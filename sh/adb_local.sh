@@ -1,26 +1,57 @@
-cat > /sdcard/cfl_watch/adb_local.sh <<'SH'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-SER="${ANDROID_SERIAL:-127.0.0.1:5555}"
+SERIAL_DEFAULT="127.0.0.1:5555"
+PORT="${ADB_TCP_PORT:-5555}"
 
-start_adb_tcp() {
-  su -c 'setprop service.adb.tcp.port 5555; setprop ctl.restart adbd' >/dev/null 2>&1 || true
+die(){ echo "[!] $*" >&2; exit 1; }
+have(){ command -v "$1" >/dev/null 2>&1; }
+
+start_server() {
+  have adb || die "adb introuvable (pkg install android-tools)"
   adb start-server >/dev/null 2>&1 || true
-  adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
-  # if unauthorized, user must accept RSA prompt
-  adb -s "$SER" get-state >/dev/null 2>&1 || true
 }
 
-stop_adb_tcp() {
-  su -c 'setprop service.adb.tcp.port -1; setprop ctl.restart adbd' >/dev/null 2>&1 || true
+status() {
+  have adb || die "adb introuvable"
+  start_server
+  echo "[*] adb devices -l:"
+  adb devices -l || true
+  echo
+  echo "[*] netstat (si dispo) / ss (si dispo):"
+  if have ss; then ss -ltnp 2>/dev/null | grep -E ":$PORT\b" || true
+  elif have netstat; then netstat -ltnp 2>/dev/null | grep -E ":$PORT\b" || true
+  else echo "(pas de ss/netstat)"; fi
+}
+
+start() {
+  start_server
+
+  # 1) Essaie d'activer adbd TCP côté Android (nécessite options dev / debug USB parfois)
+  # Si ça échoue, on ne stoppe pas, mais on le verra au status.
+  adb tcpip "$PORT" >/dev/null 2>&1 || true
+
+  # 2) Connecte sur localhost (cas emulator/VM) et sur le serial préféré
+  # IMPORTANT: on LOG les erreurs maintenant.
+  echo "[*] adb connect $SERIAL_DEFAULT"
+  adb connect "$SERIAL_DEFAULT" || true
+
+  # 3) Affiche status
+  status
+}
+
+stop() {
+  have adb || exit 0
+  start_server
+  # On essaie de revenir en USB mode, best effort
+  adb usb >/dev/null 2>&1 || true
+  # Et on coupe le serveur côté Termux (optionnel)
+  adb kill-server >/dev/null 2>&1 || true
 }
 
 case "${1:-}" in
-  start) start_adb_tcp ;;
-  stop)  stop_adb_tcp ;;
-  *) echo "Usage: $0 {start|stop}" ; exit 1 ;;
+  start) start ;;
+  stop) stop ;;
+  status) status ;;
+  *) echo "Usage: $0 {start|stop|status}" ; exit 2 ;;
 esac
-SH
-
-chmod +x /sdcard/cfl_watch/adb_local.sh
