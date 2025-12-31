@@ -23,3 +23,30 @@ termux-open "$DIR/screen.png" 2>/dev/null || echo "Ouvre manuellement: $DIR/scre
 bash /sdcard/cfl_watch/map.sh --depth 2 --max-screens 60 --max-actions 8
 
 bash /sdcard/cfl_watch/map.sh --no-launch --depth 2 --max-screens 60 --max-actions 8
+
+
+
+----------
+
+PKG="de.hafas.android.cfl"
+
+# 1) Vérifie que le package existe
+pm path "$PKG" || echo "Package introuvable (mauvais nom?)"
+
+# 2) Résout l'activité launcher (le vrai point clé)
+COMP=$(/system/bin/cmd package resolve-activity --brief -c android.intent.category.LAUNCHER "$PKG" 2>/dev/null | tail -n 1)
+echo "COMP=$COMP"
+
+# 3) Essaie de la lancer (d'abord en shell, puis en root si besoin)
+if [ -n "$COMP" ] && echo "$COMP" | grep -q '/'; then
+  /system/bin/am start -W --user 0 -n "$COMP" || su -c "/system/bin/am start -W --user 0 -n '$COMP'"
+else
+  echo "Impossible de résoudre l'activité LAUNCHER, fallback monkey"
+  monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 || su -c "monkey -p '$PKG' -c android.intent.category.LAUNCHER 1"
+fi
+
+# 4) Affiche le focus courant
+su -c "dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' -m 2" 2>/dev/null \
+ || dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' -m 2
+
+
