@@ -1,6 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
+cleanup() {
+  adb -s "${ANDROID_SERIAL:-127.0.0.1:5555}" shell am force-stop de.hafas.android.cfl >/dev/null 2>&1 || true
+  echo "DONE $(date -Iseconds)" > /sdcard/cfl_watch/logs/LAST_DONE.txt
+  command -v termux-toast >/dev/null 2>&1 && termux-toast "CFL watch terminé"
+}
+trap cleanup EXIT
+
 export ANDROID_SERIAL=127.0.0.1:5555
 BASE="/sdcard/cfl_watch"
 
