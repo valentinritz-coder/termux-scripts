@@ -1,0 +1,18 @@
+mkdir -p /sdcard/cfl_watch/simple
+TS=$(date +%F_%H-%M-%S)
+DIR="/sdcard/cfl_watch/simple/$TS"
+mkdir -p "$DIR"
+echo "$DIR"
+
+
+---------------
+
+
+(sleep 10; su -c "uiautomator dump --compressed '$DIR/ui.xml'"; su -c "screencap -p '$DIR/screen.png'") &
+
+
+
+----------------
+
+ls -lh "$DIR"
+termux-open "$DIR/screen.png" 2>/dev/null || echo "Ouvre manuellement: $DIR/screen.png"
