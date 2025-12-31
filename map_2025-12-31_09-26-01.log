@@ -1,0 +1,24 @@
+=== START Wed Dec 31 09:26:01 CET 2025 ===
+LOG=/sdcard/cfl_watch/logs/map_2025-12-31_09-26-01.log
+[*] Launch CFL (root monkey)
+  bash arg: -p
+  bash arg: de.hafas.android.cfl
+  bash arg: -c
+  bash arg: android.intent.category.LAUNCHER
+  bash arg: 1
+args: [-p, de.hafas.android.cfl, -c, android.intent.category.LAUNCHER, 1]
+ arg: "-p"
+ arg: "de.hafas.android.cfl"
+ arg: "-c"
+ arg: "android.intent.category.LAUNCHER"
+ arg: "1"
+data="de.hafas.android.cfl"
+data="android.intent.category.LAUNCHER"
+Events injected: 1
+## Network stats: elapsed time=71ms (0ms mobile, 0ms wifi, 71ms not connected)
+[*] Focus check (best effort)
+    mResumedActivity: ActivityRecord{182d68a u0 de.hafas.android.cfl/de.hafas.main.HafasApp t75}
+Failed to write while dumping service activity: Broken pipe
+[*] Run mapper
++ cat
+=== END Wed Dec 31 09:26:03 CET 2025 ===
