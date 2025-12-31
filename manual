@@ -1,1 +1,7 @@
 bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 25 --max-actions 8 --delay 2.0 &
+
+---
+
+bash /sdcard/cfl_watch/map_run.sh --depth 0 --max-screens 1 --max-actions 0 --delay 2.0 &
+sleep 2
+bash /sdcard/cfl_watch/scenario_trip.sh "Boulevard d'Avranches 16, Luxembourg" "Luxembourg"
