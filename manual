@@ -24,3 +24,16 @@ bash /sdcard/cfl_watch/adb_local.sh stop
 
 # 6) Montre le dernier dossier map créé
 ls -1dt /sdcard/cfl_watch/map/* | head -n 1
+
+
+
+
+
+
+# 6) Montre le dernier dossier map créé
+ls -1dt /sdcard/cfl_watch/map/* | head -n 1
+bash: /sdcard/cfl_watch/logs/scenario_trip_2025-12-31_10-31-15.log: No such file or directory
+tail: cannot open '/sdcard/cfl_watch/logs/scenario_trip_2025-12-31_10-31-15.log' for reading: No such file or directory
+bash: /sdcard/cfl_watch/logs/map_2025-12-31_10-31-15.log: No such file or directory
+tail: cannot open '/sdcard/cfl_watch/logs/map_2025-12-31_10-31-15.log' for reading: No such file or directory
+ls: cannot access '/sdcard/cfl_watch/map/*': No such file or directory
