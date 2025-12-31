@@ -21,3 +21,5 @@ termux-open "$DIR/screen.png" 2>/dev/null || echo "Ouvre manuellement: $DIR/scre
 ------------
 
 bash /sdcard/cfl_watch/map.sh --depth 2 --max-screens 60 --max-actions 8
+
+bash /sdcard/cfl_watch/map.sh --no-launch --depth 2 --max-screens 60 --max-actions 8
