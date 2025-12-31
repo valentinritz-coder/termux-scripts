@@ -1,1 +1,8 @@
+mkdir -p "$HOME/.shortcuts"
+
+cat > "$HOME/.shortcuts/CFL_watch_update" <<'SH'
+#!/data/data/com.termux/files/usr/bin/bash
 bash /sdcard/cfl_watch/update_from_github.sh
+SH
+
+chmod +x "$HOME/.shortcuts/CFL_watch_update"
