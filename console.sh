@@ -12,7 +12,7 @@ wait_adb() {
     if adb -s "$ANDROID_SERIAL" shell true >/dev/null 2>&1; then
       return 0
     fi
-    sleep 0.2
+    sleep 2
   done
   echo "[!] ADB n'est pas prêt sur $ANDROID_SERIAL" >&2
   return 1
