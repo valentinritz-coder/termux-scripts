@@ -1,25 +1,26 @@
 export ANDROID_SERIAL=127.0.0.1:5555
 
------
-
-bash /sdcard/cfl_watch/adb_local.sh start
-adb -s 127.0.0.1:5555 shell id -Z
-
-----
-
+# 1) Start adb local
 bash /sdcard/cfl_watch/adb_local.sh start
 
+# 2) Ouvre CFL (via adb shell, contexte shell OK)
+adb -s "$ANDROID_SERIAL" shell monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || \
+su -c 'PATH=/system/bin:/system/xbin:/vendor/bin:$PATH; /system/bin/monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1' >/dev/null 2>&1
+
+sleep 2
+
+# 3) Scénario: arrive sur Results
 LOG="/sdcard/cfl_watch/logs/scenario_trip_$(date +%Y-%m-%d_%H-%M-%S).log"
 bash -x /sdcard/cfl_watch/scenario_trip.sh "Luxembourg" "Arlon" >"$LOG" 2>&1
-tail -n 120 "$LOG"
+tail -n 60 "$LOG"
 
+# 4) Mapping depuis l'écran courant (Results idéalement)
+LOG2="/sdcard/cfl_watch/logs/map_$(date +%Y-%m-%d_%H-%M-%S).log"
+bash -x /sdcard/cfl_watch/map.sh --no-launch --depth 2 --max-screens 40 --max-actions 8 --delay 1.5 >"$LOG2" 2>&1
+tail -n 60 "$LOG2"
 
------------------------------------
-
-bash /sdcard/cfl_watch/adb_local.sh start
-LOG="/sdcard/cfl_watch/logs/scenario_trip_$(date +%Y-%m-%d_%H-%M-%S).log"
-bash -x /sdcard/cfl_watch/scenario_trip.sh "Luxembourg" "Arlon" >"$LOG" 2>&1
+# 5) Stop adb local (à la fin)
 bash /sdcard/cfl_watch/adb_local.sh stop
-tail -n 120 "$LOG"
 
----------------------
+# 6) Montre le dernier dossier map créé
+ls -1dt /sdcard/cfl_watch/map/* | head -n 1
