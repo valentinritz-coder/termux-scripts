@@ -1,0 +1,419 @@
+=== START Wed Dec 31 08:59:57 CET 2025 ===
+LOG=/sdcard/cfl_watch/logs/map_2025-12-31_08-59-57.log
+[*] Launch CFL (root monkey)
+  bash arg: -p
+  bash arg: de.hafas.android.cfl
+  bash arg: -c
+  bash arg: android.intent.category.LAUNCHER
+  bash arg: 1
+args: [-p, de.hafas.android.cfl, -c, android.intent.category.LAUNCHER, 1]
+ arg: "-p"
+ arg: "de.hafas.android.cfl"
+ arg: "-c"
+ arg: "android.intent.category.LAUNCHER"
+ arg: "1"
+data="de.hafas.android.cfl"
+data="android.intent.category.LAUNCHER"
+Events injected: 1
+## Network stats: elapsed time=17ms (0ms mobile, 0ms wifi, 17ms not connected)
+[*] Focus check (best effort)
+    mResumedActivity: ActivityRecord{769ad95 u0 de.hafas.android.cfl/de.hafas.main.HafasApp t72}
+Failed to write while dumping service activity: Broken pipe
+[*] Run mapper
++ set -euo pipefail
++ PKG=de.hafas.android.cfl
++ OUT_BASE=/sdcard/cfl_watch/map
++ DEPTH=2
++ MAX_SCREENS=80
++ MAX_ACTIONS=10
++ DELAY=1.2
++ LAUNCH=1
++ '[' 7 -gt 0 ']'
++ case "$1" in
++ LAUNCH=0
++ shift
++ '[' 6 -gt 0 ']'
++ case "$1" in
++ DEPTH=1
++ shift 2
++ '[' 4 -gt 0 ']'
++ case "$1" in
++ MAX_SCREENS=15
++ shift 2
++ '[' 2 -gt 0 ']'
++ case "$1" in
++ MAX_ACTIONS=6
++ shift 2
++ '[' 0 -gt 0 ']'
+++ now_ts
+++ date +%Y-%m-%d_%H-%M-%S
++ MAP_DIR=/sdcard/cfl_watch/map/2025-12-31_08-59-59
++ mkdir -p /sdcard/cfl_watch/map/2025-12-31_08-59-59/screens /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp
++ VISITED=/sdcard/cfl_watch/map/2025-12-31_08-59-59/visited.txt
++ COUNT_FILE=/sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ echo 0
++ :
++ echo '[*] map_dir=/sdcard/cfl_watch/map/2025-12-31_08-59-59'
+[*] map_dir=/sdcard/cfl_watch/map/2025-12-31_08-59-59
++ echo '[*] pkg=de.hafas.android.cfl depth=1 max_screens=15 max_actions=6 delay=1.2 launch=0'
+[*] pkg=de.hafas.android.cfl depth=1 max_screens=15 max_actions=6 delay=1.2 launch=0
++ '[' 0 -eq 1 ']'
++ explore 1
++ local depth=1
++ local count
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ count=0
++ '[' 0 -ge 15 ']'
++ local focus
+++ get_focus_pkg
+++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 1'
+++ sed -n 's/.* \([a-zA-Z0-9_.]\+\)\/.*/\1/p'
+++ head -n 1
+++ true
++ focus=
++ '[' -n '' ']'
++ local tmp_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local tmp_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ capture_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ local out_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local out_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ run_root 'uiautomator dump --compressed '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml'\'''
++ run_root 'screencap -p '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png'\'''
++ return 0
++ local h
+++ hash_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ local xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ python - /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ h=f9d2013e86562cad1caa3177dd01056dec17beb3
++ grep -qx f9d2013e86562cad1caa3177dd01056dec17beb3 /sdcard/cfl_watch/map/2025-12-31_08-59-59/visited.txt
++ echo f9d2013e86562cad1caa3177dd01056dec17beb3
++ count=1
++ echo 1
++ local scr_dir=/sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/f9d2013e86562cad1caa3177dd01056dec17beb3
++ mkdir -p /sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/f9d2013e86562cad1caa3177dd01056dec17beb3
++ cp -f /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml /sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/f9d2013e86562cad1caa3177dd01056dec17beb3/ui.xml
++ cp -f /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png /sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/f9d2013e86562cad1caa3177dd01056dec17beb3/screen.png
++ echo hash=f9d2013e86562cad1caa3177dd01056dec17beb3
++ echo count=1
++ echo depth=1
+++ get_focus_pkg
+++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 1'
+++ sed -n 's/.* \([a-zA-Z0-9_.]\+\)\/.*/\1/p'
+++ head -n 1
+++ true
++ echo focus_pkg=
++ echo
++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 2'
++ true
++ echo '[+] screen#1 hash=f9d2013e86562cad1caa3177dd01056dec17beb3 depth=1'
+[+] screen#1 hash=f9d2013e86562cad1caa3177dd01056dec17beb3 depth=1
++ '[' 1 -le 0 ']'
++ local actions_file=/sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/f9d2013e86562cad1caa3177dd01056dec17beb3/actions.txt
++ list_actions /sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/f9d2013e86562cad1caa3177dd01056dec17beb3/ui.xml 6
++ local xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/f9d2013e86562cad1caa3177dd01056dec17beb3/ui.xml
++ local max_actions=6
++ python - /sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/f9d2013e86562cad1caa3177dd01056dec17beb3/ui.xml 6
++ local i=0
++ IFS=$'\t'
++ read -r x y label
++ '[' -z 540 ']'
++ i=1
++ echo '    -> tap#1 (540,1230) android.widget.LinearLayout'
+    -> tap#1 (540,1230) android.widget.LinearLayout
++ run_root 'input tap 540 1230'
++ true
++ sleep 1.2
++ explore 0
++ local depth=0
++ local count
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ count=1
++ '[' 1 -ge 15 ']'
++ local focus
+++ get_focus_pkg
+++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 1'
+++ sed -n 's/.* \([a-zA-Z0-9_.]\+\)\/.*/\1/p'
+++ head -n 1
+++ true
++ focus=
++ '[' -n '' ']'
++ local tmp_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local tmp_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ capture_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ local out_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local out_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ run_root 'uiautomator dump --compressed '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml'\'''
++ run_root 'screencap -p '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png'\'''
++ return 0
++ local h
+++ hash_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ local xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ python - /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ h=3f90f718de837460aed7e5bf5c8af46b94238512
++ grep -qx 3f90f718de837460aed7e5bf5c8af46b94238512 /sdcard/cfl_watch/map/2025-12-31_08-59-59/visited.txt
++ echo 3f90f718de837460aed7e5bf5c8af46b94238512
++ count=2
++ echo 2
++ local scr_dir=/sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/3f90f718de837460aed7e5bf5c8af46b94238512
++ mkdir -p /sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/3f90f718de837460aed7e5bf5c8af46b94238512
++ cp -f /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml /sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/3f90f718de837460aed7e5bf5c8af46b94238512/ui.xml
++ cp -f /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png /sdcard/cfl_watch/map/2025-12-31_08-59-59/screens/3f90f718de837460aed7e5bf5c8af46b94238512/screen.png
++ echo hash=3f90f718de837460aed7e5bf5c8af46b94238512
++ echo count=2
++ echo depth=0
+++ get_focus_pkg
+++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 1'
+++ sed -n 's/.* \([a-zA-Z0-9_.]\+\)\/.*/\1/p'
+++ head -n 1
+++ true
++ echo focus_pkg=
++ echo
++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 2'
++ true
++ echo '[+] screen#2 hash=3f90f718de837460aed7e5bf5c8af46b94238512 depth=0'
+[+] screen#2 hash=3f90f718de837460aed7e5bf5c8af46b94238512 depth=0
++ '[' 0 -le 0 ']'
++ return 0
++ run_root 'input keyevent 4'
++ true
++ sleep 0.8
++ local c
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ c=2
++ '[' 2 -ge 15 ']'
++ IFS=$'\t'
++ read -r x y label
++ '[' -z 518 ']'
++ i=2
++ echo '    -> tap#2 (518,561) de.hafas.android.cfl:id/input_target | android.widget.TextView | Select destination'
+    -> tap#2 (518,561) de.hafas.android.cfl:id/input_target | android.widget.TextView | Select destination
++ run_root 'input tap 518 561'
++ true
++ sleep 1.2
++ explore 0
++ local depth=0
++ local count
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ count=2
++ '[' 2 -ge 15 ']'
++ local focus
+++ get_focus_pkg
+++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 1'
+++ sed -n 's/.* \([a-zA-Z0-9_.]\+\)\/.*/\1/p'
+++ head -n 1
+++ true
++ focus=
++ '[' -n '' ']'
++ local tmp_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local tmp_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ capture_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ local out_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local out_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ run_root 'uiautomator dump --compressed '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml'\'''
++ run_root 'screencap -p '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png'\'''
++ return 0
++ local h
+++ hash_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ local xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ python - /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ h=3f90f718de837460aed7e5bf5c8af46b94238512
++ grep -qx 3f90f718de837460aed7e5bf5c8af46b94238512 /sdcard/cfl_watch/map/2025-12-31_08-59-59/visited.txt
++ return 0
++ run_root 'input keyevent 4'
++ true
++ sleep 0.8
++ local c
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ c=2
++ '[' 2 -ge 15 ']'
++ IFS=$'\t'
++ read -r x y label
++ '[' -z 518 ']'
++ i=3
++ echo '    -> tap#3 (518,407) de.hafas.android.cfl:id/input_start | android.widget.TextView | Select start'
+    -> tap#3 (518,407) de.hafas.android.cfl:id/input_start | android.widget.TextView | Select start
++ run_root 'input tap 518 407'
++ true
++ sleep 1.2
++ explore 0
++ local depth=0
++ local count
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ count=2
++ '[' 2 -ge 15 ']'
++ local focus
+++ get_focus_pkg
+++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 1'
+++ sed -n 's/.* \([a-zA-Z0-9_.]\+\)\/.*/\1/p'
+++ head -n 1
+++ true
++ focus=
++ '[' -n '' ']'
++ local tmp_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local tmp_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ capture_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ local out_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local out_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ run_root 'uiautomator dump --compressed '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml'\'''
++ run_root 'screencap -p '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png'\'''
++ return 0
++ local h
+++ hash_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ local xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ python - /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ h=3f90f718de837460aed7e5bf5c8af46b94238512
++ grep -qx 3f90f718de837460aed7e5bf5c8af46b94238512 /sdcard/cfl_watch/map/2025-12-31_08-59-59/visited.txt
++ return 0
++ run_root 'input keyevent 4'
++ true
++ sleep 0.8
++ local c
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ c=2
++ '[' 2 -ge 15 ']'
++ IFS=$'\t'
++ read -r x y label
++ '[' -z 540 ']'
++ i=4
++ echo '    -> tap#4 (540,1496) android.widget.LinearLayout | : Bus 223 To Bonnevoie, Lycée Bouneweg PE Dep: Verlorenkost, Al Molkerei Departures 9:01am'
+    -> tap#4 (540,1496) android.widget.LinearLayout | : Bus 223 To Bonnevoie, Lycée Bouneweg PE Dep: Verlorenkost, Al Molkerei Departures 9:01am
++ run_root 'input tap 540 1496'
++ true
++ sleep 1.2
++ explore 0
++ local depth=0
++ local count
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ count=2
++ '[' 2 -ge 15 ']'
++ local focus
+++ get_focus_pkg
+++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 1'
+++ sed -n 's/.* \([a-zA-Z0-9_.]\+\)\/.*/\1/p'
+++ head -n 1
+++ true
++ focus=
++ '[' -n '' ']'
++ local tmp_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local tmp_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ capture_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ local out_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local out_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ run_root 'uiautomator dump --compressed '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml'\'''
++ run_root 'screencap -p '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png'\'''
++ return 0
++ local h
+++ hash_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ local xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ python - /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ h=3f90f718de837460aed7e5bf5c8af46b94238512
++ grep -qx 3f90f718de837460aed7e5bf5c8af46b94238512 /sdcard/cfl_watch/map/2025-12-31_08-59-59/visited.txt
++ return 0
++ run_root 'input keyevent 4'
++ true
++ sleep 0.8
++ local c
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ c=2
++ '[' 2 -ge 15 ']'
++ IFS=$'\t'
++ read -r x y label
++ '[' -z 540 ']'
++ i=5
++ echo '    -> tap#5 (540,1314) android.widget.LinearLayout | : Bus 29 To Senningerberg, Charlys Statioun from Platform 1 Dep: Verlorenkost, Al Molkerei'
+    -> tap#5 (540,1314) android.widget.LinearLayout | : Bus 29 To Senningerberg, Charlys Statioun from Platform 1 Dep: Verlorenkost, Al Molkerei
++ run_root 'input tap 540 1314'
++ true
++ sleep 1.2
++ explore 0
++ local depth=0
++ local count
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ count=2
++ '[' 2 -ge 15 ']'
++ local focus
+++ get_focus_pkg
+++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 1'
+++ sed -n 's/.* \([a-zA-Z0-9_.]\+\)\/.*/\1/p'
+++ head -n 1
+++ true
++ focus=
++ '[' -n '' ']'
++ local tmp_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local tmp_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ capture_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ local out_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local out_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ run_root 'uiautomator dump --compressed '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml'\'''
++ run_root 'screencap -p '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png'\'''
++ return 0
++ local h
+++ hash_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ local xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ python - /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ h=3f90f718de837460aed7e5bf5c8af46b94238512
++ grep -qx 3f90f718de837460aed7e5bf5c8af46b94238512 /sdcard/cfl_watch/map/2025-12-31_08-59-59/visited.txt
++ return 0
++ run_root 'input keyevent 4'
++ true
++ sleep 0.8
++ local c
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ c=2
++ '[' 2 -ge 15 ']'
++ IFS=$'\t'
++ read -r x y label
++ '[' -z 540 ']'
++ i=6
++ echo '    -> tap#6 (540,1132) android.widget.LinearLayout | : Bus 502 To Yutz, AéroPark P&R from Platform 4 Dep: Verlorenkost, Al Molkerei Departures '
+    -> tap#6 (540,1132) android.widget.LinearLayout | : Bus 502 To Yutz, AéroPark P&R from Platform 4 Dep: Verlorenkost, Al Molkerei Departures 
++ run_root 'input tap 540 1132'
++ true
++ sleep 1.2
++ explore 0
++ local depth=0
++ local count
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ count=2
++ '[' 2 -ge 15 ']'
++ local focus
+++ get_focus_pkg
+++ run_root 'dumpsys window windows | grep -E '\''mCurrentFocus|mFocusedApp'\'' -m 1'
+++ sed -n 's/.* \([a-zA-Z0-9_.]\+\)\/.*/\1/p'
+++ head -n 1
+++ true
++ focus=
++ '[' -n '' ']'
++ local tmp_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local tmp_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ capture_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ local out_xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ local out_png=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png
++ run_root 'uiautomator dump --compressed '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml'\'''
++ run_root 'screencap -p '\''/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.png'\'''
++ return 0
++ local h
+++ hash_screen /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ local xml=/sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
+++ python - /sdcard/cfl_watch/map/2025-12-31_08-59-59/tmp/current.xml
++ h=3f90f718de837460aed7e5bf5c8af46b94238512
++ grep -qx 3f90f718de837460aed7e5bf5c8af46b94238512 /sdcard/cfl_watch/map/2025-12-31_08-59-59/visited.txt
++ return 0
++ run_root 'input keyevent 4'
++ true
++ sleep 0.8
++ local c
+++ cat /sdcard/cfl_watch/map/2025-12-31_08-59-59/count.txt
++ c=2
++ '[' 2 -ge 15 ']'
++ IFS=$'\t'
++ read -r x y label
++ echo
+
+++ wc -l
+++ tr -d ' '
++ echo '[*] Done. Visited screens: 2'
+[*] Done. Visited screens: 2
++ echo '[*] Output: /sdcard/cfl_watch/map/2025-12-31_08-59-59'
+[*] Output: /sdcard/cfl_watch/map/2025-12-31_08-59-59
+=== END Wed Dec 31 09:00:46 CET 2025 ===
