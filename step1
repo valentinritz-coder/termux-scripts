@@ -1,0 +1,2 @@
+pkg update -y
+pkg install -y bash coreutils findutils grep sed gawk diffutils python zip
