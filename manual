@@ -1,27 +1,25 @@
-pkg install -y android-tools
-adb version
+export ANDROID_SERIAL=127.0.0.1:5555
 
----
+-----
 
-su -c 'setprop service.adb.tcp.port 5555; setprop ctl.restart adbd'
-
----
-
-su -c 'getprop service.adb.tcp.port'
-
---
-
-adb start-server
-adb connect 127.0.0.1:5555
-adb devices
-
----
-adb devices -l
-
+bash /sdcard/cfl_watch/adb_local.sh start
 adb -s 127.0.0.1:5555 shell id -Z
-adb -s 127.0.0.1:5555 shell input tap 100 100
-echo "rc=$?"
 
----
+----
 
-su -c 'setprop service.adb.tcp.port -1; setprop ctl.restart adbd'
+bash /sdcard/cfl_watch/adb_local.sh start
+
+LOG="/sdcard/cfl_watch/logs/scenario_trip_$(date +%Y-%m-%d_%H-%M-%S).log"
+bash -x /sdcard/cfl_watch/scenario_trip.sh "Luxembourg" "Arlon" >"$LOG" 2>&1
+tail -n 120 "$LOG"
+
+
+-----------------------------------
+
+bash /sdcard/cfl_watch/adb_local.sh start
+LOG="/sdcard/cfl_watch/logs/scenario_trip_$(date +%Y-%m-%d_%H-%M-%S).log"
+bash -x /sdcard/cfl_watch/scenario_trip.sh "Luxembourg" "Arlon" >"$LOG" 2>&1
+bash /sdcard/cfl_watch/adb_local.sh stop
+tail -n 120 "$LOG"
+
+---------------------
