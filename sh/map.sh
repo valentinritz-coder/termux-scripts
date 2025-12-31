@@ -31,6 +31,9 @@ run_root() {
   fi
 }
 
+SER="${ANDROID_SERIAL:-127.0.0.1:5555}"
+inject() { adb -s "$SER" shell "$@"; }
+
 need_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "[!] Missing: $1"; exit 2; }; }
 need_cmd python
 
@@ -207,7 +210,7 @@ explore() {
     i=$((i+1))
     echo "    -> tap#$i ($x,$y) $label"
 
-    run_root "input tap $x $y" >/dev/null 2>&1 || true
+    inject input tap "$x" "$y" >/dev/null 2>&1 || true
     sleep "$DELAY"
 
     local after_xml="$MAP_DIR/tmp/after.xml"
@@ -224,7 +227,7 @@ explore() {
 
     explore $((depth-1))
 
-    run_root "input keyevent 4" >/dev/null 2>&1 || true
+    inject input keyevent 4 >/dev/null 2>&1 || true
     sleep 0.8
 
     capture_screen "$after_xml" "$after_png" || true
