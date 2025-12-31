@@ -7,3 +7,22 @@ bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 5 --max-actions 3 2>&1
 ---
 
 ls -1dt /sdcard/cfl_watch/map/* | head -n 5
+
+----
+
+TS=$(date +%F_%H-%M-%S)
+LOG="/sdcard/cfl_watch/logs/SMOKE_${TS}.log"
+mkdir -p /sdcard/cfl_watch/logs
+
+{
+  echo "== START $(date) =="
+  echo "map.sh size:"; ls -lh /sdcard/cfl_watch/map.sh || true
+  echo
+  bash -x /sdcard/cfl_watch/map.sh --no-launch --depth 0 --max-screens 1 --max-actions 0
+  echo
+  echo "== END $(date) =="
+} > "$LOG" 2>&1
+
+ls -lh "$LOG"
+tail -n 80 "$LOG"
+
