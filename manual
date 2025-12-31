@@ -49,4 +49,7 @@ fi
 su -c "dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' -m 2" 2>/dev/null \
  || dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' -m 2
 
+-----------------
+
+bash /sdcard/cfl_watch/map_run.sh --depth 2 --max-screens 60 --max-actions 8
 
