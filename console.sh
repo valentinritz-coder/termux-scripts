@@ -30,3 +30,17 @@ bash "$BASE/adb_local.sh" stop
 echo
 echo "Dernier run map:"
 ls -1dt "$BASE/map/"* 2>/dev/null | head -n 1 || echo "(aucun dossier map)"
+
+# --- FIN: fermeture + signal ---
+adb -s "$ANDROID_SERIAL" shell am force-stop de.hafas.android.cfl >/dev/null 2>&1 || true
+
+# marqueur de fin
+echo "DONE $(date -Iseconds)" > /sdcard/cfl_watch/logs/LAST_DONE.txt
+
+# notification si dispo
+if command -v termux-toast >/dev/null 2>&1; then
+  LAST_MAP="$(ls -1dt /sdcard/cfl_watch/map/* 2>/dev/null | head -n 1 || true)"
+  termux-toast "Terminé. Dernier map: ${LAST_MAP:-none}"
+fi
+
+echo "[*] Terminé."
