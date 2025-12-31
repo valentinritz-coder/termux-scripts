@@ -1,0 +1,31 @@
+termux-setup-storage
+
+echo "== Termux =="
+uname -a
+echo "PREFIX=$PREFIX"
+echo "HOME=$HOME"
+
+echo "== Android =="
+getprop ro.product.model
+getprop ro.build.version.release
+getprop ro.build.version.sdk
+
+echo "== Storage =="
+ls -ld /sdcard /storage/emulated/0 2>/dev/null || true
+mkdir -p /sdcard/cfl_watch/_probe
+ls -ld /sdcard/cfl_watch/_probe
+
+echo "== Root (Magisk) =="
+command -v su || true
+su -c id
+
+echo "== uiautomator / screencap =="
+command -v uiautomator || true
+su -c "command -v uiautomator || ls -l /system/bin/uiautomator /system/bin/uiautomator*" 2>/dev/null || true
+command -v screencap || true
+su -c "command -v screencap || ls -l /system/bin/screencap" 2>/dev/null || true
+
+echo "== Quick capture test =="
+su -c "uiautomator dump --compressed /sdcard/cfl_watch/_probe/ui.xml" || uiautomator dump --compressed /sdcard/cfl_watch/_probe/ui.xml
+su -c "screencap -p /sdcard/cfl_watch/_probe/screen.png" || screencap -p /sdcard/cfl_watch/_probe/screen.png
+ls -lh /sdcard/cfl_watch/_probe/ui.xml /sdcard/cfl_watch/_probe/screen.png
