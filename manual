@@ -1,0 +1,2 @@
+pkg install -y curl
+mkdir -p /sdcard/cfl_watch/{logs,tmp,map}
