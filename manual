@@ -35,3 +35,10 @@ pkill -f "su -c" 2>/dev/null || true
 
 su -c "id; echo OK_ID"
 su -c "input tap 100 100; echo OK_TAP"
+----
+
+su -c 'input tap 100 100; echo "RC_ROOT=$?"'
+su 2000 -c 'id; input tap 100 100; echo "RC_SHELL=$?"' 2>/dev/null || echo "su 2000 not supported"
+su shell -c 'id; input tap 100 100; echo "RC_SHELLNAME=$?"' 2>/dev/null || echo "su shell not supported"
+
+----
