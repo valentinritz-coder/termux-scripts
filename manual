@@ -1,4 +1,4 @@
-bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 25 --max-actions 8 --delay 2.0 &
+kkbash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 25 --max-actions 8 --delay 2.0 &
 
 ---
 
@@ -68,3 +68,9 @@ su -c 'id -Z; input tap 100 100; echo rc=$?'
 ----
 
 
+~ $ su -Z u:r:shell:s0 -c 'id -Z; input tap 100 100; echo rc=$?' 2>/dev/null || echo "no -Z support"
+su --context u:r:shell:s0 -c 'id -Z; input tap 100 100; echo rc=$?' 2>/dev/null || echo "no --context support"
+su -c 'id -Z; input tap 100 100; echo rc=$?'
+u:r:magisk:s0
+cmd: Failure calling service input: Failed transaction (2147483646)
+rc=2
