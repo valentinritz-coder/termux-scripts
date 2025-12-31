@@ -1,5 +1,1 @@
-command -v input
-ls -l "$(command -v input)" || true
-
-su -c 'command -v input; ls -l "$(command -v input)" || true'
-su -c 'ls -l /system/bin/input || true'
+su -c 'runcon u:r:shell:s0 /system/bin/input tap 100 100; echo "rc=$?"'
