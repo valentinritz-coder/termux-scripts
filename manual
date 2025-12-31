@@ -1,1 +1,1 @@
-su -c "PATH=/system/bin:/system/xbin:/vendor/bin:\$PATH; /system/bin/monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1"
+bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 15 --max-actions 6
