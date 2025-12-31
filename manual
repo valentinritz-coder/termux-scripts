@@ -1,77 +1,18 @@
-mkdir -p /sdcard/cfl_watch/simple
 TS=$(date +%F_%H-%M-%S)
-DIR="/sdcard/cfl_watch/simple/$TS"
-mkdir -p "$DIR"
-echo "$DIR"
-
-
----------------
-
-
-(sleep 10; su -c "uiautomator dump --compressed '$DIR/ui.xml'"; su -c "screencap -p '$DIR/screen.png'") &
-
-
-
-----------------
-
-ls -lh "$DIR"
-termux-open "$DIR/screen.png" 2>/dev/null || echo "Ouvre manuellement: $DIR/screen.png"
-
-
-------------
-
-bash /sdcard/cfl_watch/map.sh --depth 2 --max-screens 60 --max-actions 8
-
-bash /sdcard/cfl_watch/map.sh --no-launch --depth 2 --max-screens 60 --max-actions 8
-
-
-
-----------
-
-PKG="de.hafas.android.cfl"
-
-# 1) Vérifie que le package existe
-pm path "$PKG" || echo "Package introuvable (mauvais nom?)"
-
-# 2) Résout l'activité launcher (le vrai point clé)
-COMP=$(/system/bin/cmd package resolve-activity --brief -c android.intent.category.LAUNCHER "$PKG" 2>/dev/null | tail -n 1)
-echo "COMP=$COMP"
-
-# 3) Essaie de la lancer (d'abord en shell, puis en root si besoin)
-if [ -n "$COMP" ] && echo "$COMP" | grep -q '/'; then
-  /system/bin/am start -W --user 0 -n "$COMP" || su -c "/system/bin/am start -W --user 0 -n '$COMP'"
-else
-  echo "Impossible de résoudre l'activité LAUNCHER, fallback monkey"
-  monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 || su -c "monkey -p '$PKG' -c android.intent.category.LAUNCHER 1"
-fi
-
-# 4) Affiche le focus courant
-su -c "dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' -m 2" 2>/dev/null \
- || dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' -m 2
-
------------------
-
-bash /sdcard/cfl_watch/map_run.sh --depth 2 --max-screens 60 --max-actions 8
-
----
-
-ls -lh /sdcard/cfl_watch/map.sh /sdcard/cfl_watch/map_run.sh 2>/dev/null || echo "scripts manquants"
-head -n 5 /sdcard/cfl_watch/map.sh 2>/dev/null
-grep -n 'OUT_BASE=' /sdcard/cfl_watch/map.sh | head -n 3
-
-
----
-
-ls -ld /sdcard/cfl_watch /sdcard/cfl_watch/map 2>/dev/null || true
-touch /sdcard/cfl_watch/_write_test && echo "write ok" && rm /sdcard/cfl_watch/_write_test
---
-
+LOG="/sdcard/cfl_watch/logs/map_${TS}.log"
 mkdir -p /sdcard/cfl_watch/logs
-bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 5 --max-actions 3 2>&1 | tee /sdcard/cfl_watch/logs/map_last.log
----
 
-sed -n '1,200p' /sdcard/cfl_watch/logs/map_last.log
----
+bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 5 --max-actions 3 2>&1 | tee "$LOG"
+echo "LOG=$LOG"
 
-ls -1dt /sdcard/cfl_watch/map/* 2>/dev/null | head -n 5 || echo "aucun run créé"
+----
 
+ls -1dt /sdcard/cfl_watch/map/* 2>/dev/null | head -n 5 || echo "=> aucun run dans /sdcard/cfl_watch/map/"
+
+----
+
+sed -n '1,40p' /sdcard/cfl_watch/map.sh
+
+-----
+
+tail -n 80 "$LOG"
