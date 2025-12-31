@@ -1,3 +1,1 @@
-bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 15 --max-actions 6
-
-(bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 15 --max-actions 6) &
+bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 25 --max-actions 8 --delay 2.0
