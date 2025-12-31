@@ -1,0 +1,6 @@
+=== FETCH https://raw.githubusercontent.com/valentinritz-coder/termux-scripts/main/console.sh ===
+=== EXEC /sdcard/cfl_watch/tmp/console.sh ===
++ su -c 'mkdir -p /data/adb/service.d'
++ su -c $'cat > /data/adb/service.d/90-adbd-tcp.sh << "EOF"\n#!/system/bin/sh\nsetprop service.adb.tcp.port 5555\nsetprop ctl.restart adbd\nEOF'
++ su -c 'chmod 755 /data/adb/service.d/90-adbd-tcp.sh'
+=== DONE ===
