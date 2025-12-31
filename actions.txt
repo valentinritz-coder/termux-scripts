@@ -1,3 +1,0 @@
-518	561	de.hafas.android.cfl:id/input_target | android.widget.TextView | Select destination
-518	407	de.hafas.android.cfl:id/input_start | android.widget.TextView | Select start
-77	154	android.widget.ImageButton | Show navigation drawer
