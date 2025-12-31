@@ -5,3 +5,24 @@ bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 25 --max-actions 8 --d
 bash /sdcard/cfl_watch/map_run.sh --depth 0 --max-screens 1 --max-actions 0 --delay 2.0 &
 sleep 2
 bash /sdcard/cfl_watch/scenario_trip.sh "Boulevard d'Avranches 16, Luxembourg" "Luxembourg"
+
+
+---
+
+mkdir -p /sdcard/cfl_watch/logs
+
+# 1) Lance CFL + fait une capture "Home" (depth 0) en background
+bash /sdcard/cfl_watch/map_run.sh --depth 0 --max-screens 1 --max-actions 0 --delay 2.0 >/dev/null 2>&1 &
+
+# 2) Prépare le log du scénario
+LOG="/sdcard/cfl_watch/logs/scenario_trip_$(date +%Y-%m-%d_%H-%M-%S).log"
+
+# 3) Exécute le scénario (avec trace bash) et loggue tout
+bash -x /sdcard/cfl_watch/scenario_trip.sh "Boulevard d'Avranches 16, Luxembourg" "Luxembourg" >"$LOG" 2>&1
+
+# 4) Affiche la fin du log
+echo "LOG=$LOG"
+tail -n 120 "$LOG"
+
+
+----
