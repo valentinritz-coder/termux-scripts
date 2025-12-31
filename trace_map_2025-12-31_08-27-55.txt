@@ -1,0 +1,5 @@
++ set -euo pipefail
++ PKG=de.hafas.android.cfl
+++ /system/bin/cmd package resolve-activity --brief -c android.intent.category.LAUNCHER de.hafas.android.cfl
+++ tail -n 1
++ COMP='cmd: Failure calling service package: Failed transaction (2147483646)'
