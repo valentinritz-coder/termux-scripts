@@ -1,39 +1,30 @@
-export ANDROID_SERIAL=127.0.0.1:5555
 
-# 1) Start adb local
+----------
+
+export ANDROID_SERIAL=127.0.0.1:5555
+mkdir -p /sdcard/cfl_watch/{logs,map,tmp}
+
+# Start ADB local
 bash /sdcard/cfl_watch/adb_local.sh start
 
-# 2) Ouvre CFL (via adb shell, contexte shell OK)
-adb -s "$ANDROID_SERIAL" shell monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || \
-su -c 'PATH=/system/bin:/system/xbin:/vendor/bin:$PATH; /system/bin/monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1' >/dev/null 2>&1
-
+# Lance CFL (via adb)
+adb -s "$ANDROID_SERIAL" shell monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
 sleep 2
 
-# 3) Scénario: arrive sur Results
+# Run scenario -> log
 LOG="/sdcard/cfl_watch/logs/scenario_trip_$(date +%Y-%m-%d_%H-%M-%S).log"
-bash -x /sdcard/cfl_watch/scenario_trip.sh "Luxembourg" "Arlon" >"$LOG" 2>&1
-tail -n 60 "$LOG"
+bash -x /sdcard/cfl_watch/scenario_trip.sh "Luxembourg" "Arlon" >"$LOG" 2>&1 || true
+echo "LOG=$LOG"
+tail -n 80 "$LOG"
 
-# 4) Mapping depuis l'écran courant (Results idéalement)
+# Run map -> log
 LOG2="/sdcard/cfl_watch/logs/map_$(date +%Y-%m-%d_%H-%M-%S).log"
-bash -x /sdcard/cfl_watch/map.sh --no-launch --depth 2 --max-screens 40 --max-actions 8 --delay 1.5 >"$LOG2" 2>&1
-tail -n 60 "$LOG2"
+bash -x /sdcard/cfl_watch/map.sh --no-launch --depth 2 --max-screens 40 --max-actions 8 --delay 1.5 >"$LOG2" 2>&1 || true
+echo "LOG2=$LOG2"
+tail -n 80 "$LOG2"
 
-# 5) Stop adb local (à la fin)
+# Stop ADB local
 bash /sdcard/cfl_watch/adb_local.sh stop
 
-# 6) Montre le dernier dossier map créé
-ls -1dt /sdcard/cfl_watch/map/* | head -n 1
-
-
-
-
-
-
-# 6) Montre le dernier dossier map créé
-ls -1dt /sdcard/cfl_watch/map/* | head -n 1
-bash: /sdcard/cfl_watch/logs/scenario_trip_2025-12-31_10-31-15.log: No such file or directory
-tail: cannot open '/sdcard/cfl_watch/logs/scenario_trip_2025-12-31_10-31-15.log' for reading: No such file or directory
-bash: /sdcard/cfl_watch/logs/map_2025-12-31_10-31-15.log: No such file or directory
-tail: cannot open '/sdcard/cfl_watch/logs/map_2025-12-31_10-31-15.log' for reading: No such file or directory
-ls: cannot access '/sdcard/cfl_watch/map/*': No such file or directory
+# Liste le dernier run map (si créé)
+ls -1dt /sdcard/cfl_watch/map/* 2>/dev/null | head -n 3
