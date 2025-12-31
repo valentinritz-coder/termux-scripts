@@ -19,5 +19,11 @@ tail -n 120 /sdcard/cfl_watch/logs/map_verbose_*.log
 ----
 ls -1dt /sdcard/cfl_watch/map/* | head -n 5
 
+-----
+
+export PATH=/system/bin:/system/xbin:/vendor/bin:$PATH
+/system/bin/monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1
+
+
 
 
