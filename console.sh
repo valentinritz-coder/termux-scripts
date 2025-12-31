@@ -1,8 +1,4 @@
-SER="192.168.118.150:39973"
-
-adb kill-server >/dev/null 2>&1 || true
-adb start-server
-
-adb connect "$SER"
+adb pair 192.168.118.150:38369
+# tu tapes le code affiché
+adb connect 192.168.118.150:39973
 adb devices -l
-adb -s "$SER" shell id -Z
