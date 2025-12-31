@@ -1,76 +1,25 @@
-kkbash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 25 --max-actions 8 --delay 2.0 &
+pkg install -y android-tools
+adb version
 
 ---
 
-bash /sdcard/cfl_watch/map_run.sh --depth 0 --max-screens 1 --max-actions 0 --delay 2.0 &
-sleep 2
-bash /sdcard/cfl_watch/scenario_trip.sh "Boulevard d'Avranches 16, Luxembourg" "Luxembourg"
-
+su -c 'setprop service.adb.tcp.port 5555; setprop ctl.restart adbd'
 
 ---
 
-mkdir -p /sdcard/cfl_watch/logs
+su -c 'getprop service.adb.tcp.port'
 
-# 1) Lance CFL + fait une capture "Home" (depth 0) en background
-bash /sdcard/cfl_watch/map_run.sh --depth 0 --max-screens 1 --max-actions 0 --delay 2.0 >/dev/null 2>&1 &
+--
 
-# 2) Prépare le log du scénario
-LOG="/sdcard/cfl_watch/logs/scenario_trip_$(date +%Y-%m-%d_%H-%M-%S).log"
+adb start-server
+adb connect 127.0.0.1:5555
+adb devices
 
-# 3) Exécute le scénario (avec trace bash) et loggue tout
-bash -x /sdcard/cfl_watch/scenario_trip.sh "Boulevard d'Avranches 16, Luxembourg" "Luxembourg" >"$LOG" 2>&1
-
-# 4) Affiche la fin du log
-echo "LOG=$LOG"
-tail -n 120 "$LOG"
-
-
-----
-
-pkill -f scenario_trip.sh 2>/dev/null || true
-pkill -f "su -c" 2>/dev/null || true
-
+---
+adb shell id -Z
+adb shell input tap 100 100
+echo "rc=$?"
 
 ---
 
-su -c "id; echo OK_ID"
-su -c "input tap 100 100; echo OK_TAP"
-----
-
-su -c 'input tap 100 100; echo "RC_ROOT=$?"'
-su 2000 -c 'id; input tap 100 100; echo "RC_SHELL=$?"' 2>/dev/null || echo "su 2000 not supported"
-su shell -c 'id; input tap 100 100; echo "RC_SHELLNAME=$?"' 2>/dev/null || echo "su shell not supported"
-
-----
-
-~ $ su -c 'input tap 100 100; echo "RC_ROOT=$?"'
-su 2000 -c 'id; input tap 100 100; echo "RC_SHELL=$?"' 2>/dev/null || echo "su 2000 not supported"
-su shell -c 'id; input tap 100 100; echo "RC_SHELLNAME=$?"' 2>/dev/null || echo "su shell not supported"
-cmd: Failure calling service input: Failed transaction (2147483646)
-RC_ROOT=2
-uid=2000(shell) gid=2000(shell) groups=2000(shell) context=u:r:magisk:s0
-cmd: Failure calling service input: Failed transaction (2147483646)
-RC_SHELL=2
-uid=2000(shell) gid=2000(shell) groups=2000(shell) context=u:r:magisk:s0
-cmd: Failure calling service input: Failed transaction (2147483646)
-RC_SHELLNAME=2
-~ $
-
---------------
-
-su -c 'id -Z; getenforce'
-
-su -Z u:r:shell:s0 -c 'id -Z; input tap 100 100; echo rc=$?' 2>/dev/null || echo "no -Z support"
-su --context u:r:shell:s0 -c 'id -Z; input tap 100 100; echo rc=$?' 2>/dev/null || echo "no --context support"
-su -c 'id -Z; input tap 100 100; echo rc=$?' 
-
-
-----
-
-
-~ $ su -Z u:r:shell:s0 -c 'id -Z; input tap 100 100; echo rc=$?' 2>/dev/null || echo "no -Z support"
-su --context u:r:shell:s0 -c 'id -Z; input tap 100 100; echo rc=$?' 2>/dev/null || echo "no --context support"
-su -c 'id -Z; input tap 100 100; echo rc=$?'
-u:r:magisk:s0
-cmd: Failure calling service input: Failed transaction (2147483646)
-rc=2
+su -c 'setprop service.adb.tcp.port -1; setprop ctl.restart adbd'
