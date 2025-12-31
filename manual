@@ -26,3 +26,12 @@ tail -n 120 "$LOG"
 
 
 ----
+
+pkill -f scenario_trip.sh 2>/dev/null || true
+pkill -f "su -c" 2>/dev/null || true
+
+
+---
+
+su -c "id; echo OK_ID"
+su -c "input tap 100 100; echo OK_TAP"
