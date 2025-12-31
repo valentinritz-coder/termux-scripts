@@ -1,3 +1,1 @@
-nl -ba /sdcard/cfl_watch/scenario_trip.sh | sed -n '1,30p'
-nl -ba /sdcard/cfl_watch/map.sh          | sed -n '1,30p'
-nl -ba /sdcard/cfl_watch/map_run.sh      | sed -n '1,30p'
+bash /sdcard/cfl_watch/update_from_github.sh
