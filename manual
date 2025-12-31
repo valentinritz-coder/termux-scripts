@@ -1,31 +1,9 @@
-ls -lh /sdcard/cfl_watch/map.sh /sdcard/cfl_watch/map_run.sh 2>/dev/null
-wc -l /sdcard/cfl_watch/map.sh /sdcard/cfl_watch/map_run.sh 2>/dev/null
-sed -n '1,20p' /sdcard/cfl_watch/map.sh
-sed -n '1,20p' /sdcard/cfl_watch/map_run.sh
-
------
-
-ls -la /sdcard/cfl_watch | grep -E 'map($|\.sh)'
-
-----
-
-mkdir -p /sdcard/cfl_watch/map/_test
-echo ok > /sdcard/cfl_watch/map/_test/ok.txt
-ls -la /sdcard/cfl_watch/map/_test
-
----
-
-
 TS=$(date +%F_%H-%M-%S)
-TRACE="/sdcard/cfl_watch/logs/trace_map_${TS}.txt"
-bash -x /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 5 --max-actions 3 > "$TRACE" 2>&1
-echo "TRACE=$TRACE"
-ls -lh "$TRACE"
-tail -n 120 "$TRACE"
+LOG="/sdcard/cfl_watch/logs/map_${TS}.log"
+mkdir -p /sdcard/cfl_watch/logs
+
+bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 5 --max-actions 3 2>&1 | tee "$LOG"
 
 ---
 
-ls -la /sdcard/cfl_watch/map 2>/dev/null || echo "=> toujours pas de /sdcard/cfl_watch/map"
-find /sdcard/cfl_watch -maxdepth 3 -type d -name screens 2>/dev/null | head -n 50
-
----
+ls -1dt /sdcard/cfl_watch/map/* | head -n 5
