@@ -16,8 +16,10 @@ adb connect 127.0.0.1:5555
 adb devices
 
 ---
-adb shell id -Z
-adb shell input tap 100 100
+adb devices -l
+
+adb -s 127.0.0.1:5555 shell id -Z
+adb -s 127.0.0.1:5555 shell input tap 100 100
 echo "rc=$?"
 
 ---
