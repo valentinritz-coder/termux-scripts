@@ -1,0 +1,37 @@
+=== FETCH https://raw.githubusercontent.com/valentinritz-coder/termux-scripts/main/console.sh ===
+=== EXEC /sdcard/cfl_watch/tmp/console.sh ===
++ set -euo pipefail
++ export ANDROID_SERIAL=127.0.0.1:5555
++ ANDROID_SERIAL=127.0.0.1:5555
++ BASE=/sdcard/cfl_watch
++ PKG=de.hafas.android.cfl
++ trap cleanup EXIT
++ mkdir -p /sdcard/cfl_watch/logs /sdcard/cfl_watch/map /sdcard/cfl_watch/tmp
++ '[' -x /sdcard/cfl_watch/update_from_github.sh ']'
++ true
++ bash /sdcard/cfl_watch/adb_local.sh start
++ adb -s 127.0.0.1:5555 shell monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1
++ true
++ sleep 2
++ bash /sdcard/cfl_watch/scenario_trip.sh Luxembourg Arlon
++ bash /sdcard/cfl_watch/map.sh --no-launch --depth 2 --max-screens 40 --max-actions 8 --delay 1.5
++ echo
+
++ echo 'Dernier run map:'
+Dernier run map:
++ head -n 1
++ ls -1dt '/sdcard/cfl_watch/map/*'
++ echo '(aucun dossier map)'
+(aucun dossier map)
++ echo '[*] Terminé.'
+[*] Terminé.
++ cleanup
++ '[' -x /sdcard/cfl_watch/adb_local.sh ']'
++ true
++ adb -s 127.0.0.1:5555 shell am force-stop de.hafas.android.cfl
++ true
++ mkdir -p /sdcard/cfl_watch/logs
+++ date -Iseconds
++ echo 'DONE 2025-12-31T11:35:10+01:00'
++ command -v termux-toast
+=== DONE ===
