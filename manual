@@ -42,3 +42,17 @@ su 2000 -c 'id; input tap 100 100; echo "RC_SHELL=$?"' 2>/dev/null || echo "su 2
 su shell -c 'id; input tap 100 100; echo "RC_SHELLNAME=$?"' 2>/dev/null || echo "su shell not supported"
 
 ----
+
+~ $ su -c 'input tap 100 100; echo "RC_ROOT=$?"'
+su 2000 -c 'id; input tap 100 100; echo "RC_SHELL=$?"' 2>/dev/null || echo "su 2000 not supported"
+su shell -c 'id; input tap 100 100; echo "RC_SHELLNAME=$?"' 2>/dev/null || echo "su shell not supported"
+cmd: Failure calling service input: Failed transaction (2147483646)
+RC_ROOT=2
+uid=2000(shell) gid=2000(shell) groups=2000(shell) context=u:r:magisk:s0
+cmd: Failure calling service input: Failed transaction (2147483646)
+RC_SHELL=2
+uid=2000(shell) gid=2000(shell) groups=2000(shell) context=u:r:magisk:s0
+cmd: Failure calling service input: Failed transaction (2147483646)
+RC_SHELLNAME=2
+~ $
+
