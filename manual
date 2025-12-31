@@ -53,3 +53,25 @@ su -c "dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' -m 2" 2>/dev
 
 bash /sdcard/cfl_watch/map_run.sh --depth 2 --max-screens 60 --max-actions 8
 
+---
+
+ls -lh /sdcard/cfl_watch/map.sh /sdcard/cfl_watch/map_run.sh 2>/dev/null || echo "scripts manquants"
+head -n 5 /sdcard/cfl_watch/map.sh 2>/dev/null
+grep -n 'OUT_BASE=' /sdcard/cfl_watch/map.sh | head -n 3
+
+
+---
+
+ls -ld /sdcard/cfl_watch /sdcard/cfl_watch/map 2>/dev/null || true
+touch /sdcard/cfl_watch/_write_test && echo "write ok" && rm /sdcard/cfl_watch/_write_test
+--
+
+mkdir -p /sdcard/cfl_watch/logs
+bash /sdcard/cfl_watch/map_run.sh --depth 1 --max-screens 5 --max-actions 3 2>&1 | tee /sdcard/cfl_watch/logs/map_last.log
+---
+
+sed -n '1,200p' /sdcard/cfl_watch/logs/map_last.log
+---
+
+ls -1dt /sdcard/cfl_watch/map/* 2>/dev/null | head -n 5 || echo "aucun run créé"
+
