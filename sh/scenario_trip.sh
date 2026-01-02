@@ -12,7 +12,10 @@ START_TEXT="${1:-Luxembourg}"
 TARGET_TEXT="${2:-Arlon}"
 DELAY="${DELAY:-1.2}"
 
+# Source la lib snap (et vérifie)
 . "$BASE/snap.sh"
+type snap_init >/dev/null 2>&1 || { echo "[!] snap_init introuvable (snap.sh pas chargé?)"; exit 1; }
+type snap      >/dev/null 2>&1 || { echo "[!] snap introuvable (snap.sh pas chargé?)"; exit 1; }
 
 inject() { adb -s "$SER" shell "$@"; }
 sleep_s() { sleep "${1:-$DELAY}"; }
@@ -26,7 +29,6 @@ type_text() {
   inject input text "$t" >/dev/null 2>&1 || true
 }
 
-# --- Scenario start ---
 snap_init "trip_${START_TEXT}_to_${TARGET_TEXT}"
 
 echo "[*] Launch CFL"
@@ -34,7 +36,6 @@ inject monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >/de
 sleep 2
 snap "00_first_screen"
 
-# NOTE: tes coordonnées sont peut-être fausses. Si rien ne se passe, il faudra les recalibrer.
 echo "[*] Destination"
 tap 518 561
 sleep_s 0.6
@@ -62,9 +63,6 @@ tap 970 561
 sleep_s 2.0
 snap "07_after_search"
 
-# --- Success heuristic ---
-# Ici tu adaptes la condition "scenario fini".
-# Exemple: si l'UI dump contient "Results" / "Résultats" / "Itinéraires"
 if grep -qEi "Results|Résultats|Itinéraires|Trajet" "$SNAP_DIR/"*"_07_after_search.xml" 2>/dev/null; then
   echo "[+] Scenario success (results detected)"
   exit 0
