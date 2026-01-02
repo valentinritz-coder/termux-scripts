@@ -1,5 +1,1 @@
-mkdir -p ~/bin
-cp /sdcard/cfl_watch/tmp/console.sh ~/bin/console.sh
-sed -i 's/\r$//' ~/bin/console.sh
-chmod +x ~/bin/console.sh
-ADB_TCP_PORT=37099 ~/bin/console.sh
+ADB_TCP_PORT=37099 bash /sdcard/cfl_watch/runner.sh
