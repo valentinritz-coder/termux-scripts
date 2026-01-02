@@ -18,6 +18,7 @@ DELAY_TYPE="${DELAY_TYPE:-0.55}"
 DELAY_PICK="${DELAY_PICK:-0.45}"
 DELAY_SEARCH="${DELAY_SEARCH:-1.2}"
 
+# snap.sh fournit snap_init + snap + SNAP_DIR
 . "$BASE/snap.sh"
 
 inject() { adb -s "$SER" shell "$@"; }
@@ -33,7 +34,17 @@ type_text() {
 }
 
 snap_if() {
-  [ "$SNAP_ON" -eq 1 ] && snap "$1" || true
+  [ "${SNAP_ON:-1}" -eq 1 ] && snap "$1" || true
+}
+
+dump_only() {
+  # Dump UI ONLY (pas de png) dans le SNAP_DIR
+  local tag="${1:-dump}"
+  local ts
+  ts="$(date +%H-%M-%S)"
+  local out="$SNAP_DIR/${ts}_${tag}.xml"
+  adb -s "$SER" shell uiautomator dump --compressed "$out" >/dev/null 2>&1 || true
+  echo "$out"
 }
 
 dump_ui() {
@@ -195,16 +206,23 @@ tap_first_result_cached() {
 }
 
 # --- Scenario start ---
-snap_init "trip_Luxembourg_to_Arlon"
+snap_init "trip_${START_TEXT}_to_${TARGET_TEXT}"
 
 finish() {
   rc=$?
   trap - EXIT
+
   if [ -n "${SNAP_DIR:-}" ] && [ -d "${SNAP_DIR:-}" ] && [ "$rc" -ne 0 ]; then
     echo "[*] Run FAILED (rc=$rc) -> génération viewers..."
-    bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" || true
+    # si SNAP_ON=0, aucun couple xml/png -> on prend 1 snap debug pour générer au moins 1 viewer
+    if [ "${SNAP_ON:-1}" -eq 0 ]; then
+      echo "[*] SNAP_ON=0 -> capturing 1 debug snap for viewers"
+      snap "99_failure" || true
+    fi
+    bash "$BASE/post_run_viewers.sh" "$SNAP_DIR" || true
     echo "[*] Viewers OK: $SNAP_DIR/viewers/index.html"
   fi
+  exit "$rc"
 }
 trap finish EXIT
 
@@ -280,9 +298,16 @@ snap_if "14_after_search"
 
 # --- Heuristics ---
 echo "[*] Evaluate result heuristics"
-latest_xml="$(ls -1t "$SNAP_DIR"/*_after_search.xml 2>/dev/null | head -n1 || true)"
-if [[ -z "$latest_xml" ]]; then
-  echo "[!] No after_search snapshot found; treating as failure"
+
+# SNAP_ON=0 => aucun after_search.xml (snap désactivé), donc on force un dump final
+if [ "${SNAP_ON:-1}" -eq 0 ]; then
+  latest_xml="$(dump_only "14_after_search")"
+else
+  latest_xml="$(ls -1t "$SNAP_DIR"/*_after_search.xml 2>/dev/null | head -n1 || true)"
+fi
+
+if [[ -z "${latest_xml:-}" ]]; then
+  echo "[!] No after_search XML found; treating as failure"
   exit 1
 fi
 
