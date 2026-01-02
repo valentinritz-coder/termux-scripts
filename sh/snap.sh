@@ -6,7 +6,6 @@ BASE="${BASE:-/sdcard/cfl_watch}"
 SER="${ANDROID_SERIAL:-127.0.0.1:37099}"
 
 mkdir -p "$BASE"/{runs,tmp,logs}
-# testttt
 # Usage:
 #   snap_init "scenario_name"
 #   snap "01_launch"
