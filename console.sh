@@ -29,7 +29,7 @@ echo "[*] SERIAL=$SERIAL (PORT=$PORT)"
 echo "[*] LOG=$LOG"
 
 # Update optionnel
-[ -x "$BASE/update_from_github.sh" ] && bash "$BASE/update_from_github.sh" >/dev/null 2>&1 || true
+[ -x "$BASE/update_from_github.sh" ] && bash "$BASE/update_from_github.sh" || true
 
 # 1) Start ADB local
 ADB_TCP_PORT="$PORT" bash "$BASE/adb_local.sh" start
@@ -40,7 +40,7 @@ adb shell monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >
 sleep 2
 
 # 3) Scénario (best effort)
-bash "$BASE/scenario_trip.sh" "Luxembourg" "Arlon" >/dev/null 2>&1 || true
+bash "$BASE/scenario_trip.sh" "Luxembourg" "Arlon" || true
 
 # 4) Mapping (ne relance pas) - on garde le rc sans tuer toute la console
 set +e
