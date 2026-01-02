@@ -106,9 +106,13 @@ tap_by_selector() {
 snap_init "trip_Luxembourg_to_Arlon"
 
 finish() {
-  # Génère les viewers si on a un SNAP_DIR
-  if [ -n "${SNAP_DIR:-}" ] && [ -d "${SNAP_DIR:-}" ]; then
-    bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
+  rc=$?
+  trap - EXIT
+
+  if [ -n "${SNAP_DIR:-}" ] && [ -d "${SNAP_DIR:-}" ] && [ "$rc" -ne 0 ]; then
+    echo "[*] Run FAILED (rc=$rc) -> génération viewers..."
+    bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" || true
+    echo "[*] Viewers OK: $SNAP_DIR/viewers/index.html"
   fi
 }
 trap finish EXIT
@@ -156,40 +160,35 @@ snap "12_after_pick_start"
 
 echo "[*] Launch search"
 snap "13_before_search"
-
 if ! (
-  tap_by_selector "search button" "resource-id=de.hafas.android.cfl:id/button_search_default" \
-  || tap_by_selector "search button (home)" "resource-id=de.hafas.android.cfl:id/button_search"
+  tap_by_selector "search button (id default)" "resource-id=de.hafas.android.cfl:id/button_search_default" \
+  || tap_by_selector "search button (id home)"    "resource-id=de.hafas.android.cfl:id/button_search" \
+  || tap_by_selector "search button (rid contains search)" "resource-id=search" \
+  || tap_by_selector "search button (text FR)" "text=Rechercher" \
+  || tap_by_selector "search button (text trips)" "text=Itinéraires"
 ); then
-  echo "[!] Search button not found (continuing to snapshots anyway)"
-  # fallback: ENTER (souvent déclenche la recherche)
+  echo "[!] Search button not found -> fallback ENTER"
   key 66 || true
 fi
-
 sleep_s 2.0
 snap "14_after_search"
-
 
 echo "[*] Evaluate result heuristics"
 latest_xml="$(ls -1t "$SNAP_DIR"/*_after_search.xml 2>/dev/null | head -n1 || true)"
 if [[ -z "$latest_xml" ]]; then
   echo "[!] No after_search snapshot found; treating as failure"
-  bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
   exit 1
 fi
 
-if inject grep -qiE "Results|Résultats|Itinéraires" "$latest_xml"; then
+if grep -qiE 'Results|Résultats|Itinéraire|Itinéraires' "$latest_xml"; then
   echo "[+] Scenario success (keyword detected in results)"
-  bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
   exit 0
 fi
 
-if inject grep -qiE "trip_recycler_view|trip_result|tripItem" "$latest_xml"; then
+if grep -qiE 'trip_recycler_view|trip_result|tripItem' "$latest_xml"; then
   echo "[+] Scenario success (trip list detected)"
-  bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
   exit 0
 fi
 
 echo "[!] Scenario may have failed (no results markers found)"
-bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
 exit 1
