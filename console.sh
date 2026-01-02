@@ -1,5 +1,5 @@
-ls -l /system/bin/input || true
-
-su -c 'ls -l /system/bin/input; /system/bin/input tap 100 100; echo "rc=$?"' || true
-
-su -c 'runcon u:r:shell:s0 /system/bin/input tap 100 100; echo "rc=$?"' || true
+cd ~/storage/shared/cfl_watch
+bash adb_local.sh start
+adb -s 127.0.0.1:37099 shell id
+adb -s 127.0.0.1:37099 shell su -c id
+bash adb_local.sh stop
