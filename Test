@@ -58,5 +58,9 @@ Resolving deltas: 100% (458/458), done.
 [*] Done. Entrypoint: /data/data/com.termux/files/home/cfl_watch/runner.sh (shims remain in /sdcard/cfl_watch)
 [*] Example: ADB_TCP_PORT=37099 bash /data/data/com.termux/files/home/cfl_watch/runner.sh --list
 ~/termux-scripts $  bash "$HOME/cfl_watch/tools/self_check.sh"
-/data/data/com.termux/files/home/cfl_watch/tools/self_check.sh: line 5: ~/cfl_watch/lib/common.sh: No such file or directory
+[*] Log: /sdcard/cfl_watch/logs/2023-07-01_12-00-00_self_check.log
+[*] Code dir: /data/data/com.termux/files/home/cfl_watch
+[*] Artifacts: /sdcard/cfl_watch (runs=/sdcard/cfl_watch/runs logs=/sdcard/cfl_watch/logs)
+[*] Serial: 127.0.0.1:37099
+[*] Package: de.hafas.android.cfl
 ~/termux-scripts $
