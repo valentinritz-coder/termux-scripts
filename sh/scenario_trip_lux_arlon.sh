@@ -7,14 +7,21 @@ PORT="${ADB_TCP_PORT:-37099}"
 SER="${ANDROID_SERIAL:-$HOST:$PORT}"
 export ANDROID_SERIAL="$SER"
 
-START_TEXT="LUXEMBOURG"
-TARGET_TEXT="ARLON"
-DELAY="${DELAY:-1.0}"
+START_TEXT="${START_TEXT:-LUXEMBOURG}"
+TARGET_TEXT="${TARGET_TEXT:-ARLON}"
+
+# --- Speed knobs ---
+SNAP_ON="${SNAP_ON:-1}"            # 1=take snaps, 0=skip snaps (FAST)
+DELAY_LAUNCH="${DELAY_LAUNCH:-1.2}"
+DELAY_TAP="${DELAY_TAP:-0.30}"
+DELAY_TYPE="${DELAY_TYPE:-0.55}"
+DELAY_PICK="${DELAY_PICK:-0.45}"
+DELAY_SEARCH="${DELAY_SEARCH:-1.2}"
 
 . "$BASE/snap.sh"
 
 inject() { adb -s "$SER" shell "$@"; }
-sleep_s() { sleep "${1:-$DELAY}"; }
+sleep_s() { sleep "${1:-0.2}"; }
 tap() { inject input tap "$1" "$2" >/dev/null 2>&1 || true; }
 key() { inject input keyevent "$1" >/dev/null 2>&1 || true; }
 
@@ -25,6 +32,10 @@ type_text() {
   inject input text "$t" >/dev/null 2>&1 || true
 }
 
+snap_if() {
+  [ "$SNAP_ON" -eq 1 ] && snap "$1" || true
+}
+
 dump_ui() {
   local dump_path="$BASE/tmp/live_dump.xml"
   mkdir -p "$BASE/tmp"
@@ -32,9 +43,12 @@ dump_ui() {
   echo "$dump_path"
 }
 
+# --- UI dump cache (BIG speedup) ---
+DUMP_CACHE=""
+refresh_dump() { DUMP_CACHE="$(dump_ui)"; }
+
 node_center() {
-  local dump="$1"
-  shift
+  local dump="$1"; shift
   python - "$dump" "$@" <<'PY' 2>/dev/null
 import sys, re
 import xml.etree.ElementTree as ET
@@ -76,6 +90,7 @@ for node in root.iter("node"):
   if not matches(node):
     continue
 
+  # climb to clickable parent if needed
   cur = node
   while cur is not None and cur.get("clickable", "") != "true":
     cur = parent.get(cur)
@@ -117,7 +132,6 @@ try:
 except Exception:
   sys.exit(0)
 
-# Trouver le RecyclerView des résultats
 list_node = None
 for n in root.iter("node"):
   if n.get("resource-id") == LIST_ID:
@@ -126,11 +140,9 @@ for n in root.iter("node"):
 if list_node is None:
   sys.exit(0)
 
-list_bounds = parse_bounds(list_node.get("bounds"))
-if not list_bounds:
+if not parse_bounds(list_node.get("bounds")):
   sys.exit(0)
 
-# Parcourir ses enfants et prendre le premier item clickable (souvent ViewGroup)
 for child in list_node.iter("node"):
   if child is list_node:
     continue
@@ -138,7 +150,7 @@ for child in list_node.iter("node"):
     bb = parse_bounds(child.get("bounds"))
     if not bb:
       continue
-    # Optionnel: ignorer petits boutons (ex: étoile favorite)
+    # ignore tiny buttons (ex: favorite star)
     w = bb[2]-bb[0]; h = bb[3]-bb[1]
     if w*h < 20000:
       continue
@@ -150,10 +162,25 @@ sys.exit(0)
 PY
 }
 
-tap_first_result() {
+tap_by_selector_cached() {
+  local label="$1"; shift
+  local dump="$1"; shift
+  local coords
+  coords="$(node_center "$dump" "$@")"
+  if [[ -z "${coords// }" ]]; then
+    echo "[!] Unable to find selector for $label with criteria: $*"
+    return 1
+  fi
+  local x y
+  read -r x y <<<"$coords"
+  echo "[*] Tap $label at $x,$y"
+  tap "$x" "$y"
+  return 0
+}
+
+tap_first_result_cached() {
   local label="${1:-first result}"
-  local dump
-  dump="$(dump_ui)"
+  local dump="$2"
   local coords
   coords="$(first_result_center "$dump")"
   if [[ -z "${coords// }" ]]; then
@@ -167,32 +194,12 @@ tap_first_result() {
   return 0
 }
 
-tap_by_selector() {
-  local label="$1"
-  shift
-  local dump
-  dump="$(dump_ui)"
-  local coords
-  coords="$(node_center "$dump" "$@")"
-  if [[ -z "${coords// }" ]]; then
-    echo "[!] Unable to find selector for $label with criteria: $*"
-    return 1
-  fi
-
-  local x y
-  read -r x y <<<"$coords"
-  echo "[*] Tap $label at $x,$y"
-  tap "$x" "$y"
-  return 0
-}
-
 # --- Scenario start ---
 snap_init "trip_Luxembourg_to_Arlon"
 
 finish() {
   rc=$?
   trap - EXIT
-
   if [ -n "${SNAP_DIR:-}" ] && [ -d "${SNAP_DIR:-}" ] && [ "$rc" -ne 0 ]; then
     echo "[*] Run FAILED (rc=$rc) -> génération viewers..."
     bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" || true
@@ -201,86 +208,77 @@ finish() {
 }
 trap finish EXIT
 
-# ----------------------------------
-# ----------------------------------
-# START OF SCENARIO-------------------
-# ----------------------------------
-# ----------------------------------
-
 echo "[*] Launch CFL"
 inject monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
-sleep 2.0
-snap "00_launch"
+sleep_s "$DELAY_LAUNCH"
+snap_if "00_launch"
 
-# ----------------------------------
-
+# --- Start field ---
 echo "[*] Open start field"
-snap "01_before_tap_start"
-tap_by_selector "start field" "content-desc=Select start" \
-|| tap_by_selector "start field (history)" "resource-id=de.hafas.android.cfl:id/input_start"
-sleep_s 0.8
-snap "02_after_tap_start"
+snap_if "01_before_tap_start"
+refresh_dump
+tap_by_selector_cached "start field" "$DUMP_CACHE" "content-desc=Select start" \
+|| tap_by_selector_cached "start field (history)" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/input_start"
+sleep_s "$DELAY_TAP"
+snap_if "02_after_tap_start"
 
 echo "[*] Type start: $START_TEXT"
-snap "03_before_type_start"
+snap_if "03_before_type_start"
 type_text "$START_TEXT"
-sleep_s 0.8
-snap "04_after_type_start"
+sleep_s "$DELAY_TYPE"
+snap_if "04_after_type_start"
 
 echo "[*] Choose start suggestion"
-snap "05_before_pick_start"
-tap_by_selector "start suggestion" "content-desc=$START_TEXT" \
-|| tap_by_selector "start suggestion (text)" "text=$START_TEXT" \
-|| tap_first_result "start suggestion (first result)"
-sleep_s 0.8
-snap "06_after_pick_start"
+snap_if "05_before_pick_start"
+refresh_dump
+tap_by_selector_cached "start suggestion" "$DUMP_CACHE" "content-desc=$START_TEXT" \
+|| tap_by_selector_cached "start suggestion (text)" "$DUMP_CACHE" "text=$START_TEXT" \
+|| tap_first_result_cached "start suggestion (first result)" "$DUMP_CACHE"
+sleep_s "$DELAY_PICK"
+snap_if "06_after_pick_start"
 
-# ----------------------------------
-
+# --- Destination field ---
 echo "[*] Open destination field"
-snap "07_before_tap_destination"
-tap_by_selector "destination field" "resource-id=de.hafas.android.cfl:id/input_target" \
-|| tap_by_selector "destination field (fallback)" "content-desc=Select destination"
-sleep_s 0.8
-snap "08_after_tap_destination"
+snap_if "07_before_tap_destination"
+refresh_dump
+tap_by_selector_cached "destination field" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/input_target" \
+|| tap_by_selector_cached "destination field (fallback)" "$DUMP_CACHE" "content-desc=Select destination"
+sleep_s "$DELAY_TAP"
+snap_if "08_after_tap_destination"
 
 echo "[*] Type destination: $TARGET_TEXT"
-snap "09_before_type_destination"
+snap_if "09_before_type_destination"
 type_text "$TARGET_TEXT"
-sleep_s 0.8
-snap "10_after_type_destination"
+sleep_s "$DELAY_TYPE"
+snap_if "10_after_type_destination"
 
 echo "[*] Choose destination suggestion"
-snap "11_before_pick_destination"
-tap_by_selector "destination suggestion" "content-desc=$TARGET_TEXT" \
-|| tap_by_selector "destination suggestion (text)" "text=$TARGET_TEXT" \
-|| tap_first_result "destination suggestion (first result)"
-sleep_s 0.8
-snap "12_after_pick_destination"
+snap_if "11_before_pick_destination"
+refresh_dump
+tap_by_selector_cached "destination suggestion" "$DUMP_CACHE" "content-desc=$TARGET_TEXT" \
+|| tap_by_selector_cached "destination suggestion (text)" "$DUMP_CACHE" "text=$TARGET_TEXT" \
+|| tap_first_result_cached "destination suggestion (first result)" "$DUMP_CACHE"
+sleep_s "$DELAY_PICK"
+snap_if "12_after_pick_destination"
 
-# ----------------------------------
-
+# --- Search ---
 echo "[*] Launch search"
-snap "13_before_search"
+snap_if "13_before_search"
+refresh_dump
 if ! (
-  tap_by_selector "search button (id default)" "resource-id=de.hafas.android.cfl:id/button_search_default" \
-  || tap_by_selector "search button (id home)"    "resource-id=de.hafas.android.cfl:id/button_search" \
-  || tap_by_selector "search button (rid contains search)" "resource-id=search" \
-  || tap_by_selector "search button (text FR)" "text=Rechercher" \
-  || tap_by_selector "search button (text trips)" "text=Itinéraires"
+  tap_by_selector_cached "search button (id default)" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/button_search_default" \
+  || tap_by_selector_cached "search button (id home)"    "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/button_search" \
+  || tap_by_selector_cached "search button (rid contains search)" "$DUMP_CACHE" "resource-id=search" \
+  || tap_by_selector_cached "search button (text FR)" "$DUMP_CACHE" "text=Rechercher" \
+  || tap_by_selector_cached "search button (text trips)" "$DUMP_CACHE" "text=Itinéraires"
 ); then
   echo "[!] Search button not found -> fallback ENTER"
   key 66 || true
 fi
-sleep_s 2.0
-snap "14_after_search"
+sleep_s "$DELAY_SEARCH"
+snap_if "14_after_search"
 
-# ----------------------------------
-# ----------------------------------
-# END OF SCENARIO-------------------
-# ----------------------------------
-# ----------------------------------
-
+# --- Heuristics ---
 echo "[*] Evaluate result heuristics"
 latest_xml="$(ls -1t "$SNAP_DIR"/*_after_search.xml 2>/dev/null | head -n1 || true)"
 if [[ -z "$latest_xml" ]]; then
