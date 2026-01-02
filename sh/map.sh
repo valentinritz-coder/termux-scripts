@@ -1,4 +1,3 @@
-cat > /sdcard/cfl_watch/map.sh <<'SH'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
@@ -245,7 +244,3 @@ explore() {
 explore "$DEPTH"
 echo "[*] Done. Visited screens: $(wc -l < "$VISITED" | tr -d ' ')"
 echo "[*] Output: $MAP_DIR"
-SH
-
-chmod +x /sdcard/cfl_watch/map.sh
-sed -i 's/\r$//' /sdcard/cfl_watch/map.sh 2>/dev/null || true
