@@ -2,3 +2,31 @@ bash adb_local.sh start
 adb shell id
 adb shell su -c id
 bash adb_local.sh stop
+
+.../0/cfl_watch $ bash adb_local.sh start
+adb shell id
+adb shell su -c id
+bash adb_local.sh stop
+[*] Activation ADB TCP sur 127.0.0.1:5555 (root)
+[*] Redémarrage adbd
+[!] Rien n'écoute sur :5555 (ss/netstat). Je tente un restart adbd de plus.
+[!] Toujours pas d'écoute détectée. On tente quand même adb connect.
+[*] adb connect 127.0.0.1:5555
+failed to connect to '127.0.0.1:5555': Connection refused
+[*] ANDROID_SERIAL fixé à 127.0.0.1:5555
+[*] getprop:
+5555
+restarting
+
+[*] Port check (:5555):
+
+[*] adb devices -l:
+List of devices attached
+127.0.0.1:5555         offline product:blueline model:Pixel_3 device:blueline transport_id:2
+
+adb: device offline
+adb: device offline
+[*] Désactivation ADB TCP (service.adb.tcp.port = -1) + restart adbd
+[*] adb disconnect 127.0.0.1:5555
+[*] adb devices -l:
+List of devices attached
