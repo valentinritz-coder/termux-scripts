@@ -1,30 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
+COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$COMMON_DIR/path.sh"
+
 # Common helpers and defaults for CFL automation scripts.
 # This file is intended to be sourced, not executed directly.
 
-expand_path(){
-  case "${1:-}" in
-    "~") printf '%s' "$HOME" ;;
-    "~/"*) printf '%s' "${1/#\~/$HOME}" ;;
-    *) printf '%s' "${1:-}" ;;
-  esac
-}
-
-_raw_code_dir="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
+_raw_code_dir="${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}"
 _raw_artifact_dir="${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}"
 
-CFL_CODE_DIR="$(expand_path "$_raw_code_dir")"
+CFL_CODE_DIR="$(expand_tilde_path "$_raw_code_dir")"
 CFL_BASE_DIR="$CFL_CODE_DIR" # backward compatibility alias
-CFL_ARTIFACT_DIR="$(expand_path "$_raw_artifact_dir")"
+CFL_ARTIFACT_DIR="$(expand_tilde_path "$_raw_artifact_dir")"
 CFL_LOG_DIR="$CFL_ARTIFACT_DIR/logs"
 CFL_RUNS_DIR="$CFL_ARTIFACT_DIR/runs"
 CFL_TMP_DIR="$CFL_CODE_DIR/tmp"
 CFL_SCENARIO_DIR="$CFL_CODE_DIR/scenarios"
 CFL_VIEWER_DIR_NAME="viewers"
 
-export CFL_CODE_DIR CFL_BASE_DIR CFL_ARTIFACT_DIR CFL_LOG_DIR CFL_RUNS_DIR CFL_TMP_DIR
+export CFL_CODE_DIR CFL_BASE_DIR CFL_ARTIFACT_DIR CFL_LOG_DIR CFL_RUNS_DIR CFL_TMP_DIR CFL_SCENARIO_DIR
 
 CFL_PKG="${CFL_PKG:-de.hafas.android.cfl}"
 

@@ -1,17 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-expand_path(){
-  case "${1:-}" in
-    "~") printf '%s' "$HOME" ;;
-    "~/"*) printf '%s' "${1/#\~/$HOME}" ;;
-    *) printf '%s' "${1:-}" ;;
-  esac
-}
-
-CODE_DIR="$(expand_path "${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}")"
-ARTIFACT_DIR="$(expand_path "${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}")"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$SCRIPT_DIR/../lib/path.sh"
+
+CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}")"
+ARTIFACT_DIR="$(expand_tilde_path "${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}")"
 SRC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 log(){ printf '[*] %s\n' "$*"; }
@@ -41,13 +35,13 @@ mkdir -p "$ARTIFACT_DIR"
 cat >"$ARTIFACT_DIR/runner.sh" <<'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
-CFL_CODE_DIR="${CFL_CODE_DIR:-~/cfl_watch}"
+CFL_CODE_DIR="${CFL_CODE_DIR:-$HOME/cfl_watch}"
 exec bash "$CFL_CODE_DIR/runner.sh" "$@"
 EOF
 cat >"$ARTIFACT_DIR/console.sh" <<'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
-CFL_CODE_DIR="${CFL_CODE_DIR:-~/cfl_watch}"
+CFL_CODE_DIR="${CFL_CODE_DIR:-$HOME/cfl_watch}"
 exec bash "$CFL_CODE_DIR/runner.sh" "$@"
 EOF
 

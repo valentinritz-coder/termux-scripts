@@ -1,11 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}"
-CFL_ARTIFACT_DIR="${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$SCRIPT_DIR/lib/path.sh"
+
+CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}")"
+CFL_BASE_DIR="$CFL_CODE_DIR"
+CFL_ARTIFACT_DIR="$(expand_tilde_path "${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}")"
 CFL_DEFAULT_PORT="${ADB_TCP_PORT:-37099}"
 CFL_DEFAULT_HOST="${ADB_HOST:-127.0.0.1}"
 CFL_SCENARIO_SCRIPT="${CFL_SCENARIO_SCRIPT:-$CFL_CODE_DIR/scenarios/scenario_trip.sh}"
+CFL_SCENARIO_SCRIPT="$(expand_tilde_path "$CFL_SCENARIO_SCRIPT")"
 CFL_DRY_RUN="${CFL_DRY_RUN:-0}"
 
 DELAY_LAUNCH="${DELAY_LAUNCH:-1.0}"

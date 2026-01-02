@@ -5,7 +5,13 @@ REPO_SLUG="valentinritz-coder/termux-scripts"
 REPO_URL="https://github.com/${REPO_SLUG}.git"
 SUBDIR="${SUBDIR:-sh}"
 
-DEST="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
+DEST="${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}"
+if [ -f "$HOME/cfl_watch/lib/path.sh" ]; then
+  . "$HOME/cfl_watch/lib/path.sh"
+  DEST="$(expand_tilde_path "$DEST")"
+else
+  DEST="${DEST/#\~/$HOME}"
+fi
 WORK="$HOME/.cache/cfl_watch_repo"
 
 CONSOLE_NAME="console.sh"

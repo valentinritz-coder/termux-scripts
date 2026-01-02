@@ -1,7 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
+CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}"
+if [ -f "$HOME/cfl_watch/lib/path.sh" ]; then
+  . "$HOME/cfl_watch/lib/path.sh"
+  CFL_CODE_DIR="$(expand_tilde_path "$CFL_CODE_DIR")"
+else
+  CFL_CODE_DIR="${CFL_CODE_DIR/#\~/$HOME}"
+fi
 CFL_ARTIFACT_DIR="${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}"
 
 PKG="de.hafas.android.cfl"
@@ -16,7 +22,7 @@ SER="${ANDROID_SERIAL:-127.0.0.1:37099}"
 
 usage() {
   cat <<EOF
-Usage: bash ~/cfl_watch/sh/map.sh [options]
+Usage: bash \"$HOME/cfl_watch/sh/map.sh\" [options]
   --pkg de.hafas.android.cfl
   --out /sdcard/cfl_watch/map
   --depth 1

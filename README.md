@@ -7,7 +7,7 @@ Automation scripts for the **CFL mobile app** designed to run **directly on an A
 - Uses **ADB over TCP** (root required) and can capture snapshots (PNG/XML) + build HTML viewers.
 
 > Important: do **not** rely on `~` inside variables. Use `$HOME`.
-> If you see `~/cfl_watch/lib/common.sh: No such file or directory`, that’s exactly why.
+> If you see errors claiming `lib/common.sh` is missing under `cfl_watch`, that's the tilde trap.
 
 ---
 
@@ -76,6 +76,24 @@ bash "$HOME/cfl_watch/tools/self_check.sh"
 If dependencies are missing:
 ```bash
 pkg install -y android-tools python
+```
+
+---
+
+## Tilde gotcha (and canonical commands)
+
+`~` inside variables is **not expanded by Bash**. Always prefer `$HOME` or absolute paths.
+
+Canonical invocations:
+```bash
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --check
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh"
+```
+
+Optional overrides (if you moved things):
+```bash
+CFL_CODE_DIR="$HOME/cfl_watch" CFL_ARTIFACT_DIR="/sdcard/cfl_watch" \
+  ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --list
 ```
 
 ---
@@ -193,7 +211,7 @@ $HOME/cfl_watch
 
 ## Troubleshooting
 
-### `~/cfl_watch/lib/common.sh: No such file or directory`
+### `lib/common.sh` not found (tilde not expanded)
 You hit the `~` expansion trap. Use `$HOME` or absolute paths.
 Example:
 ```bash
@@ -226,3 +244,9 @@ adb devices -l
 
 - Root is required for enabling ADB TCP (via `setprop service.adb.tcp.port` + restarting `adbd`).
 - Keeping artifacts on `/sdcard` makes it easy to serve viewers (`python -m http.server`) and retrieve files.
+
+## Quick verification
+- `rg "~/cfl_watch"` inside the repo should return nothing (defaults now use `$HOME`).
+- `bash "$HOME/cfl_watch/tools/self_check.sh"` works without `CFL_BASE_DIR`.
+- `bash "$HOME/cfl_watch/runner.sh" --list` works without `CFL_BASE_DIR`.
+- `CFL_CODE_DIR=~/cfl_watch bash "$HOME/cfl_watch/runner.sh" --list` still works because tilde normalization is built in.

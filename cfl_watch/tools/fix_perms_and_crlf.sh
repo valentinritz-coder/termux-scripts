@@ -1,8 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
-TARGET_DIR="${1:-$CFL_CODE_DIR}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$SCRIPT_DIR/../lib/path.sh"
+
+CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}")"
+CFL_BASE_DIR="$CFL_CODE_DIR"
+TARGET_DIR="$(expand_tilde_path "${1:-$CFL_CODE_DIR}")"
 
 log(){ printf '[*] %s\n' "$*"; }
 
