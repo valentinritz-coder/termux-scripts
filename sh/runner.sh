@@ -24,7 +24,7 @@ ADB_TCP_PORT="$PORT" bash "$BASE/adb_local.sh" start
 
 # Liste de scénarios
 SCENARIOS=(
-  "bash -x $BASE/scenario_trip.sh Luxembourg Arlon"
+  "bash $BASE/scenario_trip_lux_arlon.sh"
 )
 
 for cmd in "${SCENARIOS[@]}"; do
