@@ -25,6 +25,7 @@ SCENARIOS=(
   "bash $BASE/scenario_trip.sh Luxembourg Arlon"
   "bash $BASE/scenario_trip.sh Luxembourg Bruxelles"
   "bash $BASE/scenario_trip.sh Esch-sur-Alzette Luxembourg"
+  "bash $BASE/scenario_trip_lux_arlon.sh"
 )
 
 for cmd in "${SCENARIOS[@]}"; do
