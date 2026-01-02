@@ -1,1 +1,24 @@
-ADB_TCP_PORT=37099 bash /sdcard/cfl_watch/runner.sh
+[*] Analyse des changements (preview)...
+
+=== CHANGES (sh/ -> /sdcard/cfl_watch) ===
+*deleting   tmp/
+*deleting   logs/
+>f+++++++++ adb_local.sh
+>f+++++++++ map.sh
+>f+++++++++ map_run.sh
+>f+++++++++ runner.sh
+>f+++++++++ scenario_trip.sh
+>f+++++++++ scenario_trip_lux_arlon.sh
+>f+++++++++ snap.sh
+>fcsT...... update_from_github.sh
+
+=== CHANGES (console -> tmp) ===
+[+] NEW  -> /sdcard/cfl_watch/tmp/console.sh
+
+Appliquer ces changements ? [y/N] y
+
+[*] Application sh/ -> /sdcard/cfl_watch ...
+[*] Deploy console -> /sdcard/cfl_watch/tmp/console.sh
+cp: cannot create regular file '/sdcard/cfl_watch/tmp/console.sh': No such file or directory
+
+[Process completed (code 1) - press Enter]
