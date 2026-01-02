@@ -167,8 +167,7 @@ if ! (
   || tap_by_selector "search button (text FR)" "text=Rechercher" \
   || tap_by_selector "search button (text trips)" "text=Itinéraires"
 ); then
-  echo "[!] Search button not found -> fallback ENTER"
-  key 66 || true
+
 fi
 sleep_s 2.0
 snap "14_after_search"
