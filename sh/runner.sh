@@ -22,9 +22,9 @@ ADB_TCP_PORT="$PORT" bash "$BASE/adb_local.sh" start
 
 # Liste de scénarios: commande complète
 SCENARIOS=(
-  "bash $BASE/scenario_trip.sh Luxembourg Arlon"
-  "bash $BASE/scenario_trip.sh Luxembourg Bruxelles"
-  "bash $BASE/scenario_trip.sh Esch-sur-Alzette Luxembourg"
+#  "bash $BASE/scenario_trip.sh Luxembourg Arlon"
+#  "bash $BASE/scenario_trip.sh Luxembourg Bruxelles"
+#  "bash $BASE/scenario_trip.sh Esch-sur-Alzette Luxembourg"
   "bash $BASE/scenario_trip_lux_arlon.sh"
 )
 
