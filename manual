@@ -1,4 +1,4 @@
-./adb_local.sh start
+bash adb_local.sh start
 adb shell id
 adb shell su -c id
-./adb_local.sh stop
+bash adb_local.sh stop
