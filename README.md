@@ -12,8 +12,13 @@ Automation scripts for the CFL mobile app, optimized for running **directly on a
 
 ## Quickstart (Termux on device)
 ```bash
-# 1) Clone or fetch this repo
+# 1a) Clone or fetch this repo
 pkg install -y git
+git clone https://github.com/valentinritz-coder/termux-scripts.git
+cd termux-scripts
+
+# 1b) or erase it
+rm -rf ~/termux-scripts
 git clone https://github.com/valentinritz-coder/termux-scripts.git
 cd termux-scripts
 
