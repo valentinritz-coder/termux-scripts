@@ -4,7 +4,7 @@ cat > /sdcard/cfl_watch/scenario_trip.sh <<'SH'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-SER="${ANDROID_SERIAL:-127.0.0.1:5555}"
+SER="${ANDROID_SERIAL:-127.0.0.1:37099}"
 START_TEXT="${1:-Luxembourg}"
 TARGET_TEXT="${2:-Arlon}"
 DELAY="${DELAY:-1.2}"
