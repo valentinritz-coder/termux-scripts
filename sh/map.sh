@@ -43,8 +43,7 @@ need() { command -v "$1" >/dev/null 2>&1 || { echo "[!] missing: $1"; exit 1; };
 need python
 need adb
 
-run_root() { su -c "PATH=/system/bin:/system/xbin:/vendor/bin:\$PATH; $1"; }
-inject()   { adb -s "$SER" shell "$@"; }
+inject() { adb -s "$SER" shell "$@"; }
 
 now_ts() { date +"%Y-%m-%d_%H-%M-%S"; }
 
@@ -58,6 +57,9 @@ echo 0 > "$COUNT_FILE"
 echo "[*] map_dir=$MAP_DIR"
 echo "[*] device=$SER pkg=$PKG depth=$DEPTH max_screens=$MAX_SCREENS max_actions=$MAX_ACTIONS delay=$DELAY launch=$LAUNCH"
 
+# Preflight: device must be reachable
+adb -s "$SER" get-state >/dev/null 2>&1 || { echo "[!] adb device not ready: $SER"; exit 1; }
+
 if [ "$LAUNCH" -eq 1 ]; then
   inject monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
   sleep 1.5
@@ -66,8 +68,26 @@ fi
 capture_screen() {
   local out_xml="$1"
   local out_png="$2"
-  run_root "uiautomator dump --compressed '$out_xml'" >/dev/null 2>&1 || return 1
-  run_root "screencap -p '$out_png'" >/dev/null 2>&1 || return 1
+
+  # Clean old
+  rm -f "$out_xml" "$out_png" 2>/dev/null || true
+
+  # Dump UI + screenshot via adb shell (shell context, cohérent avec input)
+  if ! inject uiautomator dump --compressed "$out_xml" >/dev/null 2>&1; then
+    echo "[!] uiautomator dump failed"
+    return 1
+  fi
+  if ! inject screencap -p "$out_png" >/dev/null 2>&1; then
+    echo "[!] screencap failed"
+    return 1
+  fi
+
+  # Petite latence de filesystem parfois
+  sleep 0.05
+
+  # Sanity
+  [ -s "$out_xml" ] || { echo "[!] UI xml empty/missing: $out_xml"; return 1; }
+  [ -s "$out_png" ] || { echo "[!] PNG empty/missing: $out_png"; return 1; }
   return 0
 }
 
@@ -75,12 +95,20 @@ hash_xml_norm() {
   python - "$1" <<'PY'
 import sys,re,hashlib,xml.etree.ElementTree as ET
 p=sys.argv[1]
-root=ET.parse(p).getroot()
+try:
+  root=ET.parse(p).getroot()
+except Exception:
+  # si parsing foire, on hash quand même le brut pour ne pas planter
+  with open(p,'rb') as f:
+    print("RAW_"+hashlib.sha1(f.read()).hexdigest())
+  raise SystemExit(0)
+
 def clean(s): return re.sub(r"\s+"," ",(s or "").strip())
 def norm(s):
   s=re.sub(r"\b([01]?\d|2[0-3])[:h][0-5]\d\b","<TIME>",s)
   s=re.sub(r"\b\d+\b","<NUM>",s)
   return s
+
 parts=[]
 for n in root.iter("node"):
   rid=clean(n.attrib.get("resource-id"))
@@ -89,9 +117,10 @@ for n in root.iter("node"):
   txt=norm(clean(n.attrib.get("text")))
   des=norm(clean(n.attrib.get("content-desc")))
   pkg=clean(n.attrib.get("package"))
-  if not (rid or txt or des): 
+  if not (rid or txt or des):
     continue
   parts.append(f"{pkg}|{rid}|{cls}|{clk}|T={txt}|D={des}")
+
 data="\n".join(sorted(set(parts))).encode()
 print(hashlib.sha1(data).hexdigest())
 PY
@@ -127,10 +156,10 @@ def center(bounds):
 bad=re.compile(r"\b(pay|payer|achat|acheter|purchase|buy|confirm|confirmer|delete|supprimer|remove|retirer|logout|déconnexion|sign out)\b",re.I)
 cands=[]
 for n in root.iter("node"):
-  if n.attrib.get("clickable")!="true" or n.attrib.get("enabled")!="true": 
+  if n.attrib.get("clickable")!="true" or n.attrib.get("enabled")!="true":
     continue
   c=center(n.attrib.get("bounds"))
-  if not c: 
+  if not c:
     continue
   x,y,area=c
   if area<18000 or y<120:
@@ -140,7 +169,7 @@ for n in root.iter("node"):
   txt=clean(n.attrib.get("text"))
   des=clean(n.attrib.get("content-desc"))
   label=" | ".join([p for p in [rid,cls,txt,des] if p])[:140]
-  if not label or bad.search(label): 
+  if not label or bad.search(label):
     continue
   score=(5 if rid else 0)+(2 if (txt or des) else 0)+min(10,area//80000)
   cands.append((score,area,x,y,label))
@@ -149,11 +178,11 @@ cands.sort(key=lambda t:(t[0],t[1]), reverse=True)
 out=[]; seen=set()
 for score,area,x,y,label in cands:
   k=(x//10,y//10)
-  if k in seen: 
+  if k in seen:
     continue
   seen.add(k)
   out.append((x,y,label))
-  if len(out)>=max_actions: 
+  if len(out)>=max_actions:
     break
 for x,y,label in out:
   print(f"{x}\t{y}\t{label}")
