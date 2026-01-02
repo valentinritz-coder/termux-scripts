@@ -1,41 +1,57 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-# --- ADB local config (nouveau port) ---
+# --- ADB local config ---
 HOST="${ADB_HOST:-127.0.0.1}"
 PORT="${ADB_TCP_PORT:-37099}"
 SERIAL="${ADB_SERIAL:-$HOST:$PORT}"
 export ANDROID_SERIAL="$SERIAL"
 
 BASE="/sdcard/cfl_watch"
-
 mkdir -p "$BASE"/{logs,map,tmp}
+cd "$BASE"
 
-# Toujours essayer de stopper ADB local en sortant, même en cas d'erreur
+ADB_STARTED=0
+TS="$(date +%Y-%m-%d_%H-%M-%S)"
+LOG="$BASE/logs/console_$TS.log"
+
+# Log console (stdout+stderr) dans un fichier + à l'écran
+exec > >(tee -a "$LOG") 2>&1
+
 cleanup() {
-  # best effort
-  ADB_TCP_PORT="$PORT" bash "$BASE/adb_local.sh" stop >/dev/null 2>&1 || true
+  if [[ "$ADB_STARTED" == "1" ]]; then
+    ADB_TCP_PORT="$PORT" bash "$BASE/adb_local.sh" stop >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
 
-# Si tu as le script d'update (optionnel)
+echo "[*] SERIAL=$SERIAL (PORT=$PORT)"
+echo "[*] LOG=$LOG"
+
+# Update optionnel
 [ -x "$BASE/update_from_github.sh" ] && bash "$BASE/update_from_github.sh" >/dev/null 2>&1 || true
 
-# 1) Start ADB local (force le port 37099)
+# 1) Start ADB local
 ADB_TCP_PORT="$PORT" bash "$BASE/adb_local.sh" start
+ADB_STARTED=1
 
 # 2) Ouvre CFL (best effort)
 adb shell monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
 sleep 2
 
-# 3) Scénario: remplir start/destination + search (adapte les stations)
+# 3) Scénario (best effort)
 bash "$BASE/scenario_trip.sh" "Luxembourg" "Arlon" >/dev/null 2>&1 || true
 
-# 4) Mapping depuis l'écran courant (ne relance pas)
+# 4) Mapping (ne relance pas) - on garde le rc sans tuer toute la console
+set +e
 bash "$BASE/map.sh" --no-launch --depth 2 --max-screens 40 --max-actions 8 --delay 1.5
+MAP_RC=$?
+set -e
+echo "[*] map.sh rc=$MAP_RC"
 
-# 5) Stop ADB local (sera aussi appelé par le trap)
+# 5) Stop ADB local (une seule fois)
 ADB_TCP_PORT="$PORT" bash "$BASE/adb_local.sh" stop
+ADB_STARTED=0
 
 # 6) Affiche le dernier run
 echo
