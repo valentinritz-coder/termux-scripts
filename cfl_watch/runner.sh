@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-CFL_BASE_DIR="${CFL_BASE_DIR:-/sdcard/cfl_watch}"
+CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
+CFL_ARTIFACT_DIR="${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}"
 CFL_DEFAULT_PORT="${ADB_TCP_PORT:-37099}"
 CFL_DEFAULT_HOST="${ADB_HOST:-127.0.0.1}"
-CFL_SCENARIO_SCRIPT="${CFL_SCENARIO_SCRIPT:-$CFL_BASE_DIR/scenarios/scenario_trip.sh}"
+CFL_SCENARIO_SCRIPT="${CFL_SCENARIO_SCRIPT:-$CFL_CODE_DIR/scenarios/scenario_trip.sh}"
 CFL_DRY_RUN="${CFL_DRY_RUN:-0}"
 
 DELAY_LAUNCH="${DELAY_LAUNCH:-1.0}"
@@ -13,15 +14,17 @@ DELAY_TYPE="${DELAY_TYPE:-0.30}"
 DELAY_PICK="${DELAY_PICK:-0.25}"
 DELAY_SEARCH="${DELAY_SEARCH:-0.80}"
 
-. "$CFL_BASE_DIR/lib/common.sh"
+. "$CFL_CODE_DIR/lib/common.sh"
 
 usage(){
   cat <<'EOF'
-Usage: ADB_TCP_PORT=37099 bash /sdcard/cfl_watch/runner.sh [options]
+Usage: ADB_TCP_PORT=37099 bash ~/cfl_watch/runner.sh [options]
 --scenario PATH     Scenario script (default: scenarios/scenario_trip.sh)
 --start TEXT        Override start location (single-run mode)
 --target TEXT       Override destination (single-run mode)
 --snap-mode N       Override SNAP_MODE for single run (0-3)
+--latest-run        Print newest run directory and exit
+--serve             Generate/serve latest viewer (python -m http.server)
 --dry-run           Log actions without input events
 --list              Show bundled scenarios and exit
 --check             Run self-check and exit
@@ -45,6 +48,32 @@ CUSTOM_START=""
 CUSTOM_TARGET=""
 CUSTOM_SNAP_MODE=""
 
+latest_run(){
+  ensure_dirs
+  local latest
+  latest="$(latest_run_dir)"
+  if [ -z "$latest" ]; then
+    warn "No runs found under $CFL_RUNS_DIR"
+    return 1
+  fi
+  printf '%s\n' "$latest"
+}
+
+serve_latest(){
+  local latest viewer_dir port
+  need python
+  latest="$(latest_run)" || die "No runs found under $CFL_RUNS_DIR"
+  viewer_dir="$latest/viewers"
+  if [ ! -f "$viewer_dir/index.html" ]; then
+    log "Generate viewer for $latest"
+    bash "$CFL_CODE_DIR/lib/viewer.sh" "$latest"
+  fi
+  port="${CFL_HTTP_PORT:-8000}"
+  cd "$viewer_dir"
+  log "Serving latest viewer from: $viewer_dir (port $port)"
+  python -m http.server "$port"
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --scenario) CFL_SCENARIO_SCRIPT="$2"; shift 2 ;;
@@ -52,6 +81,8 @@ while [ $# -gt 0 ]; do
     --target) CUSTOM_TARGET="$2"; shift 2 ;;
     --snap-mode) CUSTOM_SNAP_MODE="$2"; shift 2 ;;
     --dry-run) CFL_DRY_RUN=1; shift ;;
+    --latest-run) latest_run; exit $? ;;
+    --serve) serve_latest; exit $? ;;
     --list) print_list; exit 0 ;;
     --check) self_check; exit 0 ;;
     -h|--help) usage; exit 0 ;;
@@ -64,18 +95,18 @@ attach_log "runner"
 need adb
 need python
 
-[ -f "$CFL_BASE_DIR/lib/adb_local.sh" ] || die "Missing: $CFL_BASE_DIR/lib/adb_local.sh"
+[ -f "$CFL_CODE_DIR/lib/adb_local.sh" ] || die "Missing: $CFL_CODE_DIR/lib/adb_local.sh"
 [ -f "$CFL_SCENARIO_SCRIPT" ] || die "Scenario introuvable: $CFL_SCENARIO_SCRIPT"
 
-chmod +x "$CFL_BASE_DIR"/lib/*.sh "$CFL_BASE_DIR"/scenarios/*.sh "$CFL_BASE_DIR"/tools/*.sh >/dev/null 2>&1 || true
+chmod +x "$CFL_CODE_DIR"/lib/*.sh "$CFL_CODE_DIR"/scenarios/*.sh "$CFL_CODE_DIR"/tools/*.sh >/dev/null 2>&1 || true
 
 cleanup(){
-  ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_BASE_DIR/lib/adb_local.sh" stop >/dev/null 2>&1 || true
+  ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_CODE_DIR/lib/adb_local.sh" stop >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
 log "Start ADB local on ${CFL_DEFAULT_HOST}:${CFL_DEFAULT_PORT}"
-ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_BASE_DIR/lib/adb_local.sh" start
+ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_CODE_DIR/lib/adb_local.sh" start
 log "Device list:"
 adb devices -l || true
 
@@ -92,11 +123,12 @@ run_one(){
   sleep_s 0.7
 
   local before_latest after_latest
-  before_latest="$(ls -1dt "$CFL_RUNS_DIR"/* 2>/dev/null | head -n1 || true)"
+  before_latest="$(latest_run_dir)"
 
   set +e
   env \
-    CFL_BASE_DIR="$CFL_BASE_DIR" \
+    CFL_CODE_DIR="$CFL_CODE_DIR" \
+    CFL_ARTIFACT_DIR="$CFL_ARTIFACT_DIR" \
     START_TEXT="$start" \
     TARGET_TEXT="$target" \
     SNAP_MODE="$snap_mode" \
@@ -115,7 +147,7 @@ run_one(){
   cfl_force_stop
   sleep_s 0.8
 
-  after_latest="$(ls -1dt "$CFL_RUNS_DIR"/* 2>/dev/null | head -n1 || true)"
+  after_latest="$(latest_run_dir)"
   if [ -n "$after_latest" ] && [ "$after_latest" != "$before_latest" ]; then
     log "Run artifacts: $after_latest"
     [ -f "$after_latest/viewers/index.html" ] && log "Viewer: $after_latest/viewers/index.html"

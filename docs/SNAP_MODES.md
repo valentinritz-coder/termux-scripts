@@ -12,6 +12,6 @@
 - Override per step inside scenarios: `snap "tag" 2` to force XML-only for that call.
 
 ### Behavior
-- Snapshots are stored under `/sdcard/cfl_watch/runs/<timestamp>_<scenario>/`.
+- Snapshots are stored under `$CFL_RUNS_DIR/<timestamp>_<scenario>/` (default `/sdcard/cfl_watch/runs/...`).
 - Viewer generation is resilient: it lists every step even if only PNG or only XML exists.
 - On failures, scenarios attempt to build the viewer automatically when `SNAP_DIR` exists.

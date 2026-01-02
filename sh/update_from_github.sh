@@ -5,7 +5,7 @@ REPO_SLUG="valentinritz-coder/termux-scripts"
 REPO_URL="https://github.com/${REPO_SLUG}.git"
 SUBDIR="${SUBDIR:-sh}"
 
-DEST="/sdcard/cfl_watch"
+DEST="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
 WORK="$HOME/.cache/cfl_watch_repo"
 
 CONSOLE_NAME="console.sh"
@@ -17,7 +17,6 @@ PROTECT_DIRS=(tmp logs map runs)
 die(){ echo "[!] $*" >&2; exit 1; }
 have(){ command -v "$1" >/dev/null 2>&1; }
 
-[ -d /sdcard ] || die "/sdcard indisponible. Fais: termux-setup-storage"
 have git || die "git absent. Fais: pkg install -y git"
 have rsync || die "rsync absent. Fais: pkg install -y rsync"
 

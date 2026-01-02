@@ -4,9 +4,9 @@ set -euo pipefail
 # Parameterized CFL trip scenario
 # Env: START_TEXT, TARGET_TEXT, SNAP_MODE, DELAY_*, CFL_DRY_RUN
 
-CFL_BASE_DIR="${CFL_BASE_DIR:-/sdcard/cfl_watch}"
-. "$CFL_BASE_DIR/lib/common.sh"
-. "$CFL_BASE_DIR/lib/snap.sh"
+CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
+. "$CFL_CODE_DIR/lib/common.sh"
+. "$CFL_CODE_DIR/lib/snap.sh"
 
 START_TEXT="${START_TEXT:-LUXEMBOURG}"
 TARGET_TEXT="${TARGET_TEXT:-ARLON}"
@@ -164,7 +164,7 @@ finish(){
   trap - EXIT
   if [ "$rc" -ne 0 ]; then
     warn "Run FAILED (rc=$rc) -> viewer"
-    "$CFL_BASE_DIR/lib/viewer.sh" "$SNAP_DIR" >/dev/null 2>&1 || true
+    "$CFL_CODE_DIR/lib/viewer.sh" "$SNAP_DIR" >/dev/null 2>&1 || true
     log "Viewer: $SNAP_DIR/viewers/index.html"
   fi
   exit "$rc"
