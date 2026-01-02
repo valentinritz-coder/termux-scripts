@@ -1,26 +1,4 @@
-su -c 'setprop service.adb.tcp.port 5555'
-su -c 'getprop service.adb.tcp.port'
-
----
-
-su -c 'stop adbd; start adbd'
-# ou, si tu préfères:
-su -c 'setprop ctl.restart adbd'
-
----
-
-su -c 'ss -ltnp 2>/dev/null | grep -E ":5555\\b" || netstat -ltnp 2>/dev/null | grep 5555 || true'
-
-
---
-
-adb kill-server
-adb start-server
-adb connect 127.0.0.1:5555
-adb devices -l
-
----
-
-su -c 'command -v resetprop && resetprop service.adb.tcp.port 5555'
-su -c 'getprop service.adb.tcp.port'
-su -c 'stop adbd; start adbd'
+./adb_local.sh start
+adb shell id
+adb shell su -c id
+./adb_local.sh stop
