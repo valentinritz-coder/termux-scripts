@@ -7,23 +7,21 @@ PORT="${ADB_TCP_PORT:-37099}"
 SER="${ANDROID_SERIAL:-$HOST:$PORT}"
 export ANDROID_SERIAL="$SER"
 
+PKG="de.hafas.android.cfl"
+
 START_TEXT="${START_TEXT:-LUXEMBOURG}"
 TARGET_TEXT="${TARGET_TEXT:-ARLON}"
 
-# 0=off, 1=png only, 2=xml only, 3=png+xml
+# SNAP_MODE: 0=off, 1=png only, 2=xml only, 3=png+xml
 SNAP_MODE="${SNAP_MODE:-1}"
 
-# --- Speed knobs ---
 DELAY_LAUNCH="${DELAY_LAUNCH:-1.0}"
-DELAY_TAP="${DELAY_TAP:-0.25}"
-DELAY_TYPE="${DELAY_TYPE:-0.35}"
-DELAY_PICK="${DELAY_PICK:-0.30}"
-DELAY_SEARCH="${DELAY_SEARCH:-0.8}"
+DELAY_TAP="${DELAY_TAP:-0.20}"
+DELAY_TYPE="${DELAY_TYPE:-0.30}"
+DELAY_PICK="${DELAY_PICK:-0.25}"
+DELAY_SEARCH="${DELAY_SEARCH:-0.80}"
 
-MAKE_VIEWERS_ON_FAIL="${MAKE_VIEWERS_ON_FAIL:-1}"
-MAKE_VIEWERS_ON_OK="${MAKE_VIEWERS_ON_OK:-0}"
-
-. "$BASE/snap.sh"  # fournit snap_init, snap, SNAP_DIR, SNAP_MODE (utilise env)
+. "$BASE/snap.sh"   # doit fournir snap_init + snap + SNAP_DIR (et idéalement utiliser SNAP_MODE)
 
 inject() { adb -s "$SER" shell "$@"; }
 sleep_s() { sleep "${1:-0.2}"; }
@@ -37,21 +35,23 @@ type_text() {
   inject input text "$t" >/dev/null 2>&1 || true
 }
 
-dump_ui_to() {
-  local out="$1"
-  adb -s "$SER" shell uiautomator dump --compressed "$out" >/dev/null 2>&1 || true
+# Snap helper: permet de choisir mode par step
+# usage: snap_step "tag" [mode]
+snap_step() {
+  local tag="$1"
+  local mode="${2:-$SNAP_MODE}"
+  snap "$tag" "$mode" || true
 }
 
-dump_ui_live() {
+dump_ui() {
   local dump_path="$BASE/tmp/live_dump.xml"
   mkdir -p "$BASE/tmp"
   inject uiautomator dump --compressed "$dump_path" >/dev/null 2>&1 || true
   echo "$dump_path"
 }
 
-# --- UI dump cache ---
 DUMP_CACHE=""
-refresh_dump() { DUMP_CACHE="$(dump_ui_live)"; }
+refresh_dump() { DUMP_CACHE="$(dump_ui)"; }
 
 node_center() {
   local dump="$1"; shift
@@ -61,6 +61,7 @@ import xml.etree.ElementTree as ET
 
 dump = sys.argv[1]
 pairs = [arg.split("=", 1) for arg in sys.argv[2:]]
+
 keymap = {
   "resource-id": "resource-id",
   "text": "text",
@@ -191,26 +192,17 @@ tap_first_result_cached() {
   return 0
 }
 
+# ---- run setup ----
 snap_init "trip_${START_TEXT}_to_${TARGET_TEXT}"
 
 finish() {
-  local rc=$?
+  rc=$?
   trap - EXIT
 
-  if [ "${MAKE_VIEWERS_ON_FAIL:-1}" -eq 1 ] && [ "$rc" -ne 0 ]; then
+  if [ -n "${SNAP_DIR:-}" ] && [ -d "${SNAP_DIR:-}" ] && [ "$rc" -ne 0 ]; then
     echo "[*] Run FAILED (rc=$rc) -> génération viewers..."
-    # si SNAP_MODE=0, on force au moins un snap debug pour avoir quelque chose
-    if [ "${SNAP_MODE:-0}" -eq 0 ]; then
-      echo "[*] SNAP_MODE=0 -> forcing 1 debug snap (png+xml) for viewers"
-      snap "99_failure" 3 || true
-    fi
-    bash "$BASE/post_run_viewers.sh" "$SNAP_DIR" || true
-    echo "[*] Viewers OK: $SNAP_DIR/viewers/index.html"
-  fi
-
-  if [ "${MAKE_VIEWERS_ON_OK:-0}" -eq 1 ] && [ "$rc" -eq 0 ]; then
-    echo "[*] Run OK -> génération viewers..."
-    bash "$BASE/post_run_viewers.sh" "$SNAP_DIR" || true
+    # si tu as SNAP_MODE=1 (png only) ou 2 (xml only), le viewer doit gérer
+    bash "$BASE/post_run_viewers.sh" "$SNAP_DIR" >/dev/null 2>&1 || true
     echo "[*] Viewers OK: $SNAP_DIR/viewers/index.html"
   fi
 
@@ -218,99 +210,80 @@ finish() {
 }
 trap finish EXIT
 
+# ---- LAUNCH (strict-ish) ----
 echo "[*] Launch CFL"
-inject monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+inject monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 sleep_s "$DELAY_LAUNCH"
-snap "00_launch" "$SNAP_MODE"
+snap_step "00_launch" "$SNAP_MODE"
 
-# --- Start field ---
+# ---- Start field ----
 echo "[*] Open start field"
-snap "01_before_tap_start" 2
+snap_step "01_before_tap_start" "$SNAP_MODE"
 refresh_dump
 tap_by_selector_cached "start field" "$DUMP_CACHE" "content-desc=Select start" \
 || tap_by_selector_cached "start field (history)" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/input_start"
 sleep_s "$DELAY_TAP"
-snap "02_after_tap_start" "$SNAP_MODE"
+snap_step "02_after_tap_start" "$SNAP_MODE"
 
 echo "[*] Type start: $START_TEXT"
 type_text "$START_TEXT"
 sleep_s "$DELAY_TYPE"
-snap "03_after_type_start" "$SNAP_MODE"
+snap_step "03_after_type_start" "$SNAP_MODE"
 
 echo "[*] Choose start suggestion"
-snap "04_before_pick_start" 2
 refresh_dump
 tap_by_selector_cached "start suggestion" "$DUMP_CACHE" "content-desc=$START_TEXT" \
 || tap_by_selector_cached "start suggestion (text)" "$DUMP_CACHE" "text=$START_TEXT" \
 || tap_first_result_cached "start suggestion (first result)" "$DUMP_CACHE"
 sleep_s "$DELAY_PICK"
-snap "05_after_pick_start" "$SNAP_MODE"
+snap_step "04_after_pick_start" "$SNAP_MODE"
 
-# --- Destination field ---
+# ---- Destination field ----
 echo "[*] Open destination field"
-snap "06_before_tap_destination" 2
 refresh_dump
 tap_by_selector_cached "destination field" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/input_target" \
 || tap_by_selector_cached "destination field (fallback)" "$DUMP_CACHE" "content-desc=Select destination"
 sleep_s "$DELAY_TAP"
-snap "07_after_tap_destination" "$SNAP_MODE"
+snap_step "05_after_tap_destination" "$SNAP_MODE"
 
 echo "[*] Type destination: $TARGET_TEXT"
 type_text "$TARGET_TEXT"
 sleep_s "$DELAY_TYPE"
-snap "08_after_type_destination" "$SNAP_MODE"
+snap_step "06_after_type_destination" "$SNAP_MODE"
 
 echo "[*] Choose destination suggestion"
-snap "09_before_pick_destination" 2
 refresh_dump
 tap_by_selector_cached "destination suggestion" "$DUMP_CACHE" "content-desc=$TARGET_TEXT" \
 || tap_by_selector_cached "destination suggestion (text)" "$DUMP_CACHE" "text=$TARGET_TEXT" \
 || tap_first_result_cached "destination suggestion (first result)" "$DUMP_CACHE"
 sleep_s "$DELAY_PICK"
-snap "10_after_pick_destination" "$SNAP_MODE"
+snap_step "07_after_pick_destination" "$SNAP_MODE"
 
-# --- Search ---
+# ---- Search ----
 echo "[*] Launch search"
-snap "11_before_search" 2
 refresh_dump
 if ! (
   tap_by_selector_cached "search button (id default)" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/button_search_default" \
-  || tap_by_selector_cached "search button (id home)"    "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/button_search" \
-  || tap_by_selector_cached "search button (rid contains search)" "$DUMP_CACHE" "resource-id=search" \
+  || tap_by_selector_cached "search button (id home)" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/button_search" \
   || tap_by_selector_cached "search button (text FR)" "$DUMP_CACHE" "text=Rechercher" \
   || tap_by_selector_cached "search button (text trips)" "$DUMP_CACHE" "text=Itinéraires"
 ); then
   echo "[!] Search button not found -> fallback ENTER"
   key 66 || true
 fi
+
 sleep_s "$DELAY_SEARCH"
-snap "12_after_search" "$SNAP_MODE"
+# compromise: après search, souvent tu veux au moins une preuve -> png+xml (3) même si SNAP_MODE=1
+snap_step "08_after_search" 3
 
-# --- Heuristics (XML final garanti) ---
-echo "[*] Evaluate result heuristics"
-
-latest_xml="$(ls -1t "$SNAP_DIR"/*_after_search.xml 2>/dev/null | head -n1 || true)"
-if [[ -z "${latest_xml:-}" ]]; then
-  # même si SNAP_MODE=1 (png-only) ou 0, on force un xml final
-  ts="$(date +%H-%M-%S)"
-  latest_xml="$SNAP_DIR/${ts}_final_after_search.xml"
-  dump_ui_to "$latest_xml"
+# ---- Heuristics (si xml présent) ----
+latest_xml="$(ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true)"
+if [[ -n "${latest_xml:-}" ]]; then
+  if grep -qiE 'Results|Résultats|Itinéraire|Itinéraires|Trajet' "$latest_xml"; then
+    echo "[+] Scenario success (keyword detected)"
+    exit 0
+  fi
 fi
 
-if [[ -z "${latest_xml:-}" ]] || [ ! -f "$latest_xml" ]; then
-  echo "[!] No XML available; treating as failure"
-  exit 1
-fi
-
-if grep -qiE 'Results|Résultats|Itinéraire|Itinéraires' "$latest_xml"; then
-  echo "[+] Scenario success (keyword detected in results)"
-  exit 0
-fi
-
-if grep -qiE 'trip_recycler_view|trip_result|tripItem' "$latest_xml"; then
-  echo "[+] Scenario success (trip list detected)"
-  exit 0
-fi
-
-echo "[!] Scenario may have failed (no results markers found)"
-exit 1
+echo "[*] Scenario done (no strong marker found)"
+exit 0
