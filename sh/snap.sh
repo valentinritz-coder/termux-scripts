@@ -1,30 +1,56 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Librairie à sourcer: . /sdcard/cfl_watch/snap.sh
+set -euo pipefail
+
+BASE="${BASE:-/sdcard/cfl_watch}"
+SER="${ANDROID_SERIAL:-127.0.0.1:37099}"
+
+mkdir -p "$BASE"/{runs,tmp,logs}
+
+# 0 = off, 1 = png only, 2 = xml only, 3 = png+xml
+SNAP_MODE="${SNAP_MODE:-3}"
 
 snap_init() {
   local name="${1:-run}"
-  local base="${BASE:-/sdcard/cfl_watch}"
   local ts
   ts="$(date +%Y-%m-%d_%H-%M-%S)"
-
-  mkdir -p "$base"/{runs,tmp,logs} 2>/dev/null || true
-  export SNAP_DIR="$base/runs/${ts}_${name}"
-  mkdir -p "$SNAP_DIR" 2>/dev/null || true
+  export SNAP_DIR="$BASE/runs/${ts}_${name}"
+  mkdir -p "$SNAP_DIR"
   echo "[*] SNAP_DIR=$SNAP_DIR"
 }
 
+_snap_do() {
+  local base="$1"
+  local mode="$2"
+
+  case "$mode" in
+    0) return 0 ;;
+    1)
+      adb -s "$SER" shell screencap -p "${base}.png" >/dev/null 2>&1 || true
+      ;;
+    2)
+      adb -s "$SER" shell uiautomator dump --compressed "${base}.xml" >/dev/null 2>&1 || true
+      ;;
+    3)
+      adb -s "$SER" shell uiautomator dump --compressed "${base}.xml" >/dev/null 2>&1 || true
+      adb -s "$SER" shell screencap -p "${base}.png" >/dev/null 2>&1 || true
+      ;;
+    *)
+      echo "[!] SNAP_MODE invalide: $mode (attendu 0/1/2/3)" >&2
+      return 1
+      ;;
+  esac
+}
+
+# snap "tag" [mode_override]
 snap() {
   local tag="${1:-snap}"
-  local ser="${ANDROID_SERIAL:-127.0.0.1:37099}"
-  local ts
+  local mode="${2:-$SNAP_MODE}"
+  local ts base
   ts="$(date +%H-%M-%S)"
-
-  if [ -z "${SNAP_DIR:-}" ]; then
-    echo "[!] SNAP_DIR non défini. Appelle d'abord: snap_init \"nom\""
-    return 1
-  fi
-
-  adb -s "$ser" shell uiautomator dump --compressed "$SNAP_DIR/${ts}_${tag}.xml" >/dev/null 2>&1 || true
-  adb -s "$ser" shell screencap -p "$SNAP_DIR/${ts}_${tag}.png" >/dev/null 2>&1 || true
-  echo "[*] snap: ${ts}_${tag}"
+  base="$SNAP_DIR/${ts}_${tag}"
+  _snap_do "$base" "$mode"
+  echo "[*] snap: ${ts}_${tag} (mode=$mode)"
 }
+
+snap_png() { snap "${1:-snap}" 1; }
+snap_xml() { snap "${1:-snap}" 2; }
