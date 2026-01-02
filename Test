@@ -1,35 +1,44 @@
- $ pkg install -y git
-git clone https://github.com/valentinritz-coder/termux-scripts.git
-cd termux-scripts
-No mirror or mirror group selected. You might want to select one by running 'termux-change-repo'
-Checking availability of current mirror:
-[*] https://repository.su/termux/termux-main/: ok
-Reading package lists... Done
-Building dependency tree... Done
-Reading state information... Done
-git is already the newest version (2.52.0).
-0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
-Cloning into 'termux-scripts'...
-remote: Enumerating objects: 866, done.
-remote: Counting objects: 100% (51/51), done.
-remote: Compressing objects: 100% (36/36), done.
-Receiving objects:  12% (104/866), 14.98 MiB | 7.42 MiB/Receiving objects:  13% (113/866), 14.98 MiB | 7.42 MiB/Receiving objects:  14% (122/866), 14.98 MiB | 7.42 MiB/Receiving objects:  15% (130/866), 14.98 MiB | 7.42 MiB/Receiving objects:  16% (139/866), 14.98 MiB | 7.42 MiB/Receiving objects:  17% (148/866), 14.98 MiB | 7.42 MiB/Receiving objects:  18% (156/866), 14.98 MiB | 7.42 MiB/Receiving objects:  19% (165/866), 14.98 MiB | 7.42 MiB/Receiving objects:  20% (174/866), 14.98 MiB | 7.42 MiB/Receiving objects:  21% (182/866), 14.98 MiB | 7.42 MiB/Receiving objects:  22% (191/866), 14.98 MiB | 7.42 MiB/Receiving objects:  23% (200/866), 14.98 MiB | 7.42 MiB/Receiving objects:  24% (208/866), 14.98 MiB | 7.42 MiB/Receiving objects:  25% (217/866), 14.98 MiB | 7.42 MiB/Receiving objects:  26% (226/866), 14.98 MiB | 7.42 MiB/Receiving objects:  27% (234/866), 14.98 MiB | 7.42 MiB/Receiving objects:  28% (243/866), 14.98 MiB | 7.42 MiB/Receiving objects:  29% (252/866), 14.98 MiB | 7.42 MiB/Receiving objects:  30% (260/866), 14.98 MiB | 7.42 MiB/Receiving objects:  31% (269/866), 14.98 MiB | 7.42 MiB/Receiving objects:  32% (278/866), 14.98 MiB | 7.42 MiB/Receiving objects:  33% (286/866), 14.98 MiB | 7.42 MiB/Receiving objects:  34% (295/866), 14.98 MiB | 7.42 MiB/Receiving objects:  35% (304/866), 14.98 MiB | 7.42 MiB/Receiving objects:  36% (312/866), 14.98 MiB | 7.42 MiB/Receiving objects:  37% (321/866), 14.98 MiB | 7.42 MiB/Receiving objects:  38% (330/866), 14.98 MiB | 7.42 MiB/Receiving objects:  39% (338/866), 14.98 MiB | 7.42 MiB/Receiving objects:  40% (347/866), 14.98 MiB | 7.42 MiB/Receiving objects:  41% (356/866), 14.98 MiB | 7.42 MiB/Receiving objects:  42% (364/866), 14.98 MiB | 7.42 MiB/Receiving objects:  43% (373/866), 14.98 MiB | 7.42 MiB/Receiving objects:  44% (382/866), 14.98 MiB | 7.42 MiB/Receiving objects:  45% (390/866), 14.98 MiB | 7.42 MiB/Receiving objects:  46% (399/866), 14.98 MiB | 7.42 MiB/Receiving objects:  47% (408/866), 14.98 MiB | 7.42 MiB/Receiving objects:  48% (416/866), 14.98 MiB | 7.42 MiB/Receiving objects:  49% (425/866), 14.98 MiB | 7.42 MiB/Receiving objects:  50% (433/866), 14.98 MiB | 7.42 MiB/Receiving objects:  51% (442/866), 14.98 MiB | 7.42 MiB/Receiving objects:  52% (451/866), 14.98 MiB | 7.42 MiB/Receiving objects:  53% (459/866), 14.98 MiB | 7.42 MiB/Receiving objects:  54% (468/866), 14.98 MiB | 7.42 MiB/Receiving objects:  55% (477/866), 14.98 MiB | 7.42 MiB/Receiving objects:  56% (485/866), 14.98 MiB | 7.42 MiB/Receiving objects:  57% (494/866), 14.98 MiB | 7.42 MiB/Receiving objects:  58% (503/866), 14.98 MiB | 7.42 MiB/Receiving objects:  59% (511/866), 14.98 MiB | 7.42 MiB/Receiving objects:  60% (520/866), 14.98 MiB | 7.42 MiB/Receiving objects:  61% (529/866), 14.98 MiB | 7.42 MiB/Receiving objects:  62% (537/866), 14.98 MiB | 7.42 MiB/Receiving objects:  63% (546/866), 14.98 MiB | 7.42 MiB/Receiving objects:  64% (555/866), 14.98 MiB | 7.42 MiB/Receiving objects:  65% (563/866), 14.98 MiB | 7.42 MiB/Receiving objects:  66% (572/866), 14.98 MiB | 7.42 MiB/Receiving objects:  67% (581/866), 14.98 MiB | 7.42 MiB/Receiving objects:  68% (589/866), 14.98 MiB | 7.42 MiB/Receiving objects:  69% (598/866), 14.98 MiB | 7.42 MiB/Receiving objects:  70% (607/866), 14.98 MiB | 7.42 MiB/Receiving objects:  71% (615/866), 14.98 MiB | 7.42 MiB/Receiving objects:  72% (624/866), 14.98 MiB | 7.42 MiB/Receiving objects:  73% (633/866), 14.98 MiB | 7.42 MiB/Receiving objects:  74% (641/866), 14.98 MiB | 7.42 MiB/Receiving objects:  75% (650/866), 14.98 MiB | 7.42 MiB/Receiving objects:  76% (659/866), 14.98 MiB | 7.42 MiB/Receiving objects:  77% (667/866), 14.98 MiB | 7.42 MiB/Receiving objects:  78% (676/866), 14.98 MiB | 7.42 MiB/Receiving objects:  79% (685/866), 14.98 MiB | 7.42 MiB/Receiving objects:  80% (693/866), 14.98 MiB | 7.42 MiB/Receiving objects:  81% (702/866), 14.98 MiB | 7.42 MiB/Receiving objects:  82% (711/866), 14.98 MiB | 7.42 MiB/Receiving objects:  83% (719/866), 14.98 MiB | 7.42 MiB/Receiving objects:  84% (728/866), 14.98 MiB | 7.42 MiB/Receiving objects:  85% (737/866), 14.98 MiB | 7.42 MiB/Receiving objects:  86% (745/866), 14.98 MiB | 7.42 MiB/Receiving objects:  87% (754/866), 14.98 MiB | 7.42 MiB/Receiving objects:  88% (763/866), 14.98 MiB | 7.42 MiB/Receiving objects:  89% (771/866), 14.98 MiB | 7.42 MiB/Receiving objects:  90% (780/866), 14.98 MiB | 7.42 MiB/Receiving objects:  91% (789/866), 14.98 MiB | 7.42 MiB/Receiving objects:  92% (797/866), 14.98 MiB | 7.42 MiB/Receiving objects:  93% (806/866), 14.98 MiB | 7.42 MiB/remote: Total 866 (delta 37), reused 15 (delta 15), pack-reused 815 (from 3)
-Receiving objects:  94% (815/866), 14.98 MiB | 7.42 MiB/Receiving objects:  95% (823/866), 14.98 MiB | 7.42 MiB/Receiving objects:  96% (832/866), 14.98 MiB | 7.42 MiB/Receiving objects:  97% (841/866), 14.98 MiB | 7.42 MiB/Receiving objects:  98% (849/866), 14.98 MiB | 7.42 MiB/Receiving objects:  99% (858/866), 14.98 MiB | 7.42 MiB/Receiving objects: 100% (866/866), 14.98 MiB | 7.42 MiB/Receiving objects: 100% (866/866), 18.56 MiB | 8.25 MiB/s, done.
-Resolving deltas: 100% (451/451), done.
-~/termux-scripts $ bash cfl_watch/tools/install_termux.sh
-[*] Install deps (android-tools, python)
-[*] Create code dir: /data/data/com.termux/files/home/cfl_watch
-[*] Copy scripts from /data/data/com.termux/files/home/termux-scripts/cfl_watch -> /data/data/com.termux/files/home/cfl_watch
-[*] Ensure artifact dirs: /sdcard/cfl_watch/{runs,logs}
-[*] Ensure tmp dir: /data/data/com.termux/files/home/cfl_watch/tmp
-[*] Fix CRLF + permissions inside code dir
-[*] Fix CRLF + permissions under /data/data/com.termux/files/home/cfl_watch
-[*] Done
-[*] Write /sdcard shims -> /sdcard/cfl_watch
-[*] Done. Entrypoint: /data/data/com.termux/files/home/cfl_watch/runner.sh (shims remain in /sdcard/cfl_watch)
-[*] Example: ADB_TCP_PORT=37099 bash /data/data/com.termux/files/home/cfl_watch/runner.sh --list
-~/termux-scripts $ ADB_TCP_PORT=37099 bash /data/data/com.termux/files/home/cfl_watch/runner.sh
-/data/data/com.termux/files/home/cfl_watch/runner.sh: line 17: ~/cfl_watch/lib/common.sh: No such file or directory
-~/termux-scripts $ ADB_TCP_PORT=37099 bash ~/cfl_watch/runner.sh
-/data/data/com.termux/files/home/cfl_watch/runner.sh: line 17: ~/cfl_watch/lib/common.sh: No such file or directory
-~/termux-scripts $
+1) Vérifie que le fichier existe (juste pour être sûr)
+ls -la /data/data/com.termux/files/home/cfl_watch/lib/common.sh
+
+
+Si tu le vois, on est bons.
+
+2) Lance runner avec le bon CFL_BASE_DIR
+ADB_TCP_PORT=37099 CFL_BASE_DIR=/data/data/com.termux/files/home/cfl_watch \
+  bash /data/data/com.termux/files/home/cfl_watch/runner.sh --list
+
+
+Puis pour exécuter:
+
+ADB_TCP_PORT=37099 CFL_BASE_DIR=/data/data/com.termux/files/home/cfl_watch \
+  bash /data/data/com.termux/files/home/cfl_watch/runner.sh
+
+3) Corrige définitivement runner.sh (pour ne plus y penser)
+
+Tu patches la ligne qui met CFL_BASE_DIR à ~/cfl_watch.
+
+Option A (recommandée): remplacer par $HOME/cfl_watch
+sed -i 's|CFL_BASE_DIR="${CFL_BASE_DIR:-~/cfl_watch}"|CFL_BASE_DIR="${CFL_BASE_DIR:-$HOME/cfl_watch}"|g' \
+  /data/data/com.termux/files/home/cfl_watch/runner.sh
+
+
+Puis reteste:
+
+ADB_TCP_PORT=37099 bash /data/data/com.termux/files/home/cfl_watch/runner.sh --list
+
+Option B: hardcode le chemin absolu Termux
+sed -i 's|CFL_BASE_DIR="${CFL_BASE_DIR:-~/cfl_watch}"|CFL_BASE_DIR="${CFL_BASE_DIR:-/data/data/com.termux/files/home/cfl_watch}"|g' \
+  /data/data/com.termux/files/home/cfl_watch/runner.sh
+
+4) Bonus: utilise le “shim” /sdcard (si tu veux des commandes plus courtes)
+
+Ton install a écrit des shims dans /sdcard/cfl_watch. Donc tu peux tenter :
+
+ADB_TCP_PORT=37099 bash /sdcard/cfl_watch/runner.sh --list
+
+
+Si ton shim exporte mal CFL_BASE_DIR, tu peux le forcer:
+
+ADB_TCP_PORT=37099 CFL_BASE_DIR=/data/data/com.termux/files/home/cfl_watch \
+  bash /sdcard/cfl_watch/runner.sh --list
