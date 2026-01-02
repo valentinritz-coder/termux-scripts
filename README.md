@@ -12,7 +12,8 @@ Automation scripts for the CFL mobile app, optimized for running **directly on a
 ## Quickstart (Termux on device)
 ```bash
 # 1) Clone or fetch this repo
-pkg install -y git && git clone https://github.com/your-org/termux-scripts.git
+pkg install -y git
+git clone https://github.com/valentinritz-coder/termux-scripts.git
 cd termux-scripts
 
 # 2) Install into /sdcard/cfl_watch (installs deps + fixes perms)
