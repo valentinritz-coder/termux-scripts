@@ -10,16 +10,20 @@ export ANDROID_SERIAL="$SER"
 START_TEXT="${START_TEXT:-LUXEMBOURG}"
 TARGET_TEXT="${TARGET_TEXT:-ARLON}"
 
-# --- Speed knobs ---
-SNAP_ON="${SNAP_ON:-1}"            # 1=take snaps, 0=skip snaps (FAST)
-DELAY_LAUNCH="${DELAY_LAUNCH:-1.2}"
-DELAY_TAP="${DELAY_TAP:-0.30}"
-DELAY_TYPE="${DELAY_TYPE:-0.55}"
-DELAY_PICK="${DELAY_PICK:-0.45}"
-DELAY_SEARCH="${DELAY_SEARCH:-1.2}"
+# 0=off, 1=png only, 2=xml only, 3=png+xml
+SNAP_MODE="${SNAP_MODE:-1}"
 
-# snap.sh fournit snap_init + snap + SNAP_DIR
-. "$BASE/snap.sh"
+# --- Speed knobs ---
+DELAY_LAUNCH="${DELAY_LAUNCH:-1.0}"
+DELAY_TAP="${DELAY_TAP:-0.25}"
+DELAY_TYPE="${DELAY_TYPE:-0.35}"
+DELAY_PICK="${DELAY_PICK:-0.30}"
+DELAY_SEARCH="${DELAY_SEARCH:-0.8}"
+
+MAKE_VIEWERS_ON_FAIL="${MAKE_VIEWERS_ON_FAIL:-1}"
+MAKE_VIEWERS_ON_OK="${MAKE_VIEWERS_ON_OK:-0}"
+
+. "$BASE/snap.sh"  # fournit snap_init, snap, SNAP_DIR, SNAP_MODE (utilise env)
 
 inject() { adb -s "$SER" shell "$@"; }
 sleep_s() { sleep "${1:-0.2}"; }
@@ -33,30 +37,21 @@ type_text() {
   inject input text "$t" >/dev/null 2>&1 || true
 }
 
-snap_if() {
-  [ "${SNAP_ON:-1}" -eq 1 ] && snap "$1" || true
-}
-
-dump_only() {
-  # Dump UI ONLY (pas de png) dans le SNAP_DIR
-  local tag="${1:-dump}"
-  local ts
-  ts="$(date +%H-%M-%S)"
-  local out="$SNAP_DIR/${ts}_${tag}.xml"
+dump_ui_to() {
+  local out="$1"
   adb -s "$SER" shell uiautomator dump --compressed "$out" >/dev/null 2>&1 || true
-  echo "$out"
 }
 
-dump_ui() {
+dump_ui_live() {
   local dump_path="$BASE/tmp/live_dump.xml"
   mkdir -p "$BASE/tmp"
   inject uiautomator dump --compressed "$dump_path" >/dev/null 2>&1 || true
   echo "$dump_path"
 }
 
-# --- UI dump cache (BIG speedup) ---
+# --- UI dump cache ---
 DUMP_CACHE=""
-refresh_dump() { DUMP_CACHE="$(dump_ui)"; }
+refresh_dump() { DUMP_CACHE="$(dump_ui_live)"; }
 
 node_center() {
   local dump="$1"; shift
@@ -66,7 +61,6 @@ import xml.etree.ElementTree as ET
 
 dump = sys.argv[1]
 pairs = [arg.split("=", 1) for arg in sys.argv[2:]]
-
 keymap = {
   "resource-id": "resource-id",
   "text": "text",
@@ -100,18 +94,14 @@ def matches(node):
 for node in root.iter("node"):
   if not matches(node):
     continue
-
-  # climb to clickable parent if needed
   cur = node
   while cur is not None and cur.get("clickable", "") != "true":
     cur = parent.get(cur)
-
   target = cur if cur is not None else node
   c = parse_bounds(target.get("bounds"))
   if c:
     print(f"{c[0]} {c[1]}")
     sys.exit(0)
-
 sys.exit(0)
 PY
 }
@@ -127,11 +117,9 @@ LIST_ID = "de.hafas.android.cfl:id/list_location_results"
 
 def parse_bounds(b):
   m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", b or "")
-  if not m:
-    return None
+  if not m: return None
   x1,y1,x2,y2 = map(int, m.groups())
-  if x2 <= x1 or y2 <= y1:
-    return None
+  if x2 <= x1 or y2 <= y1: return None
   return x1,y1,x2,y2
 
 def center(bb):
@@ -161,14 +149,12 @@ for child in list_node.iter("node"):
     bb = parse_bounds(child.get("bounds"))
     if not bb:
       continue
-    # ignore tiny buttons (ex: favorite star)
     w = bb[2]-bb[0]; h = bb[3]-bb[1]
     if w*h < 20000:
       continue
     x,y = center(bb)
     print(f"{x} {y}")
     sys.exit(0)
-
 sys.exit(0)
 PY
 }
@@ -205,23 +191,29 @@ tap_first_result_cached() {
   return 0
 }
 
-# --- Scenario start ---
 snap_init "trip_${START_TEXT}_to_${TARGET_TEXT}"
 
 finish() {
-  rc=$?
+  local rc=$?
   trap - EXIT
 
-  if [ -n "${SNAP_DIR:-}" ] && [ -d "${SNAP_DIR:-}" ] && [ "$rc" -ne 0 ]; then
+  if [ "${MAKE_VIEWERS_ON_FAIL:-1}" -eq 1 ] && [ "$rc" -ne 0 ]; then
     echo "[*] Run FAILED (rc=$rc) -> génération viewers..."
-    # si SNAP_ON=0, aucun couple xml/png -> on prend 1 snap debug pour générer au moins 1 viewer
-    if [ "${SNAP_ON:-1}" -eq 0 ]; then
-      echo "[*] SNAP_ON=0 -> capturing 1 debug snap for viewers"
-      snap "99_failure" || true
+    # si SNAP_MODE=0, on force au moins un snap debug pour avoir quelque chose
+    if [ "${SNAP_MODE:-0}" -eq 0 ]; then
+      echo "[*] SNAP_MODE=0 -> forcing 1 debug snap (png+xml) for viewers"
+      snap "99_failure" 3 || true
     fi
     bash "$BASE/post_run_viewers.sh" "$SNAP_DIR" || true
     echo "[*] Viewers OK: $SNAP_DIR/viewers/index.html"
   fi
+
+  if [ "${MAKE_VIEWERS_ON_OK:-0}" -eq 1 ] && [ "$rc" -eq 0 ]; then
+    echo "[*] Run OK -> génération viewers..."
+    bash "$BASE/post_run_viewers.sh" "$SNAP_DIR" || true
+    echo "[*] Viewers OK: $SNAP_DIR/viewers/index.html"
+  fi
+
   exit "$rc"
 }
 trap finish EXIT
@@ -229,59 +221,57 @@ trap finish EXIT
 echo "[*] Launch CFL"
 inject monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
 sleep_s "$DELAY_LAUNCH"
-snap_if "00_launch"
+snap "00_launch" "$SNAP_MODE"
 
 # --- Start field ---
 echo "[*] Open start field"
-snap_if "01_before_tap_start"
+snap "01_before_tap_start" 2
 refresh_dump
 tap_by_selector_cached "start field" "$DUMP_CACHE" "content-desc=Select start" \
 || tap_by_selector_cached "start field (history)" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/input_start"
 sleep_s "$DELAY_TAP"
-snap_if "02_after_tap_start"
+snap "02_after_tap_start" "$SNAP_MODE"
 
 echo "[*] Type start: $START_TEXT"
-snap_if "03_before_type_start"
 type_text "$START_TEXT"
 sleep_s "$DELAY_TYPE"
-snap_if "04_after_type_start"
+snap "03_after_type_start" "$SNAP_MODE"
 
 echo "[*] Choose start suggestion"
-snap_if "05_before_pick_start"
+snap "04_before_pick_start" 2
 refresh_dump
 tap_by_selector_cached "start suggestion" "$DUMP_CACHE" "content-desc=$START_TEXT" \
 || tap_by_selector_cached "start suggestion (text)" "$DUMP_CACHE" "text=$START_TEXT" \
 || tap_first_result_cached "start suggestion (first result)" "$DUMP_CACHE"
 sleep_s "$DELAY_PICK"
-snap_if "06_after_pick_start"
+snap "05_after_pick_start" "$SNAP_MODE"
 
 # --- Destination field ---
 echo "[*] Open destination field"
-snap_if "07_before_tap_destination"
+snap "06_before_tap_destination" 2
 refresh_dump
 tap_by_selector_cached "destination field" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/input_target" \
 || tap_by_selector_cached "destination field (fallback)" "$DUMP_CACHE" "content-desc=Select destination"
 sleep_s "$DELAY_TAP"
-snap_if "08_after_tap_destination"
+snap "07_after_tap_destination" "$SNAP_MODE"
 
 echo "[*] Type destination: $TARGET_TEXT"
-snap_if "09_before_type_destination"
 type_text "$TARGET_TEXT"
 sleep_s "$DELAY_TYPE"
-snap_if "10_after_type_destination"
+snap "08_after_type_destination" "$SNAP_MODE"
 
 echo "[*] Choose destination suggestion"
-snap_if "11_before_pick_destination"
+snap "09_before_pick_destination" 2
 refresh_dump
 tap_by_selector_cached "destination suggestion" "$DUMP_CACHE" "content-desc=$TARGET_TEXT" \
 || tap_by_selector_cached "destination suggestion (text)" "$DUMP_CACHE" "text=$TARGET_TEXT" \
 || tap_first_result_cached "destination suggestion (first result)" "$DUMP_CACHE"
 sleep_s "$DELAY_PICK"
-snap_if "12_after_pick_destination"
+snap "10_after_pick_destination" "$SNAP_MODE"
 
 # --- Search ---
 echo "[*] Launch search"
-snap_if "13_before_search"
+snap "11_before_search" 2
 refresh_dump
 if ! (
   tap_by_selector_cached "search button (id default)" "$DUMP_CACHE" "resource-id=de.hafas.android.cfl:id/button_search_default" \
@@ -294,20 +284,21 @@ if ! (
   key 66 || true
 fi
 sleep_s "$DELAY_SEARCH"
-snap_if "14_after_search"
+snap "12_after_search" "$SNAP_MODE"
 
-# --- Heuristics ---
+# --- Heuristics (XML final garanti) ---
 echo "[*] Evaluate result heuristics"
 
-# SNAP_ON=0 => aucun after_search.xml (snap désactivé), donc on force un dump final
-if [ "${SNAP_ON:-1}" -eq 0 ]; then
-  latest_xml="$(dump_only "14_after_search")"
-else
-  latest_xml="$(ls -1t "$SNAP_DIR"/*_after_search.xml 2>/dev/null | head -n1 || true)"
+latest_xml="$(ls -1t "$SNAP_DIR"/*_after_search.xml 2>/dev/null | head -n1 || true)"
+if [[ -z "${latest_xml:-}" ]]; then
+  # même si SNAP_MODE=1 (png-only) ou 0, on force un xml final
+  ts="$(date +%H-%M-%S)"
+  latest_xml="$SNAP_DIR/${ts}_final_after_search.xml"
+  dump_ui_to "$latest_xml"
 fi
 
-if [[ -z "${latest_xml:-}" ]]; then
-  echo "[!] No after_search XML found; treating as failure"
+if [[ -z "${latest_xml:-}" ]] || [ ! -f "$latest_xml" ]; then
+  echo "[!] No XML available; treating as failure"
   exit 1
 fi
 
