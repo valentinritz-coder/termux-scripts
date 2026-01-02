@@ -1,4 +1,3 @@
-cat > /sdcard/cfl_watch/update_from_github.sh <<'SH'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
@@ -152,7 +151,3 @@ fi
 echo
 echo "[+] OK. VERSION:"
 cat "$DEST/VERSION.txt" || true
-SH
-
-chmod +x /sdcard/cfl_watch/update_from_github.sh
-sed -i 's/\r$//' /sdcard/cfl_watch/update_from_github.sh 2>/dev/null || true
