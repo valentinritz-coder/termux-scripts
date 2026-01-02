@@ -4,7 +4,7 @@ set -euo pipefail
 
 BASE="/sdcard/cfl_watch"
 mkdir -p "$BASE"/{logs,map,tmp}
-export ANDROID_SERIAL="${ANDROID_SERIAL:-127.0.0.1:5555}"
+export ANDROID_SERIAL="${ANDROID_SERIAL:-127.0.0.1:37099}"
 SER="$ANDROID_SERIAL"
 
 LOG="$BASE/logs/map_$(date +%Y-%m-%d_%H-%M-%S).log"
