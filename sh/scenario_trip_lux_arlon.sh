@@ -171,6 +171,3 @@ fi
 
 echo "[!] Scenario may have failed (no results markers found)"
 exit 1
-
-chmod +x /sdcard/cfl_watch/scenario_trip_lux_arlon.sh
-sed -i 's/\r$//' /sdcard/cfl_watch/scenario_trip_lux_arlon.sh 2>/dev/null || true
