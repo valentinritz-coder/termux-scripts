@@ -12,10 +12,15 @@ START_TEXT="${1:-Luxembourg}"
 TARGET_TEXT="${2:-Arlon}"
 DELAY="${DELAY:-1.2}"
 
-# Source la lib snap (et vérifie)
-. "$BASE/snap.sh"
-type snap_init >/dev/null 2>&1 || { echo "[!] snap_init introuvable (snap.sh pas chargé?)"; exit 1; }
-type snap      >/dev/null 2>&1 || { echo "[!] snap introuvable (snap.sh pas chargé?)"; exit 1; }
+# Source snap.sh (sans laisser un échec tuer le script)
+if ! . "$BASE/snap.sh"; then
+  echo "[!] Impossible de sourcer $BASE/snap.sh"
+  exit 1
+fi
+
+# Vérifie que les fonctions existent
+declare -F snap_init >/dev/null 2>&1 || { echo "[!] snap_init introuvable"; exit 1; }
+declare -F snap      >/dev/null 2>&1 || { echo "[!] snap introuvable"; exit 1; }
 
 inject() { adb -s "$SER" shell "$@"; }
 sleep_s() { sleep "${1:-$DELAY}"; }
