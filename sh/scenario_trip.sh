@@ -1,31 +1,31 @@
-mkdir -p /sdcard/cfl_watch/{logs,map,tmp}
-
 cat > /sdcard/cfl_watch/scenario_trip.sh <<'SH'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-SER="${ANDROID_SERIAL:-127.0.0.1:37099}"
+HOST="${ADB_HOST:-127.0.0.1}"
+PORT="${ADB_TCP_PORT:-37099}"
+SER="${ANDROID_SERIAL:-$HOST:$PORT}"
+
 START_TEXT="${1:-Luxembourg}"
 TARGET_TEXT="${2:-Arlon}"
 DELAY="${DELAY:-1.2}"
 
-run_root() { su -c "PATH=/system/bin:/system/xbin:/vendor/bin:\$PATH; $1"; }
-inject()   { adb -s "$SER" shell "$@"; }
-sleep_s()  { sleep "${1:-$DELAY}"; }
+inject() { adb -s "$SER" shell "$@"; }
+sleep_s() { sleep "${1:-$DELAY}"; }
 
-tap() { inject input tap "$1" "$2" >/dev/null; }
+tap() { inject input tap "$1" "$2" >/dev/null 2>&1 || true; }
 key() { inject input keyevent "$1" >/dev/null 2>&1 || true; }
 
 type_text() {
   local t="$1"
-  t="${t//\'/}"      # supprime apostrophes (shell)
-  t="${t// /%s}"     # espaces -> %s
-  inject input text "$t" >/dev/null
+  t="${t//\'/}"
+  t="${t// /%s}"
+  inject input text "$t" >/dev/null 2>&1 || true
 }
 
 dump_xml() {
   local out="$1"
-  run_root "uiautomator dump --compressed '$out'" >/dev/null 2>&1 || true
+  inject uiautomator dump --compressed "$out" >/dev/null 2>&1 || true
 }
 
 echo "[*] device=$SER"
