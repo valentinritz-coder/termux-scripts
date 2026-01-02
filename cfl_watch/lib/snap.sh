@@ -3,10 +3,9 @@ set -euo pipefail
 
 # Snapshot helpers
 # SNAP_MODE: 0=off, 1=png only, 2=xml only, 3=png+xml
-
 CFL_BASE_DIR="${CFL_BASE_DIR:-/sdcard/cfl_watch}"
 SNAP_MODE="${SNAP_MODE:-3}"
-SNAP_DIR="${SNAP_DIR:-}" # set by snap_init
+SNAP_DIR="${SNAP_DIR:-}"   # set by snap_init
 SERIAL="${ANDROID_SERIAL:-127.0.0.1:37099}"
 
 log(){ printf '[*] %s\n' "$*"; }
@@ -24,7 +23,7 @@ snap_init(){
   export SNAP_DIR
 }
 
-snap_do(){
+_snap_do(){
   local base="$1"
   local mode="$2"
   case "$mode" in
@@ -50,12 +49,17 @@ snap_do(){
 snap(){
   local tag="${1:-snap}"
   local mode="${2:-$SNAP_MODE}"
-  [ -n "$SNAP_DIR" ] || SNAP_DIR="$CFL_BASE_DIR/runs/$(date +%Y-%m-%d_%H-%M-%S)_run"
+
+  if [ -z "$SNAP_DIR" ]; then
+    SNAP_DIR="$CFL_BASE_DIR/runs/$(date +%Y-%m-%d_%H-%M-%S)_run"
+  fi
   mkdir -p "$SNAP_DIR"
+
   local ts base
   ts="$(date +%H-%M-%S)"
   base="$SNAP_DIR/${ts}_$(safe_tag "$tag")"
-  snap_do "$base" "$mode"
+
+  _snap_do "$base" "$mode"
   log "snap: ${ts}_${tag} (mode=$mode)"
 }
 
