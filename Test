@@ -1,26 +1,4 @@
-$ ls -la /sdcard/cfl_watch
-total 33
--rw-rw----. 1 root everybody  187 Jan  2 13:32 console.sh
-drwxrwx---. 2 root everybody 3488 Jan  2 13:32 lib
-drwxrwx---. 2 root everybody 3488 Jan  2 13:32 logs
--rw-rw----. 1 root everybody 4551 Jan  2 13:32 runner.sh
-drwxrwx---. 2 root everybody 3488 Jan  2 13:32 runs
-drwxrwx---. 2 root everybody 3488 Jan  2 13:32 scenarios
-drwxrwx---. 2 root everybody 3488 Jan  2 13:32 tmp
-drwxrwx---. 2 root everybody 3488 Jan  2 13:32 tools
-~ $ ls -la /sdcard/cfl_watch/lib
-total 20
--rw-rw----. 1 root everybody 2877 Jan  2 13:32 adb_local.sh
--rw-rw----. 1 root everybody 2798 Jan  2 13:32 common.sh
--rw-rw----. 1 root everybody 1782 Jan  2 13:32 snap.sh
--rw-rw----. 1 root everybody 5446 Jan  2 13:32 viewer.sh
-~ $ ls -la /sdcard/cfl_watch/scenarios
-total 12
--rw-rw----. 1 root everybody 7103 Jan  2 13:32 scenario_trip.sh
--rw-rw----. 1 root everybody  264 Jan  2 13:32 scenario_trip_lux_arlon.sh
-~ $ ls -la /sdcard/cfl_watch/tools
-total 12
--rw-rw----. 1 root everybody 608 Jan  2 13:32 fix_perms_and_crlf.sh
--rw-rw----. 1 root everybody 949 Jan  2 13:32 install_termux.sh
--rw-rw----. 1 root everybody 180 Jan  2 13:32 self_check.sh
-~ $
+chmod +x /sdcard/cfl_watch/runner.sh /sdcard/cfl_watch/console.sh
+chmod +x /sdcard/cfl_watch/lib/*.sh
+chmod +x /sdcard/cfl_watch/scenarios/*.sh
+chmod +x /sdcard/cfl_watch/tools/*.sh
