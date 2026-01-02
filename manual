@@ -1,8 +1,18 @@
-~ $ cd ~/storage/shared/cfl_watch
-bash adb_local.sh start
-adb -s 127.0.0.1:37099 shell id
-adb -s 127.0.0.1:37099 shell su -c id
-bash adb_local.sh stop
+=== FETCH https://raw.githubusercontent.com/valentinritz-coder/termux-scripts/main/console.sh ===
+=== EXEC /sdcard/cfl_watch/tmp/console.sh ===
++ set -euo pipefail
++ HOST=127.0.0.1
++ PORT=37099
++ SERIAL=127.0.0.1:37099
++ export ANDROID_SERIAL=127.0.0.1:37099
++ ANDROID_SERIAL=127.0.0.1:37099
++ BASE=/sdcard/cfl_watch
++ mkdir -p /sdcard/cfl_watch/logs /sdcard/cfl_watch/map /sdcard/cfl_watch/tmp
++ trap cleanup EXIT
++ '[' -x /sdcard/cfl_watch/update_from_github.sh ']'
++ true
++ ADB_TCP_PORT=37099
++ bash /sdcard/cfl_watch/adb_local.sh start
 [*] Activation ADB TCP sur 127.0.0.1:37099 (root)
 [*] Redémarrage adbd
 [*] Attente adbd=running
@@ -20,11 +30,28 @@ List of devices attached
 [*] Pour éviter 'more than one device':
     adb -s 127.0.0.1:37099 shell <commande>
     ou dans TON terminal: export ANDROID_SERIAL=127.0.0.1:37099
-uid=2000(shell) gid=2000(shell) groups=2000(shell),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid) context=u:r:shell:s0
-uid=0(root) gid=0(root) groups=0(root) context=u:r:magisk:s0
++ adb shell monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1
++ sleep 2
++ bash /sdcard/cfl_watch/scenario_trip.sh Luxembourg Arlon
++ bash /sdcard/cfl_watch/map.sh --no-launch --depth 2 --max-screens 40 --max-actions 8 --delay 1.5
++ ADB_TCP_PORT=37099
++ bash /sdcard/cfl_watch/adb_local.sh stop
 [*] Désactivation ADB TCP (service.adb.tcp.port=-1) + restart adbd
 [*] adb disconnect 127.0.0.1:37099
 [*] adb devices -l:
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
 List of devices attached
+
++ echo
+
++ echo 'Dernier run map:'
+Dernier run map:
++ head -n 1
++ ls -1dt '/sdcard/cfl_watch/map/*'
++ echo '(aucun dossier map)'
+(aucun dossier map)
++ cleanup
++ ADB_TCP_PORT=37099
++ bash /sdcard/cfl_watch/adb_local.sh stop
+=== DONE ===
