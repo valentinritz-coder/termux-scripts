@@ -23,7 +23,7 @@ ADB_TCP_PORT="$PORT" bash "$BASE/adb_local.sh" start
 
 # Liste de scénarios
 SCENARIOS=(
-  "SNAP_ON=0 DELAY_LAUNCH=1.0 DELAY_TAP=0.25 DELAY_TYPE=0.45 DELAY_PICK=0.35 DELAY_SEARCH=1.0 bash scenario_trip_lux_arlon.sh"
+  "SNAP_ON=0 DELAY_LAUNCH=1.0 DELAY_TAP=0.25 DELAY_TYPE=0.45 DELAY_PICK=0.35 DELAY_SEARCH=1.0 bash $BASE/scenario_trip_lux_arlon.sh"
 )
 
 for cmd in "${SCENARIOS[@]}"; do
