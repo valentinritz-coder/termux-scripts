@@ -1,5 +1,0 @@
-=== FETCH https://raw.githubusercontent.com/valentinritz-coder/termux-scripts/main/console.sh ===
-=== EXEC /sdcard/cfl_watch/tmp/console.sh ===
-+ ADB_TCP_PORT=37099
-+ bash /sdcard/cfl_watch/runner.sh
-=== DONE ===
