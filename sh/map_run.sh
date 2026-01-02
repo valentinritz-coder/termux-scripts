@@ -1,4 +1,3 @@
-cat > /sdcard/cfl_watch/map_run.sh <<'SH'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
@@ -34,7 +33,3 @@ trap cleanup EXIT
 
 echo "LOG=$LOG"
 tail -n 120 "$LOG"
-SH
-
-chmod +x /sdcard/cfl_watch/map_run.sh
-sed -i 's/\r$//' /sdcard/cfl_watch/map_run.sh 2>/dev/null || true
