@@ -11,7 +11,7 @@ have(){ command -v "$1" >/dev/null 2>&1; }
 
 require() {
   have adb || die "adb introuvable. Fais: pkg install android-tools"
-  have su  || die "su introuvable. Ton root Magisk est OK?"
+  have su  || die "su introuvable. Root Magisk OK?"
 }
 
 adb_server_start() {
@@ -19,63 +19,67 @@ adb_server_start() {
 }
 
 adbd_restart() {
-  # Certaines ROM acceptent ctl.restart, d'autres préfèrent stop/start
-  if su -c 'setprop ctl.restart adbd' >/dev/null 2>&1; then
-    return 0
-  fi
-  su -c 'stop adbd; start adbd' >/dev/null 2>&1 || true
+  # stop/start marche le plus souvent (ctl.restart parfois bloqué)
+  su -c 'stop adbd; start adbd' >/dev/null 2>&1 || su -c 'setprop ctl.restart adbd' >/dev/null 2>&1 || true
 }
 
-port_listening() {
-  if have ss; then
-    ss -ltnp 2>/dev/null | grep -E ":${PORT}\b" >/dev/null 2>&1
-  elif have netstat; then
-    netstat -ltnp 2>/dev/null | grep -E ":${PORT}\b" >/dev/null 2>&1
-  else
-    # Pas de ss/netstat: on ne peut pas vérifier proprement, on “best effort”
-    return 0
-  fi
+wait_adbd_running() {
+  # attend max ~10s
+  for _ in $(seq 1 50); do
+    state="$(su -c 'getprop init.svc.adbd' 2>/dev/null | tr -d '\r' || true)"
+    [[ "$state" == "running" ]] && return 0
+    sleep 0.2
+  done
+  return 1
 }
 
 show_status() {
   echo "[*] getprop:"
   su -c "getprop service.adb.tcp.port; getprop init.svc.adbd" || true
   echo
-  echo "[*] Port check (:${PORT}):"
-  if have ss; then ss -ltnp 2>/dev/null | grep -E ":${PORT}\b" || true
-  elif have netstat; then netstat -ltnp 2>/dev/null | grep -E ":${PORT}\b" || true
-  else echo "(pas de ss/netstat)"; fi
-  echo
   echo "[*] adb devices -l:"
   adb devices -l || true
+}
+
+connect_retry() {
+  # Retente plusieurs fois, le temps que adbd écoute réellement
+  for _ in $(seq 1 8); do
+    out="$(adb connect "$SERIAL" 2>&1 || true)"
+    echo "[*] $out"
+    echo "$out" | grep -qiE 'connected to|already connected' && return 0
+    sleep 0.4
+  done
+  return 1
 }
 
 start() {
   require
   adb_server_start
 
-  echo "[*] Activation ADB TCP sur ${HOST}:${PORT} (root)"
+  echo "[*] Activation ADB TCP sur ${SERIAL} (root)"
   su -c "setprop service.adb.tcp.port ${PORT}" >/dev/null 2>&1 || die "Impossible de setprop service.adb.tcp.port"
+
   echo "[*] Redémarrage adbd"
   adbd_restart
-  sleep 0.5
 
-  # Vérif que la prop a bien pris
-  cur="$(su -c 'getprop service.adb.tcp.port' 2>/dev/null || true)"
-  [[ "$cur" == "$PORT" ]] || die "service.adb.tcp.port vaut '$cur' (attendu: $PORT)."
+  echo "[*] Attente adbd=running"
+  wait_adbd_running || echo "[!] adbd n'est pas repassé 'running' (on tente quand même)."
 
-  # Vérif écoute
-  if ! port_listening; then
-    echo "[!] Rien n'écoute sur :${PORT} (ss/netstat). Je tente un restart adbd de plus."
-    adbd_restart
-    sleep 0.5
-    port_listening || echo "[!] Toujours pas d'écoute détectée. On tente quand même adb connect."
+  # Repart propre côté serveur ADB Termux
+  adb kill-server >/dev/null 2>&1 || true
+  adb_server_start
+
+  echo "[*] adb connect (retry)"
+  connect_retry || die "Connexion ADB échouée (Connection refused). adbd n'écoute pas encore ou ROM bloque."
+
+  # Si offline, on force un reconnect
+  if adb devices | awk 'NR>1 && $1=="'"$SERIAL"'" {print $2}' | grep -qi offline; then
+    echo "[!] Device offline, reconnect..."
+    adb disconnect "$SERIAL" >/dev/null 2>&1 || true
+    sleep 0.4
+    connect_retry || die "Toujours offline après reconnect."
   fi
 
-  echo "[*] adb connect ${SERIAL}"
-  adb connect "${SERIAL}" || die "adb connect a échoué (Connection refused = adbd n'écoute pas)."
-
-  # Optionnel: éviter que adb choisisse l'autre pseudo-device (emulator-5554)
   if [[ "${SET_DEFAULT_SERIAL}" == "1" ]]; then
     export ANDROID_SERIAL="${SERIAL}"
     echo "[*] ANDROID_SERIAL fixé à ${ANDROID_SERIAL}"
@@ -88,15 +92,14 @@ stop() {
   require
   adb_server_start
 
-  echo "[*] Désactivation ADB TCP (service.adb.tcp.port = -1) + restart adbd"
+  echo "[*] Désactivation ADB TCP (service.adb.tcp.port=-1) + restart adbd"
   su -c 'setprop service.adb.tcp.port -1' >/dev/null 2>&1 || true
   adbd_restart
-  sleep 0.3
+  wait_adbd_running >/dev/null 2>&1 || true
 
   echo "[*] adb disconnect ${SERIAL}"
   adb disconnect "${SERIAL}" >/dev/null 2>&1 || true
 
-  echo "[*] adb devices -l:"
   adb devices -l || true
 }
 
@@ -111,6 +114,6 @@ case "${1:-}" in
   stop)   stop ;;
   status) status ;;
   *) echo "Usage: $0 {start|stop|status}"
-     echo "Env vars: ADB_TCP_PORT=5555 ADB_HOST=127.0.0.1 ADB_SERIAL=127.0.0.1:5555 ADB_SET_DEFAULT_SERIAL=1"
+     echo "Env: ADB_TCP_PORT=5555 ADB_HOST=127.0.0.1 ADB_SERIAL=127.0.0.1:5555 ADB_SET_DEFAULT_SERIAL=1"
      exit 2 ;;
 esac
