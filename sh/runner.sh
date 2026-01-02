@@ -26,7 +26,7 @@ die(){ echo "[!] $*" >&2; exit 1; }
 
 # --- sanity checks ---
 command -v adb >/dev/null 2>&1 || die "adb introuvable (pkg install android-tools)"
-[ -x "$BASE/adb_local.sh" ] || die "adb_local.sh introuvable ou non exécutable: $BASE/adb_local.sh"
+[ -f "$BASE/adb_local.sh" ] || die "adb_local.sh introuvable: $BASE/adb_local.sh"
 [ -f "$SCENARIO_SCRIPT" ] || die "Scenario introuvable: $SCENARIO_SCRIPT"
 
 echo "[*] Start ADB local on $SER"
