@@ -105,6 +105,14 @@ tap_by_selector() {
 # --- Scenario start ---
 snap_init "trip_Luxembourg_to_Arlon"
 
+finish() {
+  # Génère les viewers si on a un SNAP_DIR
+  if [ -n "${SNAP_DIR:-}" ] && [ -d "${SNAP_DIR:-}" ]; then
+    bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
+  fi
+}
+trap finish EXIT
+
 echo "[*] Launch CFL"
 inject monkey -p de.hafas.android.cfl -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
 sleep 2
@@ -148,9 +156,19 @@ snap "12_after_pick_start"
 
 echo "[*] Launch search"
 snap "13_before_search"
-tap_by_selector "search button" "resource-id=de.hafas.android.cfl:id/button_search_default" || tap_by_selector "search button (home)" "resource-id=de.hafas.android.cfl:id/button_search"
+
+if ! (
+  tap_by_selector "search button" "resource-id=de.hafas.android.cfl:id/button_search_default" \
+  || tap_by_selector "search button (home)" "resource-id=de.hafas.android.cfl:id/button_search"
+); then
+  echo "[!] Search button not found (continuing to snapshots anyway)"
+  # fallback: ENTER (souvent déclenche la recherche)
+  key 66 || true
+fi
+
 sleep_s 2.0
 snap "14_after_search"
+
 
 echo "[*] Evaluate result heuristics"
 latest_xml="$(ls -1t "$SNAP_DIR"/*_after_search.xml 2>/dev/null | head -n1 || true)"
