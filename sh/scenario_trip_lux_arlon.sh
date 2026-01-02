@@ -156,18 +156,22 @@ echo "[*] Evaluate result heuristics"
 latest_xml="$(ls -1t "$SNAP_DIR"/*_after_search.xml 2>/dev/null | head -n1 || true)"
 if [[ -z "$latest_xml" ]]; then
   echo "[!] No after_search snapshot found; treating as failure"
+  bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
   exit 1
 fi
 
 if inject grep -qiE "Results|Résultats|Itinéraires" "$latest_xml"; then
   echo "[+] Scenario success (keyword detected in results)"
+  bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
   exit 0
 fi
 
 if inject grep -qiE "trip_recycler_view|trip_result|tripItem" "$latest_xml"; then
   echo "[+] Scenario success (trip list detected)"
+  bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
   exit 0
 fi
 
 echo "[!] Scenario may have failed (no results markers found)"
+bash /sdcard/cfl_watch/post_run_viewers.sh "$SNAP_DIR" >/dev/null 2>&1 || true
 exit 1
