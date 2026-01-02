@@ -1,160 +1,228 @@
 # CFL Watch (Termux)
 
-Automation scripts for the CFL mobile app, optimized for running **directly on an Android phone** inside Termux. The toolkit handles ADB over TCP (root), captures UI snapshots (PNG/XML), and builds lightweight HTML viewers.
+Automation scripts for the **CFL mobile app** designed to run **directly on an Android phone** inside **Termux**.
 
-## Features
-- Split layout: code in Termux home (`~/cfl_watch`), artifacts on shared storage (`/sdcard/cfl_watch/{runs,logs}`).
-- Single entrypoint (`runner.sh`) to run one or multiple scenarios with per-step snapshots.
-- Local ADB TCP bootstrap (`lib/adb_local.sh`) for rooted devices.
-- Snapshot controls: `SNAP_MODE` 0=off, 1=png, 2=xml, 3=png+xml, with per-step overrides.
-- Robust viewer generation that works with PNG-only or XML-only runs.
-- Self-check, install helper, and legacy shims under `/sdcard/cfl_watch`.
+- **Code** lives in: `$HOME/cfl_watch`
+- **Artifacts** (runs + logs + viewers) live in: `/sdcard/cfl_watch/{runs,logs}`
+- Uses **ADB over TCP** (root required) and can capture snapshots (PNG/XML) + build HTML viewers.
 
-## Quickstart (Termux on device)
+> Important: do **not** rely on `~` inside variables. Use `$HOME`.
+> If you see `~/cfl_watch/lib/common.sh: No such file or directory`, that’s exactly why.
+
+---
+
+## Requirements
+
+- Termux installed
+- Root available (`su` works in Termux)
+- Packages:
+  - `android-tools` (adb)
+  - `python` (viewer server + scripts)
+
+---
+
+## Quickstart
+
+### 0) Allow storage access (once)
 ```bash
-# 1a) Clone or fetch this repo
-pkg install -y git
-git clone https://github.com/valentinritz-coder/termux-scripts.git
-cd termux-scripts
-
-# 1b) or erase it
-rm -rf ~/termux-scripts
-git clone https://github.com/valentinritz-coder/termux-scripts.git
-cd termux-scripts
-
-# 2) Install into ~/cfl_watch (creates /sdcard/cfl_watch/{runs,logs} + shims)
-bash cfl_watch/tools/install_termux.sh
-
-# 3) Run built-in scenarios
-ADB_TCP_PORT=37099 bash ~/cfl_watch/runner.sh --list
-ADB_TCP_PORT=37099 bash ~/cfl_watch/runner.sh
-
-# 4) Run a custom trip
-ADB_TCP_PORT=37099 START_TEXT="Esch-sur-Alzette" TARGET_TEXT="Luxembourg" SNAP_MODE=3 \
-  bash ~/cfl_watch/runner.sh --start "Esch-sur-Alzette" --target "Luxembourg"
+termux-setup-storage
 ```
 
-## Snapshot modes
-- `SNAP_MODE=0` – off
-- `SNAP_MODE=1` – PNG only
-- `SNAP_MODE=2` – XML only
-- `SNAP_MODE=3` – PNG+XML (default)
+### 1) Clone or update the repo
 
-Any call to `snap "tag" 2` overrides the mode for that step.
+#### Fresh clone (recommended path)
+```bash
+pkg install -y git
+git clone https://github.com/valentinritz-coder/termux-scripts.git "$HOME/termux-scripts"
+cd "$HOME/termux-scripts"
+```
+
+#### Update an existing clone (preferred over re-cloning)
+```bash
+cd "$HOME/termux-scripts"
+git pull --rebase
+```
+
+#### If you insist on nuking everything (only if needed)
+```bash
+rm -rf "$HOME/termux-scripts"
+git clone https://github.com/valentinritz-coder/termux-scripts.git "$HOME/termux-scripts"
+cd "$HOME/termux-scripts"
+```
+
+> If you get: `fatal: destination path 'termux-scripts' already exists...`
+> you are trying to clone into a non-empty directory. Use `git pull` or delete the folder.
+
+---
+
+### 2) Install into `$HOME/cfl_watch` + create `/sdcard/cfl_watch` artifacts + shims
+Run this from inside the repo:
+```bash
+bash cfl_watch/tools/install_termux.sh
+```
+
+After install you should have:
+- `$HOME/cfl_watch` (real code)
+- `/sdcard/cfl_watch/runs` and `/sdcard/cfl_watch/logs` (artifacts)
+- `/sdcard/cfl_watch/runner.sh` and `/sdcard/cfl_watch/console.sh` (shims)
+
+---
+
+### 3) Self-check
+```bash
+bash "$HOME/cfl_watch/tools/self_check.sh"
+```
+
+If dependencies are missing:
+```bash
+pkg install -y android-tools python
+```
+
+---
+
+### 4) Start local ADB TCP (root)
+```bash
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/lib/adb_local.sh" start
+adb devices -l
+```
+
+Expected: you see `127.0.0.1:37099 device` (not offline).
+
+---
+
+### 5) Run scenarios
+
+#### List bundled scenarios
+```bash
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --list
+```
+
+#### Run default scenario list (fast screenshots only)
+```bash
+ADB_TCP_PORT=37099 SNAP_MODE=1 bash "$HOME/cfl_watch/runner.sh"
+```
+
+#### Full debug (PNG + XML)
+```bash
+ADB_TCP_PORT=37099 SNAP_MODE=3 bash "$HOME/cfl_watch/runner.sh"
+```
+
+#### Run one custom trip
+```bash
+ADB_TCP_PORT=37099 SNAP_MODE=3 bash "$HOME/cfl_watch/runner.sh" \
+  --start "LUXEMBOURG" --target "ARLON"
+```
+
+---
 
 ## Viewers
-After a run, open the viewer on-device:
-```bash
-cd /sdcard/cfl_watch/runs/<latest>/viewers
-python -m http.server 8000
-# then open http://127.0.0.1:8000 in a mobile browser
-```
-Tip: `bash ~/cfl_watch/runner.sh --latest-run` prints the newest run; `--serve` starts a viewer server in it.
 
-## Maintenance / tools
-- `cfl_watch/tools/install_termux.sh` – install deps, copy files to `~/cfl_watch`, create `/sdcard/cfl_watch/{runs,logs}`, fix CRLF.
-- `cfl_watch/tools/self_check.sh` – verify adb, python, device reachability.
-- `cfl_watch/tools/fix_perms_and_crlf.sh` – normalize files if you edit on Windows.
+### Print newest run directory
+```bash
+bash "$HOME/cfl_watch/runner.sh" --latest-run
+```
+
+### Serve latest viewer (auto-generate if missing)
+```bash
+bash "$HOME/cfl_watch/runner.sh" --serve
+```
+
+Manual way:
+```bash
+latest="$(bash "$HOME/cfl_watch/runner.sh" --latest-run)"
+cd "$latest/viewers"
+python -m http.server 8000
+```
+
+Then open on your phone:
+- `http://127.0.0.1:8000`
+
+---
+
+## Snapshot modes
+
+`SNAP_MODE` controls what `snap` captures:
+
+- `0` = off
+- `1` = PNG only (fast)
+- `2` = XML only
+- `3` = PNG + XML (best for debugging)
+
+Per-step override is supported inside scenarios:
+- `snap "tag" 2` forces XML-only for that step.
+
+---
 
 ## Layout
+
+### Code (Termux home)
 ```
-~ / cfl_watch                  / sdcard / cfl_watch
-├── runner.sh                  ├── runner.sh     # shim -> ~/cfl_watch/runner.sh
-├── console.sh                 ├── console.sh    # shim
-├── lib/                       ├── runs/         # per-run artifacts
-├── scenarios/                 └── logs/         # stdout/stderr logs
+$HOME/cfl_watch
+├── runner.sh
+├── lib/
+│   ├── common.sh
+│   ├── adb_local.sh
+│   ├── snap.sh
+│   └── viewer.sh
+├── scenarios/
 ├── tools/
 └── tmp/
 ```
 
-### Paths & env vars
-- `CFL_CODE_DIR` (default `~/cfl_watch`) – where scripts live and execute.
-- `CFL_ARTIFACT_DIR` (default `/sdcard/cfl_watch`) – parent for logs/runs.
-- Derived: `CFL_RUNS_DIR=$CFL_ARTIFACT_DIR/runs`, `CFL_LOG_DIR=$CFL_ARTIFACT_DIR/logs`, `CFL_TMP_DIR=$CFL_CODE_DIR/tmp`.
+### Artifacts (shared storage)
+```
+/sdcard/cfl_watch
+├── runner.sh    # shim -> $HOME/cfl_watch/runner.sh
+├── console.sh   # shim
+├── runs/        # per-run artifacts
+└── logs/        # runner logs
+```
 
-## Upgrade notes
-- Legacy entrypoints under `sh/` remain as shims and call the split layout.
-- `snap.sh` lives in `lib/snap.sh`; it honors per-step overrides and `SNAP_MODE` 0-3.
-- `post_run_viewers.sh` has been replaced by `lib/viewer.sh` (works when PNG or XML is missing).
+---
+
+## Common env vars
+
+- `ADB_TCP_PORT` (default `37099`)
+- `ADB_HOST` (default `127.0.0.1`)
+- `ANDROID_SERIAL` (default `${ADB_HOST}:${ADB_TCP_PORT}`)
+- `SNAP_MODE` (0..3)
+- Delays:
+  - `DELAY_LAUNCH`, `DELAY_TAP`, `DELAY_TYPE`, `DELAY_PICK`, `DELAY_SEARCH`
+
+---
 
 ## Troubleshooting
-See `docs/TROUBLESHOOTING.md` for common Termux + ADB issues and viewer tips.
 
+### `~/cfl_watch/lib/common.sh: No such file or directory`
+You hit the `~` expansion trap. Use `$HOME` or absolute paths.
+Example:
+```bash
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --check
+```
 
+### `tar: .: file changed as we read it`
+You likely ran install while copying a directory onto itself (source == destination).
+Always run:
+- from the repo: `$HOME/termux-scripts`
+- installing to: `$HOME/cfl_watch`
 
-1) Vérifie que tu es au bon endroit
+### Selectors not found / scenario fails early
+Run with full debug:
+```bash
+ADB_TCP_PORT=37099 SNAP_MODE=3 bash "$HOME/cfl_watch/runner.sh" --start "LUXEMBOURG" --target "ARLON"
+```
+Then inspect the viewer to adjust selectors to the real UI state.
 
-Dans Termux:
-
-ls -la ~/cfl_watch
-ls -la /sdcard/cfl_watch/runs
-ls -la /sdcard/cfl_watch/logs
-
-
-Tu dois voir runner.sh, lib/adb_local.sh, lib/snap.sh, tools/self_check.sh, etc.
-
-2) Fix permissions + CRLF (au cas où)
-
-Si tu as édité depuis Windows/OneDrive ou autre enfer:
-
-bash ~/cfl_watch/tools/fix_perms_and_crlf.sh ~/cfl_watch
-
-3) Self-check (ça évite 80% des “ça marche pas”)
-bash ~/cfl_watch/tools/self_check.sh
-
-
-Si ça te dit que adb ou python manque:
-
-pkg install -y android-tools python
-
-4) Démarre ADB local (root + TCP)
-
-Tu utilises déjà le port 37099, donc:
-
-ADB_TCP_PORT=37099 bash ~/cfl_watch/lib/adb_local.sh start
-
-
-Puis vérifie que ton device est bien visible:
-
+### Device not reachable in self-check
+Start ADB TCP first:
+```bash
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/lib/adb_local.sh" start
 adb devices -l
+```
 
+---
 
-Tu dois voir 127.0.0.1:37099 device (pas offline).
+## Notes
 
-5) Lance un run “léger” pour valider (snap rapide)
-
-Je te conseille d’abord PNG only (plus rapide que PNG+XML), ça te donne des screenshots pour débug visuellement.
-
-ADB_TCP_PORT=37099 SNAP_MODE=1 bash ~/cfl_watch/runner.sh
-
-
-Si tu veux le mode full debug (plus lent):
-
-ADB_TCP_PORT=37099 SNAP_MODE=3 bash ~/cfl_watch/runner.sh
-
-6) Ouvre le viewer du dernier run
-
-Trouve le dernier dossier run:
-
-bash ~/cfl_watch/runner.sh --latest-run
-
-
-Puis:
-
-cd "$(bash ~/cfl_watch/runner.sh --latest-run)/viewers"
-python -m http.server 8000
-
-
-Ouvre ensuite dans ton navigateur Android:
-http://127.0.0.1:8000
-
-7) Si tu veux lancer un seul trajet custom
-ADB_TCP_PORT=37099 SNAP_MODE=1 bash ~/cfl_watch/runner.sh --start "LUXEMBOURG" --target "ARLON"
-
-8) Si ça foire: 2 checks utiles
-
-Est-ce que CFL se lance manuellement sur le téléphone? (oui, banal, mais on a vu pire)
-
-Est-ce que le focus est bon (l’app est vraiment au premier plan) ?
-
-adb -s 127.0.0.1:37099 shell dumpsys window windows | grep -E "mCurrentFocus|mFocusedApp" | head
+- Root is required for enabling ADB TCP (via `setprop service.adb.tcp.port` + restarting `adbd`).
+- Keeping artifacts on `/sdcard` makes it easy to serve viewers (`python -m http.server`) and retrieve files.
