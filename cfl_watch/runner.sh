@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
+CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}"
 CFL_ARTIFACT_DIR="${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}"
 CFL_DEFAULT_PORT="${ADB_TCP_PORT:-37099}"
 CFL_DEFAULT_HOST="${ADB_HOST:-127.0.0.1}"
@@ -18,7 +18,7 @@ DELAY_SEARCH="${DELAY_SEARCH:-0.80}"
 
 usage(){
   cat <<'EOF'
-Usage: ADB_TCP_PORT=37099 bash ~/cfl_watch/runner.sh [options]
+Usage: ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" [options]
 --scenario PATH     Scenario script (default: scenarios/scenario_trip.sh)
 --start TEXT        Override start location (single-run mode)
 --target TEXT       Override destination (single-run mode)
@@ -35,7 +35,6 @@ print_list(){
   cat <<'EOF'
 Bundled scenarios (START|TARGET|SNAP_MODE|DELAY_LAUNCH|DELAY_TAP|DELAY_TYPE|DELAY_PICK|DELAY_SEARCH):
 LUXEMBOURG|ARLON|1|1.0|0.20|0.30|0.25|0.80
-ESCH-SUR-ALZETTE|LUXEMBOURG|1|1.0|0.20|0.30|0.25|0.80
 EOF
 }
 
