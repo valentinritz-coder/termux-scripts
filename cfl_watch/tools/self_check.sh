@@ -2,4 +2,7 @@
 set -euo pipefail
 
 CFL_BASE_DIR="${CFL_BASE_DIR:-/sdcard/cfl_watch}"
-ADB_TCP_PORT="${ADB_TCP_PORT:-37099}" bash "$CFL_BASE_DIR/runner.sh" "$@"
+. "$CFL_BASE_DIR/lib/common.sh"
+
+attach_log "self_check"
+self_check
