@@ -3,7 +3,6 @@ set -euo pipefail
 
 # Snapshot helpers
 # SNAP_MODE: 0=off, 1=png only, 2=xml only, 3=png+xml
-CFL_BASE_DIR="${CFL_BASE_DIR:-/sdcard/cfl_watch}"
 SNAP_MODE="${SNAP_MODE:-3}"
 SNAP_DIR="${SNAP_DIR:-}"   # set by snap_init
 SERIAL="${ANDROID_SERIAL:-127.0.0.1:37099}"
@@ -17,7 +16,7 @@ snap_init(){
   local name="${1:-run}"
   local ts
   ts="$(date +%Y-%m-%d_%H-%M-%S)"
-  SNAP_DIR="$CFL_BASE_DIR/runs/${ts}_$(safe_tag "$name")"
+  SNAP_DIR="${CFL_RUNS_DIR:-/sdcard/cfl_watch/runs}/${ts}_$(safe_tag "$name")"
   mkdir -p "$SNAP_DIR"
   log "SNAP_DIR=$SNAP_DIR (SNAP_MODE=$SNAP_MODE)"
   export SNAP_DIR
@@ -51,7 +50,7 @@ snap(){
   local mode="${2:-$SNAP_MODE}"
 
   if [ -z "$SNAP_DIR" ]; then
-    SNAP_DIR="$CFL_BASE_DIR/runs/$(date +%Y-%m-%d_%H-%M-%S)_run"
+    SNAP_DIR="${CFL_RUNS_DIR:-/sdcard/cfl_watch/runs}/$(date +%Y-%m-%d_%H-%M-%S)_run"
   fi
   mkdir -p "$SNAP_DIR"
 

@@ -10,12 +10,17 @@
   - `scenario_trip.sh` – parameterized trip flow using shared helpers.
   - `scenario_trip_lux_arlon.sh` – thin wrapper example.
 - **tools/**
-  - `install_termux.sh` – install deps, copy scripts to `/sdcard/cfl_watch`, fix CRLF + permissions.
+  - `install_termux.sh` – install deps, copy scripts to `~/cfl_watch`, create `/sdcard/cfl_watch/{runs,logs}` shims, fix CRLF + permissions.
   - `self_check.sh` – light diagnostics (adb, python, device reachability).
   - `fix_perms_and_crlf.sh` – normalize files if edited off-device.
-- **runs/** – per-run artifacts (PNG/XML + viewers).
-- **logs/** – stdout/stderr logs from runner + tools.
+- **/sdcard/cfl_watch/runs/** – per-run artifacts (PNG/XML + viewers).
+- **/sdcard/cfl_watch/logs/** – stdout/stderr logs from runner + tools.
 - **sh/** – legacy shims preserved for backward compatibility; they forward to the new layout.
+
+### Paths and env defaults
+- `CFL_CODE_DIR` (default `~/cfl_watch`) hosts the scripts and executes everything.
+- `CFL_ARTIFACT_DIR` (default `/sdcard/cfl_watch`) holds artifacts: `CFL_RUNS_DIR=$CFL_ARTIFACT_DIR/runs`, `CFL_LOG_DIR=$CFL_ARTIFACT_DIR/logs`.
+- `CFL_TMP_DIR` defaults to `$CFL_CODE_DIR/tmp` for fast local scratch files.
 
 ### Data flow
 1. `runner.sh` starts local ADB TCP via `lib/adb_local.sh` and exports `ANDROID_SERIAL`.

@@ -1,8 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
+CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
+CFL_ARTIFACT_DIR="${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}"
+
 PKG="de.hafas.android.cfl"
-OUT_BASE="/sdcard/cfl_watch/map"
+OUT_BASE="${OUT_BASE:-$CFL_ARTIFACT_DIR/map}"
 DEPTH=1
 MAX_SCREENS=25
 MAX_ACTIONS=8
@@ -13,7 +16,7 @@ SER="${ANDROID_SERIAL:-127.0.0.1:37099}"
 
 usage() {
   cat <<EOF
-Usage: bash /sdcard/cfl_watch/map.sh [options]
+Usage: bash ~/cfl_watch/sh/map.sh [options]
   --pkg de.hafas.android.cfl
   --out /sdcard/cfl_watch/map
   --depth 1

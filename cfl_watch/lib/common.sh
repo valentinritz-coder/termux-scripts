@@ -4,12 +4,27 @@ set -euo pipefail
 # Common helpers and defaults for CFL automation scripts.
 # This file is intended to be sourced, not executed directly.
 
-CFL_BASE_DIR="${CFL_BASE_DIR:-/sdcard/cfl_watch}"
-CFL_LOG_DIR="$CFL_BASE_DIR/logs"
-CFL_RUNS_DIR="$CFL_BASE_DIR/runs"
-CFL_TMP_DIR="$CFL_BASE_DIR/tmp"
-CFL_SCENARIO_DIR="$CFL_BASE_DIR/scenarios"
+expand_path(){
+  case "${1:-}" in
+    "~") printf '%s' "$HOME" ;;
+    "~/"*) printf '%s' "${1/#\~/$HOME}" ;;
+    *) printf '%s' "${1:-}" ;;
+  esac
+}
+
+_raw_code_dir="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
+_raw_artifact_dir="${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}"
+
+CFL_CODE_DIR="$(expand_path "$_raw_code_dir")"
+CFL_BASE_DIR="$CFL_CODE_DIR" # backward compatibility alias
+CFL_ARTIFACT_DIR="$(expand_path "$_raw_artifact_dir")"
+CFL_LOG_DIR="$CFL_ARTIFACT_DIR/logs"
+CFL_RUNS_DIR="$CFL_ARTIFACT_DIR/runs"
+CFL_TMP_DIR="$CFL_CODE_DIR/tmp"
+CFL_SCENARIO_DIR="$CFL_CODE_DIR/scenarios"
 CFL_VIEWER_DIR_NAME="viewers"
+
+export CFL_CODE_DIR CFL_BASE_DIR CFL_ARTIFACT_DIR CFL_LOG_DIR CFL_RUNS_DIR CFL_TMP_DIR
 
 CFL_PKG="${CFL_PKG:-de.hafas.android.cfl}"
 
@@ -26,7 +41,7 @@ die(){ printf '[!!] %s\n' "$*" >&2; exit 1; }
 need(){ command -v "$1" >/dev/null 2>&1 || die "Missing dependency: $1"; }
 
 ensure_dirs(){
-  mkdir -p "$CFL_BASE_DIR" "$CFL_LOG_DIR" "$CFL_RUNS_DIR" "$CFL_TMP_DIR" "$CFL_SCENARIO_DIR"
+  mkdir -p "$CFL_CODE_DIR" "$CFL_TMP_DIR" "$CFL_ARTIFACT_DIR" "$CFL_LOG_DIR" "$CFL_RUNS_DIR" "$CFL_SCENARIO_DIR"
 }
 
 # Normalize text for filenames (safe-ish for Termux)
@@ -83,11 +98,16 @@ maybe(){
   fi
 }
 
+latest_run_dir(){
+  ls -1dt "$CFL_RUNS_DIR"/* 2>/dev/null | head -n1 || true
+}
+
 self_check(){
   ensure_dirs
   need adb
   need python
-  log "Base: $CFL_BASE_DIR"
+  log "Code dir: $CFL_CODE_DIR"
+  log "Artifacts: $CFL_ARTIFACT_DIR (runs=$CFL_RUNS_DIR logs=$CFL_LOG_DIR)"
   log "Serial: $CFL_SERIAL"
   log "Package: $CFL_PKG"
   adb start-server >/dev/null 2>&1 || true

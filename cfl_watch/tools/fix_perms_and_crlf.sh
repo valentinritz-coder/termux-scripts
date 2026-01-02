@@ -1,8 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-CFL_BASE_DIR="${CFL_BASE_DIR:-/sdcard/cfl_watch}"
-TARGET_DIR="${1:-$CFL_BASE_DIR}"
+CFL_CODE_DIR="${CFL_CODE_DIR:-${CFL_BASE_DIR:-~/cfl_watch}}"
+TARGET_DIR="${1:-$CFL_CODE_DIR}"
 
 log(){ printf '[*] %s\n' "$*"; }
 

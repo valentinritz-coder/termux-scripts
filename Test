@@ -1,17 +1,10 @@
-~ $ chmod +x /sdcard/cfl_watch/runner.sh /sdcard/cfl_watch/console.sh
-~ $ chmod +x /sdcard/cfl_watch/lib/*.sh
-~ $ chmod +x /sdcard/cfl_watch/scenarios/*.sh
-~ $ chmod +x /sdcard/cfl_watch/tools/*.sh
-~ $ ls -la /sdcard/cfl_watch/runner.sh /sdcard/cfl_watch/lib/adb_local.sh /sdcard/cfl_watch/tools/self_check.sh
--rw-rw----. 1 root everybody 2877 Jan  2 13:32 /sdcard/cfl_watch/lib/adb_local.sh
--rw-rw----. 1 root everybody 4551 Jan  2 13:32 /sdcard/cfl_watch/runner.sh
--rw-rw----. 1 root everybody  180 Jan  2 13:32 /sdcard/cfl_watch/tools/self_check.sh
-~ $ bash /sdcard/cfl_watch/tools/fix_perms_and_crlf.sh /sdcard/cfl_watch
-[*] Fix CRLF + permissions under /sdcard/cfl_watch
+~ $ bash ~/cfl_watch/tools/fix_perms_and_crlf.sh ~/cfl_watch
+[*] Fix CRLF + permissions under /data/data/com.termux/files/home/cfl_watch
 [*] Done
-~ $ bash /sdcard/cfl_watch/tools/self_check.sh
+~ $ bash ~/cfl_watch/tools/self_check.sh
 [*] Log: /sdcard/cfl_watch/logs/2026-01-02_13-47-12_self_check.log
-[*] Base: /sdcard/cfl_watch
+[*] Code dir: /data/data/com.termux/files/home/cfl_watch
+[*] Artifacts: /sdcard/cfl_watch (runs=/sdcard/cfl_watch/runs logs=/sdcard/cfl_watch/logs)
 [*] Serial: 127.0.0.1:37099
 [*] Package: de.hafas.android.cfl
 [!] Device NOT reachable on 127.0.0.1:37099
