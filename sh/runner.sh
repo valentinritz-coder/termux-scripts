@@ -1,4 +1,3 @@
-cat > /sdcard/cfl_watch/runner.sh <<'SH'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
@@ -52,7 +51,3 @@ for cmd in "${SCENARIOS[@]}"; do
 done
 
 echo "[*] Done. LOG=$LOG"
-SH
-
-chmod +x /sdcard/cfl_watch/runner.sh
-sed -i 's/\r$//' /sdcard/cfl_watch/runner.sh 2>/dev/null || true
