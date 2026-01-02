@@ -1,4 +1,3 @@
-cat > /sdcard/cfl_watch/scenario_trip_lux_arlon.sh <<'SH'
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
@@ -172,7 +171,6 @@ fi
 
 echo "[!] Scenario may have failed (no results markers found)"
 exit 1
-SH
 
 chmod +x /sdcard/cfl_watch/scenario_trip_lux_arlon.sh
 sed -i 's/\r$//' /sdcard/cfl_watch/scenario_trip_lux_arlon.sh 2>/dev/null || true
