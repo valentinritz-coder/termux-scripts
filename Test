@@ -1,4 +1,14 @@
-chmod +x /sdcard/cfl_watch/runner.sh /sdcard/cfl_watch/console.sh
-chmod +x /sdcard/cfl_watch/lib/*.sh
-chmod +x /sdcard/cfl_watch/scenarios/*.sh
-chmod +x /sdcard/cfl_watch/tools/*.sh
+ls -la /sdcard/cfl_watch/runner.sh /sdcard/cfl_watch/lib/adb_local.sh /sdcard/cfl_watch/tools/self_check.sh
+
+bash /sdcard/cfl_watch/tools/fix_perms_and_crlf.sh /sdcard/cfl_watch
+
+
+bash /sdcard/cfl_watch/tools/self_check.sh
+
+ADB_TCP_PORT=37099 bash /sdcard/cfl_watch/lib/adb_local.sh start
+
+
+ADB_TCP_PORT=37099 SNAP_MODE=1 bash /sdcard/cfl_watch/runner.sh
+
+ADB_TCP_PORT=37099 SNAP_MODE=0 bash /sdcard/cfl_watch/runner.sh
+
