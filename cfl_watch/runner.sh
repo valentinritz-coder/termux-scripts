@@ -33,6 +33,7 @@ Usage: ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" [options]
 --dry-run           Log actions without input events
 --list              Show bundled scenarios and exit
 --check             Run self-check and exit
+--instruction) LLM_INSTRUCTION="$2"; shift 2 ;;
 EOF
 }
 
@@ -50,6 +51,9 @@ SCENARIOS=(
 CUSTOM_START=""
 CUSTOM_TARGET=""
 CUSTOM_SNAP_MODE=""
+
+LLM_INSTRUCTION="${LLM_INSTRUCTION:-}"
+
 
 latest_run(){
   ensure_dirs
@@ -141,6 +145,7 @@ run_one(){
     DELAY_PICK="$d_pick" \
     DELAY_SEARCH="$d_search" \
     CFL_DRY_RUN="$CFL_DRY_RUN" \
+    LLM_INSTRUCTION="$LLM_INSTRUCTION" \
     bash "$CFL_SCENARIO_SCRIPT"
   local rc=$?
   set -e
@@ -160,6 +165,16 @@ run_one(){
 }
 
 fail_count=0
+
+if [ -n "$LLM_INSTRUCTION" ]; then
+  CFL_SCENARIO_SCRIPT="$CFL_CODE_DIR/scenarios/scenario_llm_explore.sh"
+  # utilise des placeholders, runner exige start/target pour logger
+  run_one "LLM" "LLM" "${CUSTOM_SNAP_MODE:-3}" \
+    "$DELAY_LAUNCH" "$DELAY_TAP" "$DELAY_TYPE" "$DELAY_PICK" "$DELAY_SEARCH" \
+    || fail_count=$((fail_count+1))
+  log "Done. fail_count=$fail_count"
+  exit 0
+fi
 
 if [ -n "$CUSTOM_START" ] || [ -n "$CUSTOM_TARGET" ]; then
   [ -n "$CUSTOM_START" ] || die "--start required"
