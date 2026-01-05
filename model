@@ -11,6 +11,19 @@ cd ~/src/llama.cpp
 
 curl -m 2 -sS http://127.0.0.1:8001/v1/models | head
 
+--
+
+curl -m 180 -sS http://127.0.0.1:8001/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer dummy" \
+  -d '{
+    "model":"local-model",
+    "messages":[{"role":"user","content":"Réponds UNIQUEMENT: {\"warmup\":true}"}],
+    "temperature":0,
+    "max_tokens":32
+  }' | head -c 400 ; echo
+
+
 ---
 
 cd ~/cfl_watch
