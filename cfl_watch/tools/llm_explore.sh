@@ -40,6 +40,9 @@ log "SNAP_DIR=$SNAP_DIR"
 dump_path="$CFL_TMP_DIR/live_dump.xml"
 kill_switch="/sdcard/cfl_watch/STOP"
 
+maybe cfl_launch
+sleep_s 1.0
+
 for step in $(seq 1 30); do
   if inject test -f "$kill_switch" >/dev/null 2>&1; then
     warn "Kill switch detected ($kill_switch), stopping loop."
