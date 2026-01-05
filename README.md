@@ -131,6 +131,17 @@ ADB_TCP_PORT=37099 SNAP_MODE=3 bash "$HOME/cfl_watch/runner.sh" \
   --start "LUXEMBOURG" --target "ARLON"
 ```
 
+#### Run one trip with LLM
+```bash
+export OPENAI_BASE_URL=http://127.0.0.1:8001
+export OPENAI_API_KEY=dummy
+export LLM_MODEL=local-model
+export SNAP_MODE=3
+export LLM_DEBUG_TAP=1
+
+bash runner.sh --instruction "Ouvre CFL et fais un itinéraire Luxembourg -> Arlon"
+```
+
 ---
 
 ## Viewers
