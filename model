@@ -21,3 +21,28 @@ bash tools/llm_explore.sh "Ouvre CFL, cherche un trajet Luxembourg -> Arlon"
 ----
 
 touch /sdcard/cfl_watch/STOP
+
+
+---
+
+$ llama-server \
+  -m /sdcard/cfl_watch/models/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  --host 127.0.0.1 --port 8000 \
+  -c 2048 -t 4 \
+  --alias local-model
+main: n_parallel is set to auto, using n_parallel = 4 and kv_unified = true
+build: 7631 (eadc4184c) with Clang 21.1.8 for Android aarch64
+system info: n_threads = 4, n_threads_batch = 4, total_threads = 8
+
+system_info: n_threads = 4 (n_threads_batch = 4) / 8 | CPU : NEON = 1 | ARM_FMA = 1 | FP16_VA = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 |
+
+init: using 7 threads for HTTP server
+start: binding port with default address family
+start: couldn't bind HTTP server socket, hostname: 127.0.0.1, port: 8000
+srv    operator(): operator(): cleaning up before exit...
+main: exiting due to HTTP server error
+~ $
+                                                        
+
+
+
