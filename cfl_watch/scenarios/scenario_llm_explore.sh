@@ -62,16 +62,21 @@ dump_ui(){
   inject rm -f "$dump_path" >/dev/null 2>&1 || true
   inject uiautomator dump --compressed "$dump_path" 2>&1 | sed 's/^/[uia] /' >&2 || true
 
+  # présence + taille (côté device)
   if ! inject test -s "$dump_path" >/dev/null 2>&1; then
     warn "UI dump missing/empty: $dump_path"
     return 1
   fi
-  if ! inject grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
+
+  # validation du contenu (côté Termux, car /sdcard est lisible localement)
+  if ! grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
     warn "UI dump invalid (no <hierarchy): $dump_path"
     return 1
   fi
+
   return 0
 }
+
 
 log "Instruction: $instruction"
 log "CFL_TMP_DIR=$CFL_TMP_DIR"
