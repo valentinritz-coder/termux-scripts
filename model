@@ -6,35 +6,16 @@ cd ~/src/llama.cpp
   --alias local-model
 
 
+----
 
---
-
-curl -m 2 -sS http://127.0.0.1:8001/v1/models | head
-
---
-
-curl -m 180 -sS http://127.0.0.1:8001/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer dummy" \
-  -d '{
-    "model":"local-model",
-    "messages":[{"role":"user","content":"Réponds UNIQUEMENT: {\"warmup\":true}"}],
-    "temperature":0,
-    "max_tokens":32
-  }' | head -c 400 ; echo
-
-
----
 
 cd ~/cfl_watch
 export OPENAI_BASE_URL=http://127.0.0.1:8001
 export OPENAI_API_KEY=dummy
 export LLM_MODEL=local-model
-export SNAP_MODE=3
-
------
-
-echo "BASE_URL=$OPENAI_BASE_URL MODEL=$LLM_MODEL"
+export OPENAI_TIMEOUT=180
+export LLM_MAX_TOKENS=128
+export LLM_TEMPERATURE=0
 
 
 ---
