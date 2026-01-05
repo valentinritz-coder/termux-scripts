@@ -3,9 +3,32 @@ cmake --build build -j 4 --target llama-server
 
 ----------
 
+~/src/llama.cpp $ cd /data/data/com.termux/files/home/src/llama.cpp
+~/src/llama.cpp $ cmake --build build -j 4 --target llama-server
+[  0%] Built target build_info
+[  4%] Built target ggml-base
+[  4%] Built target cpp-httplib
+[ 12%] Built target ggml-cpu
+[ 14%] Built target ggml
+[ 78%] Built target llama
+[ 86%] Built target mtmd
+[ 96%] Built target common
+[ 98%] Built target server-context
+[ 98%] Building CXX object tools/server/CMakeFiles/llama-server.dir/server-models.cpp.o
+In file included from /data/data/com.termux/files/home/src/llama.cpp/tools/server/server-models.cpp:8:
+/data/data/com.termux/files/home/src/llama.cpp/common/../vendor/sheredom/subprocess.h:234:10: fatal error:
+      'spawn.h' file not found
+  234 | #include <spawn.h>
+      |          ^~~~~~~~~
+1 error generated.
+make[3]: *** [tools/server/CMakeFiles/llama-server.dir/build.make:115: tools/server/CMakeFiles/llama-server.dir/server-models.cpp.o] Error 1
+make[2]: *** [CMakeFiles/Makefile2:5124: tools/server/CMakeFiles/llama-server.dir/all] Error 2
+make[1]: *** [CMakeFiles/Makefile2:5131: tools/server/CMakeFiles/llama-server.dir/rule] Error 2
+make: *** [Makefile:1570: llama-server] Error 2
+~/src/llama.cpp $
 
 
-
+---
 
 common.cpp.o
 In file included from /data/data/com.termux/files/home/src/llama.cpp/common/chat.cpp:10:
