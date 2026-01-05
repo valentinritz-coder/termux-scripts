@@ -229,7 +229,7 @@ def call_llm(prompt: str, model: str) -> dict:
         },
     }
 
-    r = requests.post(url, json=payload, timeout=60)
+    r = requests.post(url, json=payload, timeout=(5, 300))
     r.raise_for_status()
     data = r.json()
 
