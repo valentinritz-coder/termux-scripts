@@ -1,6 +1,18 @@
 cmake --build build -j 4 --target llama-server
 
 
+---
+
+pkg update -y
+pkg install -y libandroid-spawn
+--
+ls -l $PREFIX/include/spawn.h
+--
+cmake --build build -j 4 --target llama-server
+--
+find build -type f -name "llama-server" -perm -111 2>/dev/null
+
+
 ----------
 
 ~/src/llama.cpp $ cd /data/data/com.termux/files/home/src/llama.cpp
