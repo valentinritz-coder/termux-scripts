@@ -9,7 +9,7 @@ CFL_BASE_DIR="$CFL_CODE_DIR"
 CFL_ARTIFACT_DIR="$(expand_tilde_path "${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}")"
 CFL_DEFAULT_PORT="${ADB_TCP_PORT:-37099}"
 CFL_DEFAULT_HOST="${ADB_HOST:-127.0.0.1}"
-CFL_SCENARIO_SCRIPT="${CFL_SCENARIO_SCRIPT:-$CFL_CODE_DIR/scenarios/scenario_trip_lux_arlon.sh}"
+CFL_SCENARIO_SCRIPT="${CFL_SCENARIO_SCRIPT:-$CFL_CODE_DIR/scenarios/scenario_trip.sh}"
 CFL_SCENARIO_SCRIPT="$(expand_tilde_path "$CFL_SCENARIO_SCRIPT")"
 CFL_DRY_RUN="${CFL_DRY_RUN:-0}"
 
@@ -24,7 +24,7 @@ DELAY_SEARCH="${DELAY_SEARCH:-0.80}"
 usage(){
   cat <<'EOF'
 Usage: ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" [options]
---scenario PATH     Scenario script (default: scenarios/scenario_trip_lux_arlon.sh)
+--scenario PATH     Scenario script (default: scenarios/scenario_trip.sh)
 --start TEXT        Override start location (single-run mode)
 --target TEXT       Override destination (single-run mode)
 --snap-mode N       Override SNAP_MODE for single run (0-3)
@@ -39,12 +39,12 @@ EOF
 print_list(){
   cat <<'EOF'
 Bundled scenarios (START|TARGET|SNAP_MODE|DELAY_LAUNCH|DELAY_TAP|DELAY_TYPE|DELAY_PICK|DELAY_SEARCH):
-LUXEMBOURG|ARLON|1|1.0|0.20|0.30|0.25|0.80
+LUXEMBOURG|ARLON|3|1.0|0.20|0.30|0.25|0.80
 EOF
 }
 
 SCENARIOS=(
-  "LUXEMBOURG|ARLON|1|1.0|0.20|0.30|0.25|0.80"
+  "LUXEMBOURG|ARLON|3|1.0|0.20|0.30|0.25|0.80"
 )
 
 CUSTOM_START=""
