@@ -1,0 +1,68 @@
+[*] Log: /sdcard/cfl_watch/logs/2026-01-05_14-02-45_runner.log
+[*] Start ADB local on 127.0.0.1:37099
+[*] Activation ADB TCP sur 127.0.0.1:37099 (root)
+[*] Redémarrage adbd
+[*] Attente adbd=running
+[*] adb connect (retry) -> 127.0.0.1:37099
+[*] connected to 127.0.0.1:37099
+[*] getprop:
+37099
+running
+[*] adb devices -l:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Tip: export ANDROID_SERIAL=127.0.0.1:37099
+[*] Device list:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] === RUN: LLM -> LLM (SNAP_MODE=3) ===
+[*] SNAP_DIR=/sdcard/cfl_watch/runs/2026-01-05_14-02-56_llm_explore_Ouvre_CFL_et_fais_un_itinraire_Luxembourg_-_Arlon (SNAP_MODE=3)
+[*] Instruction: Ouvre CFL et fais un itinéraire Luxembourg -> Arlon
+[*] CFL_TMP_DIR=/sdcard/cfl_watch/tmp
+[*] SNAP_DIR=/sdcard/cfl_watch/runs/2026-01-05_14-02-56_llm_explore_Ouvre_CFL_et_fais_un_itinraire_Luxembourg_-_Arlon
+[*] Kill switch: /sdcard/cfl_watch/STOP
+[*] Steps: 30, sleep=0.5
+[uia] UI hierchary dumped to: /sdcard/cfl_watch/tmp/live_dump.xml
+[*] snap: 14-02-59_00_state (mode=3)
+[*] Step 1: dump UI
+[uia] UI hierchary dumped to: /sdcard/cfl_watch/tmp/live_dump.xml
+[*] snap: 14-03-05_01 (mode=3)
+[*] Calling LLM explorer
+[*] State summary ready
+[*] Nodes: total=25 clickable=11 (showing 25)
+Use center coordinates for taps; prefer clickable + enabled elements.
+[4] android.widget.ImageButton | id=- | text=- | desc=Show navigation drawer | click=True | enabled=True | center=(77,154) | bounds=[0,77][154,231]
+[9] android.widget.TextView | id=de.hafas.android.cfl:id/input_start | text=Select start | desc=- | click=True | enabled=True | center=(518,407) | bounds=[154,341][882,473]
+[10] android.widget.ImageButton | id=de.hafas.android.cfl:id/button_current_position | text=- | desc=Set current position as start | click=True | enabled=True | center=(970,406) | bounds=[926,379][1014,434]
+[11] android.widget.TextView | id=de.hafas.android.cfl:id/input_target | text=Select destination | desc=- | click=True | enabled=True | center=(518,561) | bounds=[154,495][882,627]
+[12] android.widget.ImageButton | id=de.hafas.android.cfl:id/button_search | text=- | desc=Search | click=True | enabled=True | center=(970,561) | bounds=[926,517][1014,605]
+[15] android.widget.LinearLayout | id=- | text=- | desc=Product filter TGV / ICE / IC inactive | click=True | enabled=True | center=(145,806) | bounds=[66,754][224,858]
+[16] android.widget.LinearLayout | id=- | text=- | desc=Product filter Regional trains inactive | click=True | enabled=True | center=(303,806) | bounds=[224,754][382,858]
+[17] android.widget.LinearLayout | id=- | text=- | desc=Product filter Bus / Long distance bus inactive | click=True | enabled=True | center=(461,806) | bounds=[382,754][540,858]
+[18] android.widget.LinearLayout | id=- | text=- | desc=Product filter Tram inactive | click=True | enabled=True | center=(619,806) | bounds=[540,754][698,858]
+[19] android.widget.LinearLayout | id=- | text=- | desc=Product filter Cable car inactive | click=True | enabled=True | center=(777,806) | bounds=[698,754][856,858]
+[20] android.widget.LinearLayout | id=- | text=- | desc=Product filter Favorites inactive | click=True | enabled=True | center=(935,806) | bounds=[856,754][1014,858]
+[0] android.widget.FrameLayout | id=- | text=- | desc=- | click=False | enabled=True | center=(540,1014) | bounds=[0,0][1080,2028]
+[1] androidx.drawerlayout.widget.DrawerLayout | id=de.hafas.android.cfl:id/drawer_layout | text=- | desc=- | click=False | enabled=True | center=(540,1014) | bounds=[0,0][1080,2028]
+[2] android.widget.LinearLayout | id=de.hafas.android.cfl:id/main_container | text=- | desc=- | click=False | enabled=True | center=(540,1014) | bounds=[0,0][1080,2028]
+[3] android.view.ViewGroup | id=de.hafas.android.cfl:id/toolbar | text=- | desc=- | click=False | enabled=True | center=(540,115) | bounds=[0,0][1080,231]
+[5] android.widget.TextView | id=- | text=Home | desc=- | click=False | enabled=True | center=(271,154) | bounds=[198,117][345,191]
+[6] android.widget.ScrollView | id=de.hafas.android.cfl:id/home_scroll | text=- | desc=- | click=False | enabled=True | center=(540,1129) | bounds=[0,231][1080,2028]
+[7] android.widget.LinearLayout | id=- | text=- | desc=- | click=False | enabled=True | center=(540,291) | bounds=[22,253][1058,330]
+[8] android.widget.TextView | id=de.hafas.android.cfl:id/home_module_caption_text | text=Trip Planner | desc=- | click=False | enabled=True | center=(540,291) | bounds=[66,265][1014,318]
+[13] android.widget.LinearLayout | id=- | text=- | desc=- | click=False | enabled=True | center=(540,698) | bounds=[22,660][1058,737]
+[14] android.widget.TextView | id=de.hafas.android.cfl:id/home_module_caption_text | text=Nearby Departures | desc=- | click=False | enabled=True | center=(540,698) | bounds=[66,672][1014,725]
+[21] android.widget.TextView | id=de.hafas.android.cfl:id/home_module_error_text | text=The location service is unable to determine your current position. | desc=- | click=False | enabled=True | center=(540,1229) | bounds=[22,1158][1058,1301]
+[22] android.widget.LinearLayout | id=- | text=- | desc=- | click=False | enabled=True | center=(540,1727) | bounds=[22,1689][1058,1766]
+[23] android.widget.TextView | id=de.hafas.android.cfl:id/home_module_caption_text | text=Nearby Map | desc=- | click=False | enabled=True | center=(540,1727) | bounds=[66,1701][1014,1754]
+[24] android.view.ViewGroup | id=de.hafas.android.cfl:id/view_touch_receiver | text=- | desc=Map | click=False | enabled=True | center=(540,1897) | bounds=[22,1766][1058,2028]
+[*] State JSON (debug):
+[*] {"size": {"width": 1080, "height": 2400, "total_nodes": 25, "clickable_nodes": 11}, "candidates": [{"idx": 4, "class_name": "android.widget.ImageButton", "resource_id": "", "text": "", "content_desc": "Show navigation drawer", "clickable": true, "enabled": true, "bounds": "[0,77][154,231]", "center": [77, 154]}, {"idx": 9, "class_name": "android.widget.TextView", "resource_id": "de.hafas.android.cfl:id/input_start", "text": "Select start", "content_desc": "", "clickable": true, "enabled": true, "bounds": "[154,341][882,473]", "center": [518, 407]}, {"idx": 10, "class_name": "android.widget.ImageButton", "resource_id": "de.hafas.android.cfl:id/button_current_position", "text": "", "content_desc": "Set current position as start", "clickable": true, "enabled": true, "bounds": "[926,379][1014,434]", "center": [970, 406]}, {"idx": 11, "class_name": "android.widget.TextView", "resource_id": "de.hafas.android.cfl:id/input_target", "text": "Select destination", "content_desc": "", "clickable": true, "enabled": true, "bounds": "[154,495][882,627]", "center": [518, 561]}, {"idx": 12, "class_name": "android.widget.ImageButton", "resource_id": "de.hafas.android.cfl:id/button_search", "text": "", "content_desc": "Search", "clickable": true, "enabled": true, "bounds": "[926,517][1014,605]", "center": [970, 561]}, {"idx": 15, "class_name": "android.widget.LinearLayout", "resource_id": "", "text": "", "content_desc": "Product filter TGV / ICE / IC inactive", "clickable": true, "enabled": true, "bounds": "[66,754][224,858]", "center": [145, 806]}, {"idx": 16, "class_name": "android.widget.LinearLayout", "resource_id": "", "text": "", "content_desc": "Product filter Regional trains inactive", "clickable": true, "enabled": true, "bounds": "[224,754][382,858]", "center": [303, 806]}, {"idx": 17, "class_name": "android.widget.LinearLayout", "resource_id": "", "text": "", "content_desc": "Product filter Bus / Long distance bus inactive", "clickable": true, "enabled": true, "bounds": "[382,754][540,858]", "center": [461, 806]}, {"idx": 18, "class_name": "android.widget.LinearLayout", "resource_id": "", "text": "", "content_desc": "Product filter Tram inactive", "clickable": true, "enabled": true, "bounds": "[540,754][698,858]", "center": [619, 806]}, {"idx": 19, "class_name": "android.widget.LinearLayout", "resource_id": "", "text": "", "content_desc": "Product filter Cable car inactive", "clickable": true, "enabled": true, "bounds": "[698,754][856,858]", "center": [777, 806]}, {"idx": 20, "class_name": "android.widget.LinearLayout", "resource_id": "", "text": "", "content_desc": "Product filter Favorites inactive", "clickable": true, "enabled": true, "bounds": "[856,754][1014,858]", "center": [935, 806]}, {"idx": 0, "class_name": "android.widget.FrameLayout", "resource_id": "", "text": "", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[0,0][1080,2028]", "center": [540, 1014]}, {"idx": 1, "class_name": "androidx.drawerlayout.widget.DrawerLayout", "resource_id": "de.hafas.android.cfl:id/drawer_layout", "text": "", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[0,0][1080,2028]", "center": [540, 1014]}, {"idx": 2, "class_name": "android.widget.LinearLayout", "resource_id": "de.hafas.android.cfl:id/main_container", "text": "", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[0,0][1080,2028]", "center": [540, 1014]}, {"idx": 3, "class_name": "android.view.ViewGroup", "resource_id": "de.hafas.android.cfl:id/toolbar", "text": "", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[0,0][1080,231]", "center": [540, 115]}, {"idx": 5, "class_name": "android.widget.TextView", "resource_id": "", "text": "Home", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[198,117][345,191]", "center": [271, 154]}, {"idx": 6, "class_name": "android.widget.ScrollView", "resource_id": "de.hafas.android.cfl:id/home_scroll", "text": "", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[0,231][1080,2028]", "center": [540, 1129]}, {"idx": 7, "class_name": "android.widget.LinearLayout", "resource_id": "", "text": "", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[22,253][1058,330]", "center": [540, 291]}, {"idx": 8, "class_name": "android.widget.TextView", "resource_id": "de.hafas.android.cfl:id/home_module_caption_text", "text": "Trip Planner", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[66,265][1014,318]", "center": [540, 291]}, {"idx": 13, "class_name": "android.widget.LinearLayout", "resource_id": "", "text": "", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[22,660][1058,737]", "center": [540, 698]}, {"idx": 14, "class_name": "android.widget.TextView", "resource_id": "de.hafas.android.cfl:id/home_module_caption_text", "text": "Nearby Departures", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[66,672][1014,725]", "center": [540, 698]}, {"idx": 21, "class_name": "android.widget.TextView", "resource_id": "de.hafas.android.cfl:id/home_module_error_text", "text": "The location service is unable to determine your current position.", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[22,1158][1058,1301]", "center": [540, 1229]}, {"idx": 22, "class_name": "android.widget.LinearLayout", "resource_id": "", "text": "", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[22,1689][1058,1766]", "center": [540, 1727]}, {"idx": 23, "class_name": "android.widget.TextView", "resource_id": "de.hafas.android.cfl:id/home_module_caption_text", "text": "Nearby Map", "content_desc": "", "clickable": false, "enabled": true, "bounds": "[66,1701][1014,1754]", "center": [540, 1727]}, {"idx": 24, "class_name": "android.view.ViewGroup", "resource_id": "de.hafas.android.cfl:id/view_touch_receiver", "text": "", "content_desc": "Map", "clickable": false, "enabled": true, "bounds": "[22,1766][1058,2028]", "center": [540, 1897]}]}
+[*] Action JSON: {"action": "done", "reason": "LLM parse/call error: HTTPConnectionPool(host='127.0.0.1', port=8001): Read timed out. (read timeout=60)"}
+[*] LLM -> done
+[*] llm_explore finished.
+[*] RC=0
+[*] Run artifacts: /sdcard/cfl_watch/runs/2026-01-05_14-02-56_llm_explore_Ouvre_CFL_et_fais_un_itinraire_Luxembourg_-_Arlon
+[*] Done. fail_count=0
