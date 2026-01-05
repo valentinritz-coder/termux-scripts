@@ -7,9 +7,11 @@ python -m pip install requests
 
 
 cd ~/cfl_watch
-export OPENAI_BASE_URL=http://127.0.0.1:8002
+export OPENAI_BASE_URL=http://127.0.0.1:8001
 export OPENAI_API_KEY=dummy
 export LLM_MODEL=local-model
 export SNAP_MODE=3
+export LLM_DEBUG_TAP=1
 
 bash runner.sh --instruction "Ouvre CFL et fais un itinéraire Luxembourg -> Arlon"
+
