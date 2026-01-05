@@ -127,8 +127,8 @@ def build_prompt(instruction: str, state_summary: str) -> str:
     return textwrap.dedent(
         f"""
         You control an Android app over adb (uiautomator + touch). Choose the safest next step.
-        Respond with a STRICT JSON (no code fences, no comments) shaped exactly as:
-        {"action": "tap"|"type"|"key"|"done", "x": int, "y": int, "text": string, "keycode": int, "reason": string}
+        Respond with a STRICT JSON (no code fences, no comments) like:
+        {{"action":"tap","x":518,"y":407,"text":"","keycode":null,"reason":"Tap start field"}}
         - action=tap => use center coordinates inside the target bounds (integers only)
         - action=type => fill text field; leave x/y empty
         - action=key => send Android keycode (e.g., 4 for BACK)
