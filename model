@@ -1,4 +1,7 @@
-curl -sS http://127.0.0.1:8001/v1/models | head
+cd ~/cfl_watch
+export OPENAI_BASE_URL=http://127.0.0.1:8001
+export OPENAI_API_KEY=dummy
+export LLM_MODEL=local-model
+export SNAP_MODE=3
 
-~/cfl_watch $ curl -sS http://127.0.0.1:8001/v1/models | head
-{"models":[{"name":"local-model","model":"local-model","modified_at":"","size":"","digest":"","type":"model","description":"","tags":[""],"capabilities":["completion"],"parameters":"","details":{"parent_model":"","format":"gguf","family":"","families":[""],"parameter_size":"","quantization_level":""}}],"object":"list","data":[{"id":"local-model","object":"model","created":1767613040,"owned_by":"llamacpp","meta":{"vocab_type":2,"n_vocab":151936,"n_ctx_train":32768,"n_embd":896,"n_params":630167424,"size":485452288}}]}~/cfl_watch $
+bash tools/llm_explore.sh "Ouvre CFL, cherche un trajet Luxembourg -> Arlon"
