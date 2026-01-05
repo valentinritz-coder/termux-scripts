@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
-"""Experimental LLM-driven explorer for CFL Android UI."""
+"""Experimental LLM-driven explorer for CFL Android UI.
+
+Reads a uiautomator XML dump, extracts clickable candidates, asks an LLM for the next
+safe action, and outputs a single JSON action object.
+"""
+
+from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 import re
-import ast
 import sys
 import textwrap
 from dataclasses import dataclass
@@ -18,32 +24,25 @@ import xml.etree.ElementTree as ET
 BOUNDS_RE = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 
 
-ACTION_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "action": {"type": "string", "enum": ["tap", "type", "key", "done"]},
-        "x": {"type": ["integer", "null"]},
-        "y": {"type": ["integer", "null"]},
-        "text": {"type": "string"},
-        "keycode": {"type": ["integer", "null"]},
-        "reason": {"type": "string"},
-    },
-    "required": ["action"],
-    "additionalProperties": True,
-}
+def log(msg: str) -> None:
+    print(f"[*] {msg}", file=sys.stderr)
+
+
+def warn(msg: str) -> None:
+    print(f"[!] {msg}", file=sys.stderr)
+
 
 def _norm_base(url: str) -> str:
+    """Normalize base URL, removing trailing / and optional /v1 suffix."""
     url = (url or "").rstrip("/")
     if url.endswith("/v1"):
         url = url[:-3]
     return url
-    
-def _api_base() -> str:
-    base = os.environ.get("OPENAI_BASE_URL", "http://127.0.0.1:8001").rstrip("/")
-    # Certains mettent déjà /v1, d'autres non
-    if base.endswith("/v1"):
-        return base
-    return base + "/v1"
+
+
+def _chat_completions_url() -> str:
+    base = _norm_base(os.getenv("OPENAI_BASE_URL", "http://127.0.0.1:8001"))
+    return f"{base}/v1/chat/completions"
 
 
 @dataclass
@@ -71,14 +70,6 @@ class Candidate:
             f"bounds={self.bounds or '-'}",
         ]
         return " | ".join(parts)
-
-
-def log(msg: str) -> None:
-    print(f"[*] {msg}", file=sys.stderr)
-
-
-def warn(msg: str) -> None:
-    print(f"[!] {msg}", file=sys.stderr)
 
 
 def parse_bounds(raw: Optional[str]) -> Optional[Tuple[int, int, int, int]]:
@@ -109,6 +100,7 @@ def extract_candidates(xml_path: str, limit: int = 80) -> Tuple[List[Candidate],
             x1, y1, x2, y2 = parsed
             center = ((x1 + x2) // 2, (y1 + y2) // 2)
             max_x, max_y = max(max_x, x2), max(max_y, y2)
+
         candidates.append(
             Candidate(
                 idx=idx,
@@ -152,52 +144,76 @@ def build_state_summary(candidates: List[Candidate], size: Dict[str, int]) -> Tu
     return state_summary, state_json
 
 
-def build_prompt(instruction: str, state_summary: str) -> str:
+def compact_state(state_json: Dict, max_candidates: int = 12, maxlen: int = 80) -> Dict:
+    """Keep only clickable+enabled candidates and clip text/desc to keep prompts small."""
+    def clip(s: str) -> str:
+        s = (s or "")
+        return s if len(s) <= maxlen else s[: maxlen - 1] + "…"
+
+    out = []
+    for c in state_json.get("candidates", []):
+        if c.get("clickable") and c.get("enabled"):
+            out.append(
+                {
+                    "idx": c.get("idx"),
+                    "id": c.get("resource_id", "") or "",
+                    "text": clip(c.get("text", "") or ""),
+                    "desc": clip(c.get("content_desc", "") or ""),
+                    "center": c.get("center"),
+                }
+            )
+
+    return {"size": state_json.get("size", {}), "candidates": out[:max_candidates]}
+
+
+def build_prompt(instruction: str, compact_ui_json_text: str) -> str:
     return textwrap.dedent(
         f"""
-        You control an Android app over adb (uiautomator + touch). Choose the safest next step.
-        Respond with a STRICT JSON (no code fences, no comments) like:
+        You control an Android app over adb (uiautomator dump + touch + key events).
+        Choose the SAFEST next step towards the goal.
+
+        Output MUST be a single STRICT JSON object (no markdown, no code fences, no extra text).
+        Example:
         {{"action":"tap","x":518,"y":407,"text":"","keycode":null,"reason":"Tap start field"}}
-        - action=tap => use center coordinates inside the target bounds (integers only)
-        - action=type => fill text field; leave x/y empty
-        - action=key => send Android keycode (e.g., 4 for BACK)
-        - action=done => goal reached or blocked
-        Rules: stay inside screen bounds, avoid risky taps like (0,0), prefer clickable & enabled nodes, keep moves deterministic.
 
-        Instruction: {instruction}
+        Allowed actions:
+        - tap: tap at integer x/y (use the provided "center" coords; stay within screen bounds; avoid (0,0))
+        - type: provide "text" only (x/y null)
+        - key: provide Android keycode only (e.g., 4 for BACK)
+        - done: if goal reached or blocked
 
-        Current UI (summarized):
-        {state_summary}
+        Rules:
+        - Prefer clickable AND enabled candidates.
+        - Be deterministic. Do not guess coordinates not present in candidates.
+        - Keep reason short.
+
+        Goal: {instruction}
+
+        Current UI (compact JSON):
+        {compact_ui_json_text}
         """
     ).strip()
 
 
-def _strip_code_fences(text: str) -> str:
-    if text.startswith("```"):
-        text = re.sub(r"^```[a-zA-Z0-9]*\s*", "", text)
-        text = re.sub(r"```\s*$", "", text)
-    return text.strip()
-
-
-def parse_llm_response(content: str) -> dict:
+def parse_llm_response(content: str) -> Dict:
     if content is None:
         raise ValueError("LLM content empty")
 
     s = content.strip()
 
-    # enlève ```json ... ```
+    # Remove ```json fences if any
     s = re.sub(r"^```(?:json)?\s*|\s*```$", "", s, flags=re.IGNORECASE | re.DOTALL).strip()
 
-    # récupère le premier {...} si le modèle bavarde
+    # Extract the first {...} block if the model babbles
     m = re.search(r"\{.*\}", s, flags=re.DOTALL)
     if m:
         s = m.group(0).strip()
 
-    # 1) vrai JSON
+    # 1) Strict JSON
     try:
         obj = json.loads(s)
     except Exception:
-        # 2) parfois Qwen renvoie un dict Python avec quotes simples -> ast.literal_eval
+        # 2) Some local models answer with Python dict-like text
         try:
             obj = ast.literal_eval(s)
         except Exception as e:
@@ -208,62 +224,70 @@ def parse_llm_response(content: str) -> dict:
 
     return obj
 
-def safe_action_from_error(err: Exception) -> dict:
+
+def safe_action_from_error(err: Exception) -> Dict:
     return {"action": "done", "reason": f"LLM parse/call error: {err}"}
-    
-def call_llm(prompt: str, model: str) -> dict:
-    base = _norm_base(os.getenv("OPENAI_BASE_URL", "http://127.0.0.1:8001"))
+
+
+def _post_json(url: str, headers: Dict[str, str], payload: Dict, timeout: float) -> Dict:
+    r = requests.post(url, headers=headers, json=payload, timeout=timeout)
+    if not r.ok:
+        raise RuntimeError(f"LLM HTTP {r.status_code}: {r.text[:2000]}")
+    return r.json()
+
+
+def call_llm(prompt: str, model: str) -> Dict:
+    url = _chat_completions_url()
     api_key = os.getenv("OPENAI_API_KEY", "dummy")
-    url = f"{base}/v1/chat/completions"
 
     timeout = float(os.getenv("OPENAI_TIMEOUT", "180"))
     max_tokens = int(os.getenv("LLM_MAX_TOKENS", "128"))
     temperature = float(os.getenv("LLM_TEMPERATURE", "0"))
 
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+
+    system = (
+        "You are an automation planner.\n"
+        "Return ONLY a single JSON object, no markdown, no extra text.\n"
+        "Use double quotes.\n"
+        "Schema: {\"action\":\"tap|type|key|done\",\"x\":int|null,\"y\":int|null,"
+        "\"text\":string,\"keycode\":int|null,\"reason\":string}\n"
+        "If unsure, return {\"action\":\"done\",\"reason\":\"...\"}."
+    )
+
     payload = {
         "model": model,
         "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are an automation planner.\n"
-                    "Return ONLY a single JSON object, no markdown, no extra text.\n"
-                    "Use double quotes.\n"
-                    "Schema: {\"action\":\"tap|type|key|done\",\"x\":int,\"y\":int,"
-                    "\"text\":string,\"keycode\":int|null,\"reason\":string}\n"
-                    "If unsure, return {\"action\":\"done\",\"reason\":\"...\"}."
-                ),
-            },
+            {"role": "system", "content": system},
             {"role": "user", "content": prompt},
         ],
         "temperature": temperature,
         "max_tokens": max_tokens,
         "stream": False,
-        # llama-server ignore peut-être response_format, mais ça ne casse rien :
+        # Some servers support it, others crash on it. We'll retry without if needed.
         "response_format": {"type": "json_object"},
-        # Optionnel: stop dès que ça ferme l’objet (ça aide certains modèles)
-        "stop": ["\n\n", "```"],
+        # "stop" is often counter-productive; keep it out by default.
     }
 
-    r = requests.post(
-        url,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
-        json=payload,
-        timeout=timeout,
-    )
-    r.raise_for_status()
-    data = r.json()
+    # Attempt 1: with response_format
+    try:
+        data = _post_json(url, headers, payload, timeout=timeout)
+    except RuntimeError as e:
+        # Attempt 2: remove fields that many local servers reject
+        warn(f"First LLM call failed, retrying without response_format. err={e}")
+        payload2 = dict(payload)
+        payload2.pop("response_format", None)
+        data = _post_json(url, headers, payload2, timeout=timeout)
 
     # OpenAI-chat style
     content = ""
     try:
         content = data["choices"][0]["message"].get("content") or ""
     except Exception:
-        # fallback (au cas où)
-        content = data["choices"][0].get("text") or ""
+        content = data.get("choices", [{}])[0].get("text") or ""
 
     return parse_llm_response(content)
 
@@ -287,14 +311,17 @@ def validate_action(action: Dict, size: Dict[str, int]) -> Dict:
         try:
             x = int(action.get("x"))
             y = int(action.get("y"))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise ValueError("Tap requires integer x/y") from exc
+
         max_x = max(1, int(size.get("width", 1080)))
         max_y = max(1, int(size.get("height", 2400)))
+
         if x <= 0 or y <= 0:
             raise ValueError("Tap coordinates must be positive and non-zero")
         if x > max_x or y > max_y:
             raise ValueError("Tap coordinates outside screen bounds")
+
         safe["x"], safe["y"] = x, y
 
     elif act == "type":
@@ -306,7 +333,7 @@ def validate_action(action: Dict, size: Dict[str, int]) -> Dict:
     elif act == "key":
         try:
             safe["keycode"] = int(action.get("keycode"))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise ValueError("Key action requires numeric keycode") from exc
 
     return safe
@@ -318,27 +345,43 @@ def main() -> int:
     parser.add_argument("--xml", required=True, help="Path to uiautomator dump XML")
     parser.add_argument("--model", default=os.environ.get("LLM_MODEL", "local-model"))
     parser.add_argument("--limit", type=int, default=80, help="Max candidates to surface")
+    parser.add_argument("--compact-candidates", type=int, default=int(os.getenv("LLM_UI_MAX_CANDIDATES", "12")))
+    parser.add_argument("--compact-maxlen", type=int, default=int(os.getenv("LLM_UI_MAXLEN", "80")))
+    parser.add_argument("--debug-full-summary", action="store_true", help="Log full state summary (can be huge)")
     args = parser.parse_args()
 
     candidates, size = extract_candidates(args.xml, limit=args.limit)
     state_summary, state_json = build_state_summary(candidates, size)
 
-    log("State summary ready")
-    log(state_summary)
-    log("State JSON (debug):")
-    log(json.dumps(state_json, ensure_ascii=False))
+    compact = compact_state(state_json, max_candidates=args.compact_candidates, maxlen=args.compact_maxlen)
+    compact_text = json.dumps(compact, ensure_ascii=False, indent=2)
 
-    prompt = build_prompt(args.instruction, state_summary)
+    log("State ready")
+    if args.debug_full_summary:
+        log(state_summary)
+    log("State JSON compact (debug):")
+    log(compact_text)
+
+    prompt = build_prompt(args.instruction, compact_text)
+
+    log(f"LLM endpoint: {_chat_completions_url()}")
+    log(f"Prompt chars={len(prompt)}")
+
     try:
         raw_action = call_llm(prompt, args.model)
     except Exception as e:
         print(json.dumps(safe_action_from_error(e), ensure_ascii=False))
         return 0
+
     log(f"Raw LLM response: {raw_action}")
 
-    action = validate_action(raw_action, size)
-    log(f"Validated action: {action}")
+    try:
+        action = validate_action(raw_action, size)
+    except Exception as e:
+        print(json.dumps(safe_action_from_error(e), ensure_ascii=False))
+        return 0
 
+    log(f"Validated action: {action}")
     print(json.dumps(action, ensure_ascii=False))
     return 0
 
