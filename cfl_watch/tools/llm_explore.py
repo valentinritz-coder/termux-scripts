@@ -32,6 +32,12 @@ ACTION_SCHEMA = {
     "additionalProperties": True,
 }
 
+def _norm_base(url: str) -> str:
+    url = (url or "").rstrip("/")
+    if url.endswith("/v1"):
+        url = url[:-3]
+    return url
+    
 def _api_base() -> str:
     base = os.environ.get("OPENAI_BASE_URL", "http://127.0.0.1:8001").rstrip("/")
     # Certains mettent déjà /v1, d'autres non
@@ -174,72 +180,90 @@ def _strip_code_fences(text: str) -> str:
 
 
 def parse_llm_response(content: str) -> dict:
-    raw = (content or "").strip()
+    if content is None:
+        raise ValueError("LLM content empty")
 
-    # enlève fences ```json ... ```
-    if raw.startswith("```"):
-        raw = re.sub(r"^```[a-zA-Z0-9_-]*\s*", "", raw)
-        raw = re.sub(r"\s*```$", "", raw).strip()
+    s = content.strip()
 
-    # essaie d'extraire un objet JSON au milieu d'un blabla
-    m = re.search(r"(\{.*\})", raw, flags=re.S)
-    candidate = m.group(1).strip() if m else raw
+    # enlève ```json ... ```
+    s = re.sub(r"^```(?:json)?\s*|\s*```$", "", s, flags=re.IGNORECASE | re.DOTALL).strip()
 
-    # 1) JSON strict
+    # récupère le premier {...} si le modèle bavarde
+    m = re.search(r"\{.*\}", s, flags=re.DOTALL)
+    if m:
+        s = m.group(0).strip()
+
+    # 1) vrai JSON
     try:
-        obj = json.loads(candidate)
-        if isinstance(obj, dict):
-            return obj
+        obj = json.loads(s)
     except Exception:
-        pass
+        # 2) parfois Qwen renvoie un dict Python avec quotes simples -> ast.literal_eval
+        try:
+            obj = ast.literal_eval(s)
+        except Exception as e:
+            raise ValueError(f"LLM response is not valid JSON: {e}")
 
-    # 2) “presque JSON” (quotes simples, None, etc.)
-    try:
-        obj = ast.literal_eval(candidate)
-        if isinstance(obj, dict):
-            return obj
-    except Exception:
-        pass
+    if not isinstance(obj, dict):
+        raise ValueError("LLM response did not produce an object")
 
-    raise ValueError("LLM response is not valid JSON")
+    return obj
 
 def safe_action_from_error(err: Exception) -> dict:
     return {"action": "done", "reason": f"LLM parse/call error: {err}"}
     
 def call_llm(prompt: str, model: str) -> dict:
-    url = _api_base() + "/chat/completions"
+    base = _norm_base(os.getenv("OPENAI_BASE_URL", "http://127.0.0.1:8001"))
+    api_key = os.getenv("OPENAI_API_KEY", "dummy")
+    url = f"{base}/v1/chat/completions"
+
+    timeout = float(os.getenv("OPENAI_TIMEOUT", "180"))
+    max_tokens = int(os.getenv("LLM_MAX_TOKENS", "128"))
+    temperature = float(os.getenv("LLM_TEMPERATURE", "0"))
 
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": (
-                "Tu es un contrôleur UI. "
-                "Réponds UNIQUEMENT avec un objet JSON valide (double quotes). "
-                "Aucun texte hors JSON."
-            )},
+            {
+                "role": "system",
+                "content": (
+                    "You are an automation planner.\n"
+                    "Return ONLY a single JSON object, no markdown, no extra text.\n"
+                    "Use double quotes.\n"
+                    "Schema: {\"action\":\"tap|type|key|done\",\"x\":int,\"y\":int,"
+                    "\"text\":string,\"keycode\":int|null,\"reason\":string}\n"
+                    "If unsure, return {\"action\":\"done\",\"reason\":\"...\"}."
+                ),
+            },
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0,
-        "top_p": 1,
-        "max_tokens": 256,
-        # Forçage JSON côté llama-server
-        "response_format": {
-            "type": "json_object",
-            "schema": ACTION_SCHEMA,
-        },
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": False,
+        # llama-server ignore peut-être response_format, mais ça ne casse rien :
+        "response_format": {"type": "json_object"},
+        # Optionnel: stop dès que ça ferme l’objet (ça aide certains modèles)
+        "stop": ["\n\n", "```"],
     }
 
-    r = requests.post(url, json=payload, timeout=(5, 300))
+    r = requests.post(
+        url,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        json=payload,
+        timeout=timeout,
+    )
     r.raise_for_status()
     data = r.json()
 
-    # Compat chat vs completions
-    choice0 = (data.get("choices") or [{}])[0]
+    # OpenAI-chat style
     content = ""
-    if isinstance(choice0.get("message"), dict):
-        content = choice0["message"].get("content") or ""
-    if not content:
-        content = choice0.get("text") or ""
+    try:
+        content = data["choices"][0]["message"].get("content") or ""
+    except Exception:
+        # fallback (au cas où)
+        content = data["choices"][0].get("text") or ""
 
     return parse_llm_response(content)
 
