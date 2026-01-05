@@ -128,7 +128,7 @@ run_one(){
   cfl_force_stop
   sleep_s 0.7
   cfl_launch
-  sleep_s 0.7
+  sleep_s 5
 
   local before_latest after_latest
   before_latest="$(latest_run_dir)"
