@@ -22,16 +22,16 @@ DELAY_TYPE="${DELAY_TYPE:-0.30}"
 DELAY_PICK="${DELAY_PICK:-0.25}"
 DELAY_SEARCH="${DELAY_SEARCH:-0.80}"
 
+: "${CFL_TMP_DIR:=/sdcard/cfl_watch/tmp}"
+
 dump_ui(){
-  : "${CFL_TMP_DIR:="$CFL_BASE_DIR/tmp"}"   # fallback au cas où
   local dump_path="$CFL_TMP_DIR/live_dump.xml"
 
-  mkdir -p "$CFL_TMP_DIR"
+  inject mkdir -p "$CFL_TMP_DIR" >/dev/null 2>&1 || true
+  inject rm -f "$dump_path" >/dev/null 2>&1 || true
 
-  # Laisse TEMPORAIREMENT les erreurs visibles (au moins en debug)
-  inject uiautomator dump --compressed "$dump_path" >/dev/null 2>&1 || true
+  inject uiautomator dump --compressed "$dump_path" 2>&1 | sed 's/^/[uia] /' >&2 || true
 
-  # Sanity checks côté appareil (via inject)
   if ! inject test -s "$dump_path" >/dev/null 2>&1; then
     warn "UI dump absent/vide: $dump_path"
   elif ! inject grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
@@ -40,7 +40,6 @@ dump_ui(){
 
   printf '%s' "$dump_path"
 }
-
 
 node_center(){
   local dump="$1"; shift
