@@ -15,7 +15,9 @@ CFL_BASE_DIR="$CFL_CODE_DIR" # backward compatibility alias
 CFL_ARTIFACT_DIR="$(expand_tilde_path "$_raw_artifact_dir")"
 CFL_LOG_DIR="$CFL_ARTIFACT_DIR/logs"
 CFL_RUNS_DIR="$CFL_ARTIFACT_DIR/runs"
-CFL_TMP_DIR="$CFL_CODE_DIR/tmp"
+# tmp must be writable by adb shell for uiautomator dumps.
+# Default to sdcard, but allow override from env.
+CFL_TMP_DIR="$(expand_tilde_path "${CFL_TMP_DIR:-$CFL_ARTIFACT_DIR/tmp}")"
 CFL_SCENARIO_DIR="$CFL_CODE_DIR/scenarios"
 CFL_VIEWER_DIR_NAME="viewers"
 
