@@ -12,6 +12,10 @@ cd ~/src
 git clone https://github.com/ggml-org/llama.cpp
 cd llama.cpp
 
+
+
+/data/data/com.termux/files/home/src/llama.cpp
+
 # Configure en forçant le serveur
 cmake -S . -B build \
   -DCMAKE_BUILD_TYPE=Release \
