@@ -2,13 +2,11 @@
 """
 LLM-driven Android UI explorer (CFL) with guardrails.
 
-Key improvements vs your draft:
-- Removes duplicated code + fixes undefined variable bugs.
-- Extracts richer node attrs (package, focused, focusable) to detect "typing" states.
-- Detects UI phase (journey form vs picking start/destination).
-- Adds rule-based "fast path" to prevent dumb loops (select visible Luxembourg/Arlon).
-- De-prioritizes / ignores keyboard (IME) keys to stop tapping ESC like a maniac.
-- Stronger prompt context (targets + phase + safety rules).
+Discipline upgrades (the point):
+- Objective + constraints + state are always provided.
+- The LLM MUST choose targets from the provided state using `target_idx` (no hallucinated x/y).
+- Exactly ONE action per run (tap OR type OR key OR done).
+- Strict JSON output (enforced with response_format=json_object + validation).
 """
 
 from __future__ import annotations
@@ -87,7 +85,6 @@ class Candidate:
             f"enabled={self.enabled}",
             f"focused={self.focused}",
             f"center=({cx},{cy})",
-            f"bounds={self.bounds or '-'}",
         ]
         return " | ".join(parts)
 
@@ -121,7 +118,6 @@ def extract_candidates(xml_path: str) -> Tuple[List[Candidate], Dict[str, int], 
     max_x, max_y = 0, 0
     packages: List[str] = []
 
-    # uiautomator dump typically uses attribute "package"
     for idx, node in enumerate(root.iter("node")):
         a = node.attrib
         bounds = a.get("bounds", "")
@@ -167,7 +163,7 @@ def extract_candidates(xml_path: str) -> Tuple[List[Candidate], Dict[str, int], 
     return candidates, size, dominant_pkg
 
 
-# ---------- state + phase ----------
+# ---------- state + phase + constraints ----------
 
 
 def _norm(s: str) -> str:
@@ -180,7 +176,6 @@ def parse_targets_from_instruction(instruction: str) -> Dict[str, str]:
     Returns {"start": "...", "destination": "..."} when possible.
     """
     s = instruction or ""
-    # pick the *last* match to survive prefixes like "Ouvre ... itinéraire ..."
     patterns = [
         r"([A-Za-zÀ-ÿ0-9' -]{2,})\s*(?:->|→)\s*([A-Za-zÀ-ÿ0-9' -]{2,})",
         r"([A-Za-zÀ-ÿ0-9' -]{2,})\s*(?:à|to)\s*([A-Za-zÀ-ÿ0-9' -]{2,})",
@@ -195,30 +190,55 @@ def parse_targets_from_instruction(instruction: str) -> Dict[str, str]:
     return {"start": "", "destination": ""}
 
 
+def parse_constraints_from_instruction(instruction: str) -> Dict:
+    """
+    Pulls common constraints from the instruction.
+    You can keep this simple and still win big:
+    - no_via: "sans via"
+    - exclude: bus/tram
+    - allowed_services: TGV/IC/TER/RE/RB if mentioned (otherwise default)
+    """
+    s = _norm(instruction)
+    no_via = bool(re.search(r"\bsans\s+via\b|\bwithout\s+via\b|\bno\s+via\b", s))
+
+    exclude = []
+    for mode in ["bus", "tram", "metro", "subway", "coach"]:
+        if re.search(rf"\bpas\s+de\s+{mode}\b|\bno\s+{mode}\b|\bwithout\s+{mode}\b|\bexclude\s+{mode}\b", s):
+            exclude.append(mode)
+
+    allowed_services = sorted(set(re.findall(r"\b(TGV|IC|TER|RE|RB)\b", instruction, flags=re.IGNORECASE)))
+    if not allowed_services:
+        allowed_services = ["TGV", "IC", "TER", "RE", "RB"]
+
+    return {
+        "no_via": no_via,
+        "exclude_modes": exclude,  # informational for now
+        "allowed_services": [x.upper() for x in allowed_services],
+        "rail_only": True if ("bus" in exclude or "tram" in exclude or allowed_services) else False,
+    }
+
+
 def detect_phase(all_nodes: List[Candidate]) -> str:
     """
     Coarse phase detection:
     - "journey_form": CFL journey form with input_start/input_target
     - "pick_start": location picker currently selecting start
     - "pick_destination": location picker currently selecting destination
+    - "pick_unknown": location picker but unclear which field
     - "unknown": anything else
     """
-    # journey form IDs seen in your logs
     has_input_start = any("id/input_start" in c.resource_id for c in all_nodes)
     has_input_target = any("id/input_target" in c.resource_id for c in all_nodes)
     if has_input_start or has_input_target:
         return "journey_form"
 
-    # picker field id in your logs
     picker_field = next((c for c in all_nodes if c.resource_id.endswith(":id/input_location_name")), None)
     if picker_field:
         t = _norm(picker_field.text)
-        # your UI shows "Select start" / "Select destination"
         if "start" in t:
             return "pick_start"
         if "destination" in t or "target" in t:
             return "pick_destination"
-        # fallback: unknown picker
         return "pick_unknown"
 
     return "unknown"
@@ -227,13 +247,11 @@ def detect_phase(all_nodes: List[Candidate]) -> str:
 def is_ime_candidate(c: Candidate) -> bool:
     """
     Keyboard keys are poison for an automation planner.
-    We classify IME nodes by package and by typical key labels.
     """
     pkg = _norm(c.package)
     if "inputmethod" in pkg or "keyboard" in pkg:
         return True
 
-    # heuristic for "Hacker's Keyboard"-like overlays: ESC/ALT/CTRL etc
     txt = (c.text or "").strip()
     if txt in {"ESC", "ALT", "CTRL", "HOME", "END", "PGUP", "PGDN", "↹", "⇳", "☰", "↑", "↓", "←", "→"}:
         return True
@@ -242,9 +260,6 @@ def is_ime_candidate(c: Candidate) -> bool:
 
 
 def score_candidate(c: Candidate, dominant_pkg: str) -> int:
-    """
-    Higher score => earlier in the surfaced list.
-    """
     s = 0
     if c.clickable and c.enabled:
         s += 100
@@ -259,13 +274,13 @@ def score_candidate(c: Candidate, dominant_pkg: str) -> int:
     if c.focused:
         s += 15
     if is_ime_candidate(c):
-        s -= 200  # shove it to the bottom
+        s -= 200
     return s
 
 
 def surface_candidates(all_nodes: List[Candidate], dominant_pkg: str, limit: int) -> List[Candidate]:
     scored = [(score_candidate(c, dominant_pkg), c.idx, c) for c in all_nodes]
-    scored.sort(key=lambda t: (t[0], -t[1]), reverse=True)  # stable-ish, deterministic
+    scored.sort(key=lambda t: (t[0], -t[1]), reverse=True)
     out: List[Candidate] = []
     for _, _, c in scored:
         out.append(c)
@@ -274,55 +289,61 @@ def surface_candidates(all_nodes: List[Candidate], dominant_pkg: str, limit: int
     return out
 
 
-def build_state_summary(surfaced: List[Candidate], size: Dict[str, int], phase: str, targets: Dict[str, str]) -> Tuple[str, Dict]:
-    lines = [
-        f"Phase: {phase}",
-        f"Targets: start='{targets.get('start','')}' destination='{targets.get('destination','')}'",
-        f"Nodes: total={size['total_nodes']} clickable={size['clickable_nodes']} (showing {len(surfaced)})",
-        "Use center coordinates for taps; prefer clickable + enabled elements.",
-        "Never tap on keyboard keys (ESC/ALT/etc). Use action=type or key codes instead.",
-    ]
-    for c in surfaced:
-        lines.append(c.summary_line())
-
-    state_summary = "\n".join(lines)
-    state_json = {
+def build_state(surfaced: List[Candidate], size: Dict[str, int], phase: str, targets: Dict[str, str], constraints: Dict) -> Dict:
+    return {
         "phase": phase,
         "targets": targets,
+        "constraints": constraints,
         "size": size,
         "candidates": [c.__dict__ for c in surfaced],
     }
-    return state_summary, state_json
 
 
-def compact_state(state: Dict, max_candidates: int = 12, maxlen: int = 80) -> Dict:
+def compact_state(state: Dict, max_candidates: int = 18, maxlen: int = 80) -> Dict:
     def clip(s: str) -> str:
         s = (s or "")
         return s if len(s) <= maxlen else s[: maxlen - 1] + "…"
 
     out = []
     for c in state.get("candidates", []):
-        if c.get("clickable") and c.get("enabled"):
+        # keep only actionable things: clickable+enabled and non-IME
+        if c.get("clickable") and c.get("enabled") and not is_ime_candidate(
+            Candidate(
+                idx=c.get("idx", -1),
+                package=c.get("package", ""),
+                class_name=c.get("class_name", ""),
+                resource_id=c.get("resource_id", ""),
+                text=c.get("text", ""),
+                content_desc=c.get("content_desc", ""),
+                clickable=bool(c.get("clickable")),
+                enabled=bool(c.get("enabled")),
+                focusable=bool(c.get("focusable")),
+                focused=bool(c.get("focused")),
+                bounds=c.get("bounds", ""),
+                center=c.get("center"),
+            )
+        ):
             out.append(
                 {
                     "idx": c.get("idx"),
-                    "pkg": c.get("package", ""),
                     "id": c.get("resource_id", ""),
                     "text": clip(c.get("text", "")),
                     "desc": clip(c.get("content_desc", "")),
                     "focused": bool(c.get("focused")),
-                    "center": c.get("center"),
+                    "center": c.get("center"),  # not for the LLM to invent; just for debug parity
                 }
             )
+
     return {
         "phase": state.get("phase", ""),
         "targets": state.get("targets", {}),
+        "constraints": state.get("constraints", {}),
         "size": state.get("size", {}),
         "candidates": out[:max_candidates],
     }
 
 
-# ---------- rule-based “fast path” ----------
+# ---------- rule-based “fast path” (still allowed, still disciplined) ----------
 
 
 def _contains_city(c: Candidate, city: str) -> bool:
@@ -331,18 +352,33 @@ def _contains_city(c: Candidate, city: str) -> bool:
     city_l = _norm(city)
     text = _norm(c.text)
     desc = _norm(c.content_desc)
-    # prefer list entries: usually desc contains "Luxembourg, ..." etc
     return (city_l in desc) or (city_l == text) or (city_l in text)
 
 
+def _find_nav_itinerary(all_nodes: List[Candidate]) -> Optional[Candidate]:
+    needles = ["itinéraire", "itinerary", "trajet", "journey", "recherche", "search"]
+    candidates = []
+    for c in all_nodes:
+        if not (c.clickable and c.enabled and c.center):
+            continue
+        blob = f"{_norm(c.text)} {_norm(c.content_desc)} {_norm(c.resource_id)}"
+        if any(n in blob for n in needles):
+            candidates.append(c)
+    if not candidates:
+        return None
+    candidates.sort(key=lambda x: (len((x.text or "") + (x.content_desc or "")), x.idx), reverse=True)
+    return candidates[0]
+
+
 def rule_based_action(all_nodes: List[Candidate], phase: str, targets: Dict[str, str]) -> Optional[Dict]:
-    """
-    Return an action dict or None if we want LLM fallback.
-    """
     start = targets.get("start", "").strip()
     dest = targets.get("destination", "").strip()
 
-    # 1) On journey form: tap the right field in order (start then destination), else press search.
+    if phase == "unknown":
+        nav = _find_nav_itinerary(all_nodes)
+        if nav:
+            return {"action": "tap", "target_idx": nav.idx, "reason": "Navigate to itinerary/search screen"}
+
     if phase == "journey_form":
         start_field = next((c for c in all_nodes if c.resource_id.endswith(":id/input_start")), None)
         dest_field = next((c for c in all_nodes if c.resource_id.endswith(":id/input_target")), None)
@@ -356,19 +392,17 @@ def rule_based_action(all_nodes: List[Candidate], phase: str, targets: Dict[str,
             return t in {"", "select start", "select destination"} or "select" in t
 
         if start_field and start and is_placeholder(start_field.text) and start_field.center:
-            return {"action": "tap", "x": start_field.center[0], "y": start_field.center[1], "reason": f"Open start field to set '{start}'"}
+            return {"action": "tap", "target_idx": start_field.idx, "reason": f"Open start field to set '{start}'"}
         if dest_field and dest and is_placeholder(dest_field.text) and dest_field.center:
-            return {"action": "tap", "x": dest_field.center[0], "y": dest_field.center[1], "reason": f"Open destination field to set '{dest}'"}
+            return {"action": "tap", "target_idx": dest_field.idx, "reason": f"Open destination field to set '{dest}'"}
         if search_btn and search_btn.center:
-            return {"action": "tap", "x": search_btn.center[0], "y": search_btn.center[1], "reason": "Launch search"}
+            return {"action": "tap", "target_idx": search_btn.idx, "reason": "Launch search"}
 
         return None
 
-    # 2) On picker: if target city is already visible in list -> tap it directly.
     if phase in {"pick_start", "pick_destination", "pick_unknown"}:
         want = start if phase == "pick_start" else dest if phase == "pick_destination" else (start or dest)
 
-        # Find tappable list entry (not favorite button, not voice, not nav up)
         list_entries = [
             c
             for c in all_nodes
@@ -377,27 +411,20 @@ def rule_based_action(all_nodes: List[Candidate], phase: str, targets: Dict[str,
             and c.center
             and not c.resource_id.endswith(":id/button_favorite")
             and not c.resource_id.endswith(":id/button_location_voice")
-            and (c.resource_id == "" or "id/" not in c.resource_id)  # list rows often have empty id
         ]
 
-        # Prefer an entry that contains the wanted city
         matching = [c for c in list_entries if _contains_city(c, want)]
         if want and matching:
-            # choose the most “specific” one (longer desc), deterministic
             matching.sort(key=lambda c: (len((c.content_desc or "").strip()), c.idx), reverse=True)
             best = matching[0]
-            return {"action": "tap", "x": best.center[0], "y": best.center[1], "reason": f"Select '{want}' from visible list"}
+            return {"action": "tap", "target_idx": best.idx, "reason": f"Select '{want}' from visible list"}
 
-        # If not visible, type into the picker field (but only if focused, else focus it first).
         field = next((c for c in all_nodes if c.resource_id.endswith(":id/input_location_name")), None)
         if field and field.center and want:
             if field.focused:
                 return {"action": "type", "text": want, "reason": f"Type '{want}' in location search field"}
-            # not focused: focus it first
-            return {"action": "tap", "x": field.center[0], "y": field.center[1], "reason": "Focus location input field"}
+            return {"action": "tap", "target_idx": field.idx, "reason": "Focus location input field"}
 
-        # If keyboard overlay is there, close it instead of tapping keys
-        # (Back is keycode 4)
         if any(is_ime_candidate(c) for c in all_nodes):
             return {"action": "key", "keycode": 4, "reason": "Close keyboard overlay (BACK)"}
 
@@ -409,38 +436,41 @@ def rule_based_action(all_nodes: List[Candidate], phase: str, targets: Dict[str,
 # ---------- prompt + LLM ----------
 
 
-def build_prompt(instruction: str, state_summary: str, phase: str, targets: Dict[str, str]) -> str:
-    # Strong, explicit context to avoid “tap field again” loops
-    start = targets.get("start", "")
-    dest = targets.get("destination", "")
-
+def build_prompt(instruction: str, compact: Dict) -> str:
+    """
+    LLM sees:
+    - objective + constraints (from instruction + parsed constraints)
+    - UI state (compact JSON)
+    It must pick ONE action, and for taps MUST pick target_idx from the candidate list.
+    """
     return textwrap.dedent(
         f"""
-        You control an Android app over adb (uiautomator + touch).
-        Your overall task: {instruction}
+        You are controlling an Android app using adb + uiautomator.
+        Your job is NOT to be clever. Your job is to be deterministic and state-driven.
 
-        Current phase: {phase}
-        Target route:
-        - Start must be: {start}
-        - Destination must be: {dest}
+        OBJECTIVE:
+        {instruction}
 
-        IMPORTANT RULES:
-        - Never tap on keyboard keys (ESC/ALT/CTRL/etc). If typing is needed, use action=type.
-        - If you are picking START, do NOT select the destination city by mistake.
-        - Prefer selecting an already visible list entry (e.g., "Luxembourg, ..." or "Arlon, ...") rather than re-tapping the same field.
-        - Keep actions deterministic and safe.
+        CONSTRAINTS (must respect):
+        - Use the provided UI state only. Do not invent buttons or coordinates.
+        - Exactly ONE action this turn.
+        - For taps: you MUST choose target_idx from state.candidates[].idx (no raw x/y).
+        - Never tap on keyboard keys (ESC/ALT/CTRL/etc). Use action=type or action=key.
+        - If typing is needed but the field is not focused: tap the input field first (and type next turn).
 
-        Respond with a STRICT JSON (no code fences, no comments), like:
-        {{"action":"tap","x":518,"y":407,"text":"","keycode":null,"reason":"Tap start field"}}
+        OUTPUT: return STRICT JSON only (no markdown), schema:
+        {{
+          "action": "tap|type|key|done",
+          "target_idx": number|null,
+          "text": string,
+          "keycode": number|null,
+          "reason": string
+        }}
 
-        Allowed actions:
-        - tap: requires integer x,y inside screen bounds
-        - type: requires "text" (x/y omitted)
-        - key: requires "keycode" (e.g., 4 BACK, 66 ENTER)
-        - done: if goal reached or blocked
+        UI STATE (compact JSON):
+        {json.dumps(compact, ensure_ascii=False)}
 
-        Current UI (summarized):
-        {state_summary}
+        Decide the next single action now.
         """
     ).strip()
 
@@ -474,7 +504,7 @@ def call_llm(prompt: str, model: str) -> Dict:
     api_key = os.getenv("OPENAI_API_KEY", "dummy")
 
     timeout = float(os.getenv("OPENAI_TIMEOUT", "60"))
-    max_tokens = int(os.getenv("LLM_MAX_TOKENS", "128"))
+    max_tokens = int(os.getenv("LLM_MAX_TOKENS", "192"))
     temperature = float(os.getenv("LLM_TEMPERATURE", "0"))
 
     payload = {
@@ -484,11 +514,12 @@ def call_llm(prompt: str, model: str) -> Dict:
                 "role": "system",
                 "content": (
                     "You are an automation planner.\n"
-                    "Return ONLY a single JSON object, no markdown, no extra text.\n"
-                    "Use double quotes.\n"
-                    'Schema: {"action":"tap|type|key|done","x":int,"y":int,"text":string,"keycode":int|null,"reason":string}\n'
-                    'If unsure, return {"action":"done","reason":"..."}.\n'
-                    "Never tap on keyboard keys; use type/keycode.\n"
+                    "Return ONLY one JSON object.\n"
+                    "No markdown.\n"
+                    "Must be state-driven.\n"
+                    "For taps: select a target_idx that exists in the provided candidate list.\n"
+                    'Schema: {"action":"tap|type|key|done","target_idx":number|null,"text":string,"keycode":number|null,"reason":string}\n'
+                    "Never tap keyboard keys.\n"
                 ),
             },
             {"role": "user", "content": prompt},
@@ -521,10 +552,14 @@ def call_llm(prompt: str, model: str) -> Dict:
 
 
 def safe_action_from_error(err: Exception) -> Dict:
-    return {"action": "done", "reason": f"LLM error: {err}"}
+    return {"action": "done", "reason": f"LLM error: {err}", "target_idx": None, "text": "", "keycode": None}
 
 
-def validate_action(action: Dict, size: Dict[str, int]) -> Dict:
+def _index_surfaced_by_idx(surfaced: List[Candidate]) -> Dict[int, Candidate]:
+    return {c.idx: c for c in surfaced}
+
+
+def validate_action(action: Dict, size: Dict[str, int], surfaced_by_idx: Dict[int, Candidate]) -> Dict:
     allowed = {"tap", "type", "key", "done"}
     act = str(action.get("action", "")).strip().lower()
     if act not in allowed:
@@ -532,6 +567,7 @@ def validate_action(action: Dict, size: Dict[str, int]) -> Dict:
 
     safe = {
         "action": act,
+        "target_idx": None,
         "x": None,
         "y": None,
         "text": "",
@@ -540,19 +576,32 @@ def validate_action(action: Dict, size: Dict[str, int]) -> Dict:
     }
 
     if act == "tap":
-        try:
-            x = int(action.get("x"))
-            y = int(action.get("y"))
-        except Exception as exc:
-            raise ValueError("Tap requires integer x/y") from exc
+        # disciplined: target_idx must exist in surfaced candidates
+        if action.get("target_idx", None) is None:
+            raise ValueError("Tap requires target_idx (selected from state.candidates[].idx)")
 
+        try:
+            tidx = int(action.get("target_idx"))
+        except Exception as exc:
+            raise ValueError("Tap requires numeric target_idx") from exc
+
+        c = surfaced_by_idx.get(tidx)
+        if c is None:
+            raise ValueError(f"target_idx={tidx} is not in the surfaced candidate list")
+        if not (c.clickable and c.enabled):
+            raise ValueError(f"target_idx={tidx} is not clickable+enabled")
+        if c.center is None:
+            raise ValueError(f"target_idx={tidx} has no center (missing bounds?)")
+        if is_ime_candidate(c):
+            raise ValueError("Refusing to tap IME/keyboard element")
+
+        x, y = c.center
         max_x = max(1, int(size.get("width", 1080)))
         max_y = max(1, int(size.get("height", 2400)))
-        if x <= 0 or y <= 0:
-            raise ValueError("Tap coordinates must be positive and non-zero")
-        if x > max_x or y > max_y:
+        if x <= 0 or y <= 0 or x > max_x or y > max_y:
             raise ValueError("Tap coordinates outside screen bounds")
 
+        safe["target_idx"] = tidx
         safe["x"], safe["y"] = x, y
 
     elif act == "type":
@@ -574,39 +623,41 @@ def validate_action(action: Dict, size: Dict[str, int]) -> Dict:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="LLM-guided Android explorer (with guardrails)")
+    parser = argparse.ArgumentParser(description="LLM-guided Android explorer (disciplined, state-driven)")
     parser.add_argument("--instruction", required=True, help="Goal for the agent")
     parser.add_argument("--xml", required=True, help="Path to uiautomator dump XML")
     parser.add_argument("--model", default=os.environ.get("LLM_MODEL", "local-model"))
-    parser.add_argument("--limit", type=int, default=80, help="Max surfaced candidates")
+    parser.add_argument("--limit", type=int, default=90, help="Max surfaced candidates")
     parser.add_argument("--no_llm", action="store_true", help="Only rule-based decisions (debug)")
     args = parser.parse_args()
 
     all_nodes, size, dominant_pkg = extract_candidates(args.xml)
     targets = parse_targets_from_instruction(args.instruction)
+    constraints = parse_constraints_from_instruction(args.instruction)
     phase = detect_phase(all_nodes)
 
     surfaced = surface_candidates(all_nodes, dominant_pkg, limit=args.limit)
-    state_summary, state_json = build_state_summary(surfaced, size, phase, targets)
+    state = build_state(surfaced, size, phase, targets, constraints)
+    compact = compact_state(state)
 
-    log("State summary ready")
-    log(state_summary)
-    log("State JSON compact (debug):")
-    log(json.dumps(compact_state(state_json), ensure_ascii=False))
+    log("Compact state (what the LLM actually gets):")
+    log(json.dumps(compact, ensure_ascii=False, indent=2))
 
-    # Fast path to prevent obvious loops
+    surfaced_by_idx = _index_surfaced_by_idx(surfaced)
+
+    # rule-based fast path (still outputs disciplined schema)
     rb = rule_based_action(all_nodes, phase, targets)
     if rb:
-        action = validate_action(rb, size)
+        action = validate_action(rb, size, surfaced_by_idx)
         log(f"Rule-based action: {action}")
         print(json.dumps(action, ensure_ascii=False))
         return 0
 
     if args.no_llm:
-        print(json.dumps({"action": "done", "reason": "Rule-based had no decision and --no_llm set"}, ensure_ascii=False))
+        print(json.dumps({"action": "done", "reason": "Rule-based had no decision and --no_llm set", "target_idx": None, "x": None, "y": None, "text": "", "keycode": None}, ensure_ascii=False))
         return 0
 
-    prompt = build_prompt(args.instruction, state_summary, phase, targets)
+    prompt = build_prompt(args.instruction, compact)
 
     try:
         raw_action = call_llm(prompt, args.model)
@@ -617,10 +668,10 @@ def main() -> int:
     log(f"Raw LLM response: {raw_action}")
 
     try:
-        action = validate_action(raw_action, size)
+        action = validate_action(raw_action, size, surfaced_by_idx)
     except Exception as e:
         warn(f"Action validation failed: {e}")
-        action = {"action": "done", "reason": f"Invalid action from LLM: {e}", "x": None, "y": None, "text": "", "keycode": None}
+        action = {"action": "done", "reason": f"Invalid action from LLM: {e}", "target_idx": None, "x": None, "y": None, "text": "", "keycode": None}
 
     log(f"Validated action: {action}")
     print(json.dumps(action, ensure_ascii=False))
