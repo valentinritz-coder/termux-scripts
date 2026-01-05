@@ -1,3 +1,12 @@
+cmake --build build -j 4 --target llama-server
+
+
+----------
+
+
+
+
+
 common.cpp.o
 In file included from /data/data/com.termux/files/home/src/llama.cpp/common/chat.cpp:10:
 In file included from /data/data/com.termux/files/home/src/llama.cpp/common/../vendor/minja/chat-template.hpp:11:
