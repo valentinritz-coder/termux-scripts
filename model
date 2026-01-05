@@ -1,171 +1,23 @@
-cmake --build build -j 4 --target llama-server
-
-
+cp -f ~/src/llama.cpp/build/bin/llama-server $PREFIX/bin/
+chmod +x $PREFIX/bin/llama-server
+which llama-server
 ---
+llama-server \
+  -m /sdcard/cfl_watch/models/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  --host 127.0.0.1 --port 8000 \
+  -c 2048 -t 4 \
+  --alias local-model
+----
+curl -sS http://127.0.0.1:8000/v1/models | head
+----
+cd ~/cfl_watch
+export OPENAI_BASE_URL=http://127.0.0.1:8000
+export OPENAI_API_KEY=dummy
+export LLM_MODEL=local-model
+export SNAP_MODE=3
 
-pkg update -y
-pkg install -y libandroid-spawn
---
-ls -l $PREFIX/include/spawn.h
---
-cmake --build build -j 4 --target llama-server
---
-find build -type f -name "llama-server" -perm -111 2>/dev/null
+bash tools/llm_explore.sh "Ouvre CFL, cherche un trajet Luxembourg -> Arlon"
 
+----
 
-----------
-
-~/src/llama.cpp $ cd /data/data/com.termux/files/home/src/llama.cpp
-~/src/llama.cpp $ cmake --build build -j 4 --target llama-server
-[  0%] Built target build_info
-[  4%] Built target ggml-base
-[  4%] Built target cpp-httplib
-[ 12%] Built target ggml-cpu
-[ 14%] Built target ggml
-[ 78%] Built target llama
-[ 86%] Built target mtmd
-[ 96%] Built target common
-[ 98%] Built target server-context
-[ 98%] Building CXX object tools/server/CMakeFiles/llama-server.dir/server-models.cpp.o
-In file included from /data/data/com.termux/files/home/src/llama.cpp/tools/server/server-models.cpp:8:
-/data/data/com.termux/files/home/src/llama.cpp/common/../vendor/sheredom/subprocess.h:234:10: fatal error:
-      'spawn.h' file not found
-  234 | #include <spawn.h>
-      |          ^~~~~~~~~
-1 error generated.
-make[3]: *** [tools/server/CMakeFiles/llama-server.dir/build.make:115: tools/server/CMakeFiles/llama-server.dir/server-models.cpp.o] Error 1
-make[2]: *** [CMakeFiles/Makefile2:5124: tools/server/CMakeFiles/llama-server.dir/all] Error 2
-make[1]: *** [CMakeFiles/Makefile2:5131: tools/server/CMakeFiles/llama-server.dir/rule] Error 2
-make: *** [Makefile:1570: llama-server] Error 2
-~/src/llama.cpp $
-
-
----
-
-common.cpp.o
-In file included from /data/data/com.termux/files/home/src/llama.cpp/common/chat.cpp:10:
-In file included from /data/data/com.termux/files/home/src/llama.cpp/common/../vendor/minja/chat-template.hpp:11:
-/data/data/com.termux/files/home/src/llama.cpp/common/../vendor/minja/minja.hpp:956:10: warning:
-      function 'do_render' could be declared with
-      attribute 'noreturn' [-Wmissing-noreturn]
-  956 |     void do_render(std::ostringstream &, const s...
-      |          ^
-/data/data/com.termux/files/home/src/llama.cpp/common/../vendor/minja/minja.hpp:1234:11: warning:
-      function 'do_evaluate' could be declared with
-      attribute 'noreturn' [-Wmissing-noreturn]
- 1234 |     Value do_evaluate(const std::shared_ptr<Cont...
-      |           ^
-/data/data/com.termux/files/home/src/llama.cpp/common/../vendor/minja/minja.hpp:2736:84: warning:
-      function 'operator()' could be declared with
-      attribute 'noreturn' [-Wmissing-noreturn]
- 2736 |   ...{ "message" }, [](const std::shared_ptr<Context...
-      |                     ^
-[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/whisper-enc.cpp.o
-[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/youtuvl.cpp.o
-[ 88%] Building CXX object common/CMakeFiles/common.dir/console.cpp.o
-[ 88%] Linking CXX shared library ../../bin/libmtmd.so
-[ 88%] Built target mtmd
-[ 90%] Building CXX object common/CMakeFiles/common.dir/download.cpp.o
-[ 90%] Building CXX object common/CMakeFiles/common.dir/json-partial.cpp.o
-[ 90%] Building CXX object common/CMakeFiles/common.dir/json-schema-to-grammar.cpp.o
-[ 90%] Building CXX object common/CMakeFiles/common.dir/llguidance.cpp.o
-[ 92%] Building CXX object common/CMakeFiles/common.dir/log.cpp.o
-[ 92%] Building CXX object common/CMakeFiles/common.dir/ngram-cache.cpp.o
-[ 92%] Building CXX object common/CMakeFiles/common.dir/peg-parser.cpp.o
-[ 92%] Building CXX object common/CMakeFiles/common.dir/preset.cpp.o
-[ 94%] Building CXX object common/CMakeFiles/common.dir/regex-partial.cpp.o
-[ 94%] Building CXX object common/CMakeFiles/common.dir/sampling.cpp.o
-[ 94%] Building CXX object common/CMakeFiles/common.dir/speculative.cpp.o
-[ 94%] Building CXX object common/CMakeFiles/common.dir/unicode.cpp.o
-3 warnings generated.
-[ 96%] Linking CXX static library libcommon.a
-[ 96%] Built target common
-[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-context.cpp.o
-[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-common.cpp.o
-[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-queue.cpp.o
-[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-task.cpp.o
-[ 98%] Linking CXX static library libserver-context.a
-[ 98%] Built target server-context
-[ 98%] Generating index.html.gz.hpp
-[ 98%] Generating loading.html.hpp
-[100%] Building CXX object tools/server/CMakeFiles/llama-server.dir/server-models.cpp.o
-[100%] Building CXX object tools/server/CMakeFiles/llama-server.dir/server.cpp.o
-[100%] Building CXX object tools/server/CMakeFiles/llama-server.dir/server-http.cpp.o
-In file included from /data/data/com.termux/files/home/src/llama.cpp/tools/server/server-models.cpp:8:
-/data/data/com.termux/files/home/src/llama.cpp/common/../vendor/sheredom/subprocess.h:234:10: fatal error:
-      'spawn.h' file not found
-  234 | #include <spawn.h>
-      |          ^~~~~~~~~
-1 error generated.
-make[3]: *** [tools/server/CMakeFiles/llama-server.dir/build.make:115: tools/server/CMakeFiles/llama-server.dir/server-models.cpp.o] Error 1
-make[3]: *** Waiting for unfinished jobs....
-make[2]: *** [CMakeFiles/Makefile2:5124: tools/server/CMakeFiles/llama-server.dir/all] Error 2
-make[1]: *** [CMakeFiles/Makefile2:5131: tools/server/CMakeFiles/llama-server.dir/rule] Error 2
-make: *** [Makefile:1570: llama-server] Error 2
-~/src/llama.cpp $ ls -l build/bin/llama-server
-ls: cannot access 'build/bin/llama-server': No such file or directory
-~/src/llama.cpp $ cd /data/data/com.termux/files/home/src/llama.cpp
-~/src/llama.cpp $ pwd
-/data/data/com.termux/files/home/src/llama.cpp
-~/src/llama.cpp $ ls -la
-total 1035
-drwx------. 27 u0_a208 u0_a208   3488 Jan  5 11:28 .
-drwx------.  3 u0_a208 u0_a208   3488 Jan  5 11:27 ..
--rw-------.  1 u0_a208 u0_a208   4961 Jan  5 11:28 .clang-format
--rw-------.  1 u0_a208 u0_a208    931 Jan  5 11:28 .clang-tidy
-drwx------.  3 u0_a208 u0_a208   3488 Jan  5 11:28 .devops
--rw-------.  1 u0_a208 u0_a208    237 Jan  5 11:28 .dockerignore
--rw-------.  1 u0_a208 u0_a208     97 Jan  5 11:28 .ecrc
--rw-------.  1 u0_a208 u0_a208   1372 Jan  5 11:28 .editorconfig
--rw-------.  1 u0_a208 u0_a208    565 Jan  5 11:28 .flake8
-drwx------.  2 u0_a208 u0_a208   3488 Jan  5 11:28 .gemini
-drwx------.  7 u0_a208 u0_a208   3488 Jan  5 11:28 .git
-drwx------.  5 u0_a208 u0_a208   3488 Jan  5 11:28 .github
--rw-------.  1 u0_a208 u0_a208   1618 Jan  5 11:28 .gitignore
--rw-------.  1 u0_a208 u0_a208      0 Jan  5 11:28 .gitmodules
--rw-------.  1 u0_a208 u0_a208    447 Jan  5 11:28 .pre-commit-config.yaml
--rw-------.  1 u0_a208 u0_a208   4445 Jan  5 11:28 AGENTS.md
--rw-------.  1 u0_a208 u0_a208  47860 Jan  5 11:28 AUTHORS
--rw-------.  1 u0_a208 u0_a208    106 Jan  5 11:28 CLAUDE.md
--rw-------.  1 u0_a208 u0_a208   9146 Jan  5 11:28 CMakeLists.txt
--rw-------.  1 u0_a208 u0_a208   4570 Jan  5 11:28 CMakePresets.json
--rw-------.  1 u0_a208 u0_a208   5600 Jan  5 11:28 CODEOWNERS
--rw-------.  1 u0_a208 u0_a208  10605 Jan  5 11:28 CONTRIBUTING.md
--rw-------.  1 u0_a208 u0_a208   1078 Jan  5 11:28 LICENSE
--rw-------.  1 u0_a208 u0_a208    257 Jan  5 11:28 Makefile
--rw-------.  1 u0_a208 u0_a208  30484 Jan  5 11:28 README.md
--rw-------.  1 u0_a208 u0_a208   5754 Jan  5 11:28 SECURITY.md
-drwx------.  3 u0_a208 u0_a208   3488 Jan  5 11:28 benches
-drwx------. 13 u0_a208 u0_a208   3488 Jan  5 11:28 build
--rwx------.  1 u0_a208 u0_a208  21904 Jan  5 11:28 build-xcframework.sh
-drwx------.  2 u0_a208 u0_a208   3488 Jan  5 11:28 ci
-drwx------.  2 u0_a208 u0_a208   3488 Jan  5 11:28 cmake
-drwx------.  2 u0_a208 u0_a208   3488 Jan  5 11:28 common
--rwx------.  1 u0_a208 u0_a208 517867 Jan  5 11:28 convert_hf_to_gguf.py
--rwx------.  1 u0_a208 u0_a208  25324 Jan  5 11:28 convert_hf_to_gguf_update.py
--rwx------.  1 u0_a208 u0_a208  19106 Jan  5 11:28 convert_llama_ggml_to_gguf.py
--rwx------.  1 u0_a208 u0_a208  20603 Jan  5 11:28 convert_lora_to_gguf.py
-drwx------.  7 u0_a208 u0_a208   3488 Jan  5 11:28 docs
-drwx------. 29 u0_a208 u0_a208   3488 Jan  5 11:28 examples
--rw-------.  1 u0_a208 u0_a208   1556 Jan  5 11:28 flake.lock
--rw-------.  1 u0_a208 u0_a208   7243 Jan  5 11:28 flake.nix
-drwx------.  5 u0_a208 u0_a208   3488 Jan  5 11:28 ggml
-drwx------.  5 u0_a208 u0_a208   3488 Jan  5 11:28 gguf-py
-drwx------.  2 u0_a208 u0_a208   3488 Jan  5 11:28 grammars
-drwx------.  2 u0_a208 u0_a208   3488 Jan  5 11:28 include
-drwx------.  2 u0_a208 u0_a208   3488 Jan  5 11:28 licenses
-drwx------.  2 u0_a208 u0_a208   3488 Jan  5 11:28 media
-drwx------.  3 u0_a208 u0_a208   3488 Jan  5 11:28 models
--rw-------.  1 u0_a208 u0_a208    163 Jan  5 11:28 mypy.ini
-drwx------.  3 u0_a208 u0_a208   3488 Jan  5 11:28 pocs
--rw-------.  1 u0_a208 u0_a208 124786 Jan  5 11:28 poetry.lock
--rw-------.  1 u0_a208 u0_a208   1336 Jan  5 11:28 pyproject.toml
--rw-------.  1 u0_a208 u0_a208    653 Jan  5 11:28 pyrightconfig.json
-drwx------.  2 u0_a208 u0_a208   3488 Jan  5 11:28 requirements
--rw-------.  1 u0_a208 u0_a208    551 Jan  5 11:28 requirements.txt
-drwx------.  5 u0_a208 u0_a208   3488 Jan  5 11:28 scripts
-drwx------.  3 u0_a208 u0_a208   3488 Jan  5 11:28 src
-drwx------.  3 u0_a208 u0_a208   3488 Jan  5 11:28 tests
-drwx------. 19 u0_a208 u0_a208   3488 Jan  5 11:28 tools
-drwx------.  8 u0_a208 u0_a208   3488 Jan  5 11:28 vendor
-~/src/llama.cpp $
+touch /sdcard/cfl_watch/STOP
