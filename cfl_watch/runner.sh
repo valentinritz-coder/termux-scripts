@@ -24,16 +24,16 @@ DELAY_SEARCH="${DELAY_SEARCH:-0.80}"
 usage(){
   cat <<'EOF'
 Usage: ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" [options]
---scenario PATH     Scenario script (default: scenarios/scenario_trip.sh)
---start TEXT        Override start location (single-run mode)
---target TEXT       Override destination (single-run mode)
---snap-mode N       Override SNAP_MODE for single run (0-3)
---latest-run        Print newest run directory and exit
---serve             Generate/serve latest viewer (python -m http.server)
---dry-run           Log actions without input events
---list              Show bundled scenarios and exit
---check             Run self-check and exit
---instruction) LLM_INSTRUCTION="$2"; shift 2 ;;
+--scenario PATH      Scenario script (default: scenarios/scenario_trip.sh)
+--start TEXT         Override start location (single-run mode)
+--target TEXT        Override destination (single-run mode)
+--snap-mode N        Override SNAP_MODE for single run (0-3)
+--instruction TEXT   Instruction LLM (déclenche scenario_llm_explore.sh)
+--latest-run         Print newest run directory and exit
+--serve              Generate/serve latest viewer (python -m http.server)
+--dry-run            Log actions without input events
+--list               Show bundled scenarios and exit
+--check              Run self-check and exit
 EOF
 }
 
@@ -87,6 +87,7 @@ while [ $# -gt 0 ]; do
     --start) CUSTOM_START="$2"; shift 2 ;;
     --target) CUSTOM_TARGET="$2"; shift 2 ;;
     --snap-mode) CUSTOM_SNAP_MODE="$2"; shift 2 ;;
+    --instruction) LLM_INSTRUCTION="$2"; shift 2 ;;
     --dry-run) CFL_DRY_RUN=1; shift ;;
     --latest-run) latest_run; exit $? ;;
     --serve) serve_latest; exit $? ;;
