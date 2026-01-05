@@ -70,15 +70,15 @@ for step in $(seq 1 30); do
 
   log "Action JSON: $action_json"
 
-  action="$(printf '%s' "$action_json" | python - <<'PY'
+  action="$(python -c '
 import json, sys
-data = json.load(sys.stdin)
-def val(k, default=None):
-    v = data.get(k, default)
-    return "" if v is None else v
-print(data.get("action",""), val("x"), val("y"), val("text",""), val("keycode",""), sep="|")
-PY
-)"
+d=json.load(sys.stdin)
+def val(k):
+    v=d.get(k,"")
+    return "" if v is None else str(v)
+print("|".join([d.get("action",""), val("x"), val("y"), val("text"), val("keycode")]))
+' <<<"$action_json")"
+
 
   IFS="|" read -r act x y text keycode <<<"$action"
 
