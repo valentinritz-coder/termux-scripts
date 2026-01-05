@@ -70,14 +70,19 @@ for step in $(seq 1 30); do
 
   log "Action JSON: $action_json"
 
-  action="$(python -c '
+action="$(
+  python - "$action_json" <<'PY'
 import json, sys
-d=json.load(sys.stdin)
+d = json.loads(sys.argv[1])
+
 def val(k):
-    v=d.get(k,"")
+    v = d.get(k, "")
     return "" if v is None else str(v)
+
 print("|".join([d.get("action",""), val("x"), val("y"), val("text"), val("keycode")]))
-' <<<"$action_json")"
+PY
+)"
+
 
 
   IFS="|" read -r act x y text keycode <<<"$action"
