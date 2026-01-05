@@ -1,0 +1,30 @@
+mkdir -p /sdcard/cfl_watch/models
+cd /sdcard/cfl_watch/models
+
+curl -L \
+  "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf" \
+  -o qwen2.5-0.5b-instruct-q4_k_m.gguf
+
+
+apt update && apt upgrade -y
+apt install -y git cmake clang make python
+git clone https://github.com/ggml-org/llama.cpp
+cd llama.cpp
+cmake -S . -B build
+cmake --build build -j4
+
+cd ~/llama.cpp
+./build/bin/llama-server \
+  -m /sdcard/cfl_watch/models/qwen2.5-0.5b-instruct-q4_k_m.gguf \
+  --host 127.0.0.1 --port 8000 \
+  -c 2048 -t 4 \
+  --alias local-model
+
+
+cd ~/cfl_watch
+export OPENAI_BASE_URL="http://127.0.0.1:8000"
+export OPENAI_API_KEY="no-key"
+export LLM_MODEL="local-model"
+
+bash tools/llm_explore.sh "Ouvre CFL, fais un itinéraire Luxembourg -> Arlon"
+
