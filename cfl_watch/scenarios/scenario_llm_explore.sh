@@ -137,7 +137,11 @@ print("|".join([d.get("action",""), val("x"), val("y"), val("text"), val("keycod
 
       if [ "$LLM_DEBUG_TAP" = "1" ]; then
         set +e
-        adb -s "$CFL_SERIAL" shell input tap "$x" "$y"
+        serial_args=()
+        if [ -n "${ANDROID_SERIAL:-}" ]; then
+          serial_args=(-s "$ANDROID_SERIAL")
+        fi
+        adb "${serial_args[@]}" shell input tap "$x" "$y"
         rc=$?
         set -e
         log "adb tap rc=$rc"
