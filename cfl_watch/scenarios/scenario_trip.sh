@@ -34,12 +34,13 @@ dump_ui(){
 
   if ! inject test -s "$dump_path" >/dev/null 2>&1; then
     warn "UI dump absent/vide: $dump_path"
-  elif ! inject grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
+  elif ! grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
     warn "UI dump invalide (pas de <hierarchy): $dump_path"
   fi
 
   printf '%s' "$dump_path"
 }
+
 
 node_center(){
   local dump="$1"; shift
