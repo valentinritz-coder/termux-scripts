@@ -31,6 +31,7 @@ LLM_STEPS="${LLM_STEPS:-30}"
 LLM_STEP_SLEEP="${LLM_STEP_SLEEP:-0.5}"
 kill_switch="${LLM_KILL_SWITCH:-$CFL_ARTIFACT_DIR/STOP}"
 dump_path="$CFL_TMP_DIR/live_dump.xml"
+LLM_DEBUG_TAP="${LLM_DEBUG_TAP:-1}"
 
 run_name="llm_explore_$(safe_name "$instruction")"
 snap_init "$run_name"
@@ -111,22 +112,40 @@ for step in $(seq 1 "$LLM_STEPS"); do
 
   log "Action JSON: $action_json"
 
-  action="$(printf '%s' "$action_json" | python - <<'PY'
+  action="$(
+    python -c '
 import json, sys
-data = json.load(sys.stdin)
-def val(k, default=None):
-    v = data.get(k, default)
-    return "" if v is None else v
-print(data.get("action",""), val("x"), val("y"), val("text",""), val("keycode",""), sep="|")
-PY
-)"
+d=json.loads(sys.stdin.read())
+def val(k):
+    v=d.get(k,"")
+    return "" if v is None else str(v)
+print("|".join([d.get("action",""), val("x"), val("y"), val("text"), val("keycode")]))
+' <<<"$action_json"
+  )"
 
   IFS="|" read -r act x y text keycode <<<"$action"
+  act="${act//$'\r'/}"; x="${x//$'\r'/}"; y="${y//$'\r'/}"
+  text="${text//$'\r'/}"; keycode="${keycode//$'\r'/}"
 
   case "$act" in
     tap)
-      log "LLM -> tap $x,$y"
-      maybe tap "$x" "$y"
+      log "LLM -> tap $x,$y (debug=$LLM_DEBUG_TAP)"
+      if [ -z "${x:-}" ] || [ -z "${y:-}" ]; then
+        warn "tap coords empty -> abort"
+        break
+      fi
+
+      if [ "$LLM_DEBUG_TAP" = "1" ]; then
+        set +e
+        adb -s "$CFL_SERIAL" shell input tap "$x" "$y"
+        rc=$?
+        set -e
+        log "adb tap rc=$rc"
+        sleep_s 0.8
+        snap "$(printf '%02d' "$step")_after_tap" "$SNAP_MODE"
+      else
+        maybe tap "$x" "$y"
+      fi
       ;;
     type)
       log "LLM -> type: $text"
