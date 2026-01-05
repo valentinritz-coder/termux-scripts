@@ -1,30 +1,47 @@
-mkdir -p /sdcard/cfl_watch/models
-cd /sdcard/cfl_watch/models
+cd /storage/self/primary/cfl_watch/models/llama.cpp
 
-curl -L \
-  "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf" \
-  -o qwen2.5-0.5b-instruct-q4_k_m.gguf
+# 1) Voir ce que CMake a décidé
+grep -E 'LLAMA_BUILD_(SERVER|EXAMPLES)' build/CMakeCache.txt || true
+
+# 2) Voir si une target serveur existe
+cmake --build build --target help 2>/dev/null | grep -i server || true
 
 
-apt update && apt upgrade -y
-apt install -y git cmake clang make python
+
+--
+
+# Reconfigure en forçant server+examples ON
+cmake -S . -B build \
+  -DLLAMA_BUILD_SERVER=ON \
+  -DLLAMA_BUILD_EXAMPLES=ON \
+  -DCMAKE_BUILD_TYPE=Release
+
+# Compile juste le serveur
+cmake --build build -j 4 --target llama-server
+
+--
+
+ls -la build/bin | grep -i server || true
+
+---
+
+# 1) Mettre le code dans Termux home
+cd ~
 git clone https://github.com/ggml-org/llama.cpp
 cd llama.cpp
-cmake -S . -B build
-cmake --build build -j4
+cmake -B build -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_EXAMPLES=ON
+cmake --build build -j 4 --target llama-server
 
-cd /sdcard/cfl_watch/models/llama.cpp
-./build/bin/llama-server \
-  -m /sdcard/cfl_watch/models/qwen2.5-0.5b-instruct-q4_k_m.gguf \
-  --host 127.0.0.1 --port 8000 \
-  -c 2048 -t 4 \
-  --alias local-model
+# 2) Utiliser le modèle resté sur /sdcard
+./build/bin/llama-server -m /sdcard/cfl_watch/models/qwen2.5-0.5b-instruct-q4_k_m.gguf --host 127.0.0.1 --port 8000 -c 2048 -t 4 --alias local-model
 
+
+
+--
+
+export OPENAI_BASE_URL=http://127.0.0.1:8000
+export OPENAI_API_KEY=dummy
+export LLM_MODEL=local-model
 
 cd ~/cfl_watch
-export OPENAI_BASE_URL="http://127.0.0.1:8000"
-export OPENAI_API_KEY="no-key"
-export LLM_MODEL="local-model"
-
-bash tools/llm_explore.sh "Ouvre CFL, fais un itinéraire Luxembourg -> Arlon"
-
+bash tools/llm_explore.sh "Ouvre CFL, cherche un trajet Luxembourg -> Arlon"
