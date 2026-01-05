@@ -23,11 +23,24 @@ DELAY_PICK="${DELAY_PICK:-0.25}"
 DELAY_SEARCH="${DELAY_SEARCH:-0.80}"
 
 dump_ui(){
+  : "${CFL_TMP_DIR:="$CFL_BASE_DIR/tmp"}"   # fallback au cas où
   local dump_path="$CFL_TMP_DIR/live_dump.xml"
+
   mkdir -p "$CFL_TMP_DIR"
+
+  # Laisse TEMPORAIREMENT les erreurs visibles (au moins en debug)
   inject uiautomator dump --compressed "$dump_path" >/dev/null 2>&1 || true
+
+  # Sanity checks côté appareil (via inject)
+  if ! inject test -s "$dump_path" >/dev/null 2>&1; then
+    warn "UI dump absent/vide: $dump_path"
+  elif ! inject grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
+    warn "UI dump invalide (pas de <hierarchy): $dump_path"
+  fi
+
   printf '%s' "$dump_path"
 }
+
 
 node_center(){
   local dump="$1"; shift
@@ -176,6 +189,11 @@ finish(){
 trap finish EXIT
 
 log "Scenario: $START_TEXT -> $TARGET_TEXT (SNAP_MODE=$SNAP_MODE)"
+
+log "CFL_CODE_DIR=$CFL_CODE_DIR"
+log "CFL_BASE_DIR=$CFL_BASE_DIR"
+log "CFL_TMP_DIR=${CFL_TMP_DIR:-<unset>}"
+
 
 # App should already be launched by runner, but ok to keep a launch safety net:
 maybe cfl_launch
