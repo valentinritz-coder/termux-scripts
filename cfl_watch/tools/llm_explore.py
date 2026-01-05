@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import re
+import ast
 import sys
 import textwrap
 from dataclasses import dataclass
@@ -15,6 +16,28 @@ import xml.etree.ElementTree as ET
 
 
 BOUNDS_RE = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
+
+
+ACTION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "action": {"type": "string", "enum": ["tap", "type", "key", "done"]},
+        "x": {"type": ["integer", "null"]},
+        "y": {"type": ["integer", "null"]},
+        "text": {"type": "string"},
+        "keycode": {"type": ["integer", "null"]},
+        "reason": {"type": "string"},
+    },
+    "required": ["action"],
+    "additionalProperties": True,
+}
+
+def _api_base() -> str:
+    base = os.environ.get("OPENAI_BASE_URL", "http://127.0.0.1:8001").rstrip("/")
+    # Certains mettent déjà /v1, d'autres non
+    if base.endswith("/v1"):
+        return base
+    return base + "/v1"
 
 
 @dataclass
@@ -150,47 +173,74 @@ def _strip_code_fences(text: str) -> str:
     return text.strip()
 
 
-def parse_llm_response(raw: str) -> Dict:
-    cleaned = _strip_code_fences(raw)
+def parse_llm_response(content: str) -> dict:
+    raw = (content or "").strip()
+
+    # enlève fences ```json ... ```
+    if raw.startswith("```"):
+        raw = re.sub(r"^```[a-zA-Z0-9_-]*\s*", "", raw)
+        raw = re.sub(r"\s*```$", "", raw).strip()
+
+    # essaie d'extraire un objet JSON au milieu d'un blabla
+    m = re.search(r"(\{.*\})", raw, flags=re.S)
+    candidate = m.group(1).strip() if m else raw
+
+    # 1) JSON strict
     try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
+        obj = json.loads(candidate)
+        if isinstance(obj, dict):
+            return obj
+    except Exception:
         pass
 
-    brace_match = re.search(r"\{.*\}", cleaned, flags=re.DOTALL)
-    if brace_match:
-        try:
-            return json.loads(brace_match.group(0))
-        except json.JSONDecodeError:
-            pass
+    # 2) “presque JSON” (quotes simples, None, etc.)
+    try:
+        obj = ast.literal_eval(candidate)
+        if isinstance(obj, dict):
+            return obj
+    except Exception:
+        pass
 
     raise ValueError("LLM response is not valid JSON")
 
-
-def call_llm(prompt: str, model: str) -> Dict:
-    base_url = os.environ.get("OPENAI_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
-    api_key = os.environ.get("OPENAI_API_KEY", "dummy-key")
-    url = f"{base_url}/v1/chat/completions"
+def safe_action_from_error(err: Exception) -> dict:
+    return {"action": "done", "reason": f"LLM parse/call error: {err}"}
+    
+def call_llm(prompt: str, model: str) -> dict:
+    url = _api_base() + "/chat/completions"
 
     payload = {
         "model": model,
         "messages": [
-            {
-                "role": "system",
-                "content": "You are a careful Android UI navigator. Respond ONLY with the requested JSON.",
-            },
+            {"role": "system", "content": (
+                "Tu es un contrôleur UI. "
+                "Réponds UNIQUEMENT avec un objet JSON valide (double quotes). "
+                "Aucun texte hors JSON."
+            )},
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0.2,
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 256,
+        # Forçage JSON côté llama-server
+        "response_format": {
+            "type": "json_object",
+            "schema": ACTION_SCHEMA,
+        },
     }
 
-    headers = {"Authorization": f"Bearer {api_key}"}
-    resp = requests.post(url, json=payload, headers=headers, timeout=60)
-    resp.raise_for_status()
-    data = resp.json()
-    content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+    r = requests.post(url, json=payload, timeout=60)
+    r.raise_for_status()
+    data = r.json()
+
+    # Compat chat vs completions
+    choice0 = (data.get("choices") or [{}])[0]
+    content = ""
+    if isinstance(choice0.get("message"), dict):
+        content = choice0["message"].get("content") or ""
     if not content:
-        raise ValueError("LLM response missing content")
+        content = choice0.get("text") or ""
+
     return parse_llm_response(content)
 
 
@@ -255,7 +305,11 @@ def main() -> int:
     log(json.dumps(state_json, ensure_ascii=False))
 
     prompt = build_prompt(args.instruction, state_summary)
-    raw_action = call_llm(prompt, args.model)
+    try:
+        raw_action = call_llm(prompt, args.model)
+    except Exception as e:
+        print(json.dumps(safe_action_from_error(e), ensure_ascii=False))
+        return 0
     log(f"Raw LLM response: {raw_action}")
 
     action = validate_action(raw_action, size)
