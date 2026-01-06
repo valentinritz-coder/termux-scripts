@@ -32,5 +32,16 @@ chmod +x ~/cfl_watch/tools/cfl_snap_watch.sh
 [*] Watching UI changes -> /sdcard/cfl_watch/runs/2026-01-06_10-58-28_cfl_pages
 [*] Ctrl+C to stop
 
+----
+
+SERIAL="${ANDROID_SERIAL:-127.0.0.1:37099}"
+SNAP_DIR="/sdcard/cfl_watch/runs/2026-01-06_10-58-28_cfl_pages"
+
+adb -s "$SERIAL" shell "command -v sha1sum || echo 'sha1sum=NO'"
+adb -s "$SERIAL" shell "command -v grep || echo 'grep=NO'"
+adb -s "$SERIAL" shell "ls -la '$SNAP_DIR' || echo 'SNAP_DIR not found'"
+
+---
+
 
 ----
