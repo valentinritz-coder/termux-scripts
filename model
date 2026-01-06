@@ -22,32 +22,11 @@ export LLM_TEMPERATURE=0
 
 bash runner.sh --instruction "Ouvre CFL et fais un itinéraire Luxembourg -> Arlon"
 
---
-/data/data/com.termux/files/home/cfl_watch/tools/cfl_dump_loop.sh
-
-
-----
-chmod +x ~/cfl/watch/tools/cfl_dump_loop.sh
-~/cfl/watch/tools/cfl_dump_loopsh
-
-----
-termux-setup-storage
-----
-echo ok > /sdcard/_termux_test.txt
-ls -lah /sdcard/_termux_test.txt
-
 ---
-uiautomator dump --compressed /sdcard/_test.xml; echo "rc=$?"
-ls -lah /sdcard/_test.xml
-head -n 2 /sdcard/_test.xml
+chmod +x ~/cfl_watch/tools/cfl_snap_watch.sh
+~/cfl_watch/tools/cfl_snap_watch.sh "cfl_pages"
 
 ----
-su -c "uiautomator dump --compressed /sdcard/_test.xml"; echo "rc=$?"
-ls -lah /sdcard/_test.xml
-head -n 2 /sdcard/_test.xml
 
----
 
-screencap -p /sdcard/_test.png; echo "rc=$?"
-ls -lah /sdcard/_test.png
-
+----
