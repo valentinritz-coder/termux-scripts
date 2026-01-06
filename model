@@ -1,12 +1,4 @@
-dummycd ~/src/llama.cpp
-./build/bin/llama-server \
-  -m /sdcard/cfl_watch/models/qwen2.5-0.5b-instruct-q4_k_m.gguf \
-  --host 127.0.0.1 --port 8001 \
-  -c 2048 -t 4 \
-  --alias local-model
 
+unset LLM_INSTRUCTION
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
 
-----
-export SNAP_MODE=3
-export LLM_STEPS=25
-bash "$HOME/cfl_watch/runner.sh" --instruction "Recherche un trajet Luxembourg -> Arlon en train uniquement maintenant"
