@@ -9,168 +9,83 @@ CFL_BASE_DIR="$CFL_CODE_DIR"
 . "$CFL_CODE_DIR/lib/common.sh"
 . "$CFL_CODE_DIR/lib/snap.sh"
 
-# Runner ne passe pas d'args -> env obligatoire
-instruction="${LLM_TRIP_INSTRUCTION:-${LLM_INSTRUCTION:-}}"
-if [ -z "$instruction" ]; then
-  die "LLM_TRIP_INSTRUCTION (or LLM_INSTRUCTION) is required."
+# Instruction: runner ne passe pas d'args -> env obligatoire
+instruction="${LLM_INSTRUCTION:-}"
+if [ -z "$instruction" ] && [ -z "${LLM_TRIP_JSON:-}" ]; then
+  die "LLM_INSTRUCTION or LLM_TRIP_JSON is required.
+Example:
+  export LLM_INSTRUCTION='Recherche un trajet entre Luxembourg et Arlon en train uniquement pour maintenant.'
+  bash $0"
 fi
 
-# Ne pas casser la redirection du runner: attach_log seulement si standalone
+# Logs only if standalone (runner already redirects)
 if [ -z "${CFL_LOG_FILE:-}" ]; then
   attach_log "llm_tripplanner"
 fi
 
 ensure_dirs
 
-: "${CFL_TMP_DIR:="$CFL_ARTIFACT_DIR/tmp"}"
-export CFL_TMP_DIR
-
-# Tuning
-LLM_STEPS="${LLM_STEPS:-30}"
-LLM_STEP_SLEEP="${LLM_STEP_SLEEP:-0.5}"
-kill_switch="${LLM_KILL_SWITCH:-$CFL_ARTIFACT_DIR/STOP}"
-dump_path="$CFL_TMP_DIR/live_dump.xml"
-LLM_DEBUG_TAP="${LLM_DEBUG_TAP:-1}"
-
-run_name="llm_tripplanner_$(safe_name "$instruction")"
-snap_init "$run_name"
-
-# Persisted artifacts for the run
-history_file="$SNAP_DIR/history.jsonl"
-plan_file="$SNAP_DIR/trip_plan.json"
-
-finish(){
-  local rc=$?
-  trap - EXIT
-  if [ "$rc" -ne 0 ]; then
-    warn "llm_tripplanner FAILED (rc=$rc) -> viewer"
-    "$CFL_CODE_DIR/lib/viewer.sh" "$SNAP_DIR" >/dev/null 2>&1 || true
-    log "Viewer: $SNAP_DIR/viewers/index.html"
-  fi
-  exit "$rc"
-}
-trap finish EXIT
-
-# Déps python (requests)
+# Deps python (requests)
 python - <<'PY' >/dev/null 2>&1 || die "Python dependency missing: requests (run: pip install requests)"
 import requests  # noqa
 PY
 
-if [ -z "${OPENAI_BASE_URL:-}" ]; then
-  warn "OPENAI_BASE_URL is not set. Example: export OPENAI_BASE_URL=http://127.0.0.1:8001"
+# If LLM base URL missing, warn (fallback parser still works)
+if [ -z "${OPENAI_BASE_URL:-}" ] && [ -z "${LLM_TRIP_JSON:-}" ]; then
+  warn "OPENAI_BASE_URL is not set. Will rely on fallback parsing only."
 fi
 
-dump_ui(){
-  inject mkdir -p "$CFL_TMP_DIR" >/dev/null 2>&1 || true
-  inject rm -f "$dump_path" >/dev/null 2>&1 || true
-  inject uiautomator dump --compressed "$dump_path" 2>&1 | sed 's/^/[uia] /' >&2 || true
-
-  if ! inject test -s "$dump_path" >/dev/null 2>&1; then
-    warn "UI dump missing/empty: $dump_path"
-    return 1
-  fi
-  if ! grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
-    warn "UI dump invalid (no <hierarchy): $dump_path"
-    return 1
-  fi
-  return 0
-}
-
-log "Instruction: $instruction"
-log "CFL_TMP_DIR=$CFL_TMP_DIR"
-log "SNAP_DIR=$SNAP_DIR"
-log "Kill switch: $kill_switch"
-log "Steps: $LLM_STEPS, sleep=$LLM_STEP_SLEEP"
-log "History: $history_file"
-log "Plan: $plan_file"
-
-dump_ui || true
-snap "00_state" "$SNAP_MODE"
-
-for step in $(seq 1 "$LLM_STEPS"); do
-  if inject test -f "$kill_switch" >/dev/null 2>&1; then
-    warn "Kill switch detected ($kill_switch), stopping."
-    break
-  fi
-
-  log "Step $step: dump UI"
-  if ! dump_ui; then
-    warn "Abort: dump UI failed"
-    break
-  fi
-
-  snap "$(printf '%02d' "$step")" "$SNAP_MODE"
-
-  log "Calling LLM tripplanner (disciplined)"
-  action_json="$(
-    python "$CFL_CODE_DIR/tools/llm_explore.py" \
+TRIP_JSON="${LLM_TRIP_JSON:-}"
+if [ -z "$TRIP_JSON" ]; then
+  log "Parsing instruction to TripRequest JSON (LLM as parser)"
+  TRIP_JSON="$(
+    python "$CFL_CODE_DIR/tools/llm_trip_request.py" \
       --instruction "$instruction" \
-      --xml "$dump_path" \
-      --history_file "$history_file" \
-      --plan_file "$plan_file"
+      --model "${LLM_MODEL:-local-model}"
   )"
+fi
 
-  log "Action JSON: $action_json"
+log "TripRequest: $TRIP_JSON"
 
-  action="$(
-    python -c '
+# Extract fields (and uppercase)
+read_vars="$(
+  python - <<'PY' "$TRIP_JSON"
 import json, sys
-d=json.loads(sys.stdin.read())
-def val(k):
-    v=d.get(k,"")
-    return "" if v is None else str(v)
-print("|".join([d.get("action",""), val("x"), val("y"), val("text"), val("keycode")]))
-' <<<"$action_json"
-  )"
+req = json.loads(sys.argv[1])
+start = (req.get("start","") or "").strip().upper()
+dest  = (req.get("destination","") or "").strip().upper()
+when  = (req.get("when","now") or "now").strip()
+rail  = bool(req.get("rail_only", True))
+print(start)
+print(dest)
+print(when)
+print("1" if rail else "0")
+PY
+)"
 
-  IFS="|" read -r act x y text keycode <<<"$action"
-  act="${act//$'\r'/}"; x="${x//$'\r'/}"; y="${y//$'\r'/}"
-  text="${text//$'\r'/}"; keycode="${keycode//$'\r'/}"
+START_TEXT="$(printf '%s\n' "$read_vars" | sed -n '1p')"
+TARGET_TEXT="$(printf '%s\n' "$read_vars" | sed -n '2p')"
+WHEN_TEXT="$(printf '%s\n' "$read_vars" | sed -n '3p')"
+RAIL_ONLY="$(printf '%s\n' "$read_vars" | sed -n '4p')"
 
-  case "$act" in
-    tap)
-      log "LLM -> tap $x,$y (debug=$LLM_DEBUG_TAP)"
-      if [ -z "${x:-}" ] || [ -z "${y:-}" ]; then
-        warn "tap coords empty -> abort"
-        break
-      fi
+if [ -z "$START_TEXT" ] || [ -z "$TARGET_TEXT" ]; then
+  die "TripRequest missing start/destination. Got: $TRIP_JSON"
+fi
 
-      if [ "$LLM_DEBUG_TAP" = "1" ]; then
-        set +e
-        serial_args=()
-        if [ -n "${ANDROID_SERIAL:-}" ]; then
-          serial_args=(-s "$ANDROID_SERIAL")
-        fi
-        adb "${serial_args[@]}" shell input tap "$x" "$y"
-        rc=$?
-        set -e
-        log "adb tap rc=$rc"
-        sleep_s 0.8
-        snap "$(printf '%02d' "$step")_after_tap" "$SNAP_MODE"
-      else
-        maybe tap "$x" "$y"
-      fi
-      ;;
-    type)
-      log "LLM -> type: $text"
-      maybe type_text "$text"
-      ;;
-    key)
-      log "LLM -> keycode: $keycode"
-      maybe key "$keycode"
-      ;;
-    done)
-      log "LLM -> done"
-      break
-      ;;
-    *)
-      warn "Unknown action: $act"
-      break
-      ;;
-  esac
+if [ "$WHEN_TEXT" != "now" ]; then
+  warn "WHEN != now is not wired to UI yet (still runs default 'Dep now'). when=$WHEN_TEXT"
+fi
 
-  sleep_s "$LLM_STEP_SLEEP"
-done
+if [ "$RAIL_ONLY" = "1" ]; then
+  log "rail_only requested (filtering is UI-specific; not enforced yet unless you add the settings steps)."
+fi
 
-log "llm_tripplanner finished."
-exit 0
+# Now run your deterministic scenario (the reliable part)
+export START_TEXT
+export TARGET_TEXT
+
+# keep user SNAP_MODE if set, else default
+export SNAP_MODE="${SNAP_MODE:-1}"
+
+log "Executing deterministic scenario_trip.sh with START_TEXT=$START_TEXT TARGET_TEXT=$TARGET_TEXT"
+bash "$CFL_CODE_DIR/scenarios/scenario_trip.sh"
