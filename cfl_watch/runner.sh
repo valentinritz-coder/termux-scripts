@@ -104,6 +104,11 @@ need adb
 need python
 
 [ -f "$CFL_CODE_DIR/lib/adb_local.sh" ] || die "Missing: $CFL_CODE_DIR/lib/adb_local.sh"
+# If instruction provided, force LLM scenario BEFORE checking file existence
+if [ -n "$LLM_INSTRUCTION" ]; then
+  CFL_SCENARIO_SCRIPT="$CFL_CODE_DIR/scenarios/scenario_llm_tripplanner.sh"
+fi
+
 [ -f "$CFL_SCENARIO_SCRIPT" ] || die "Scenario introuvable: $CFL_SCENARIO_SCRIPT"
 
 chmod +x "$CFL_CODE_DIR"/lib/*.sh "$CFL_CODE_DIR"/scenarios/*.sh "$CFL_CODE_DIR"/tools/*.sh >/dev/null 2>&1 || true
@@ -168,7 +173,6 @@ run_one(){
 fail_count=0
 
 if [ -n "$LLM_INSTRUCTION" ]; then
-  CFL_SCENARIO_SCRIPT="$CFL_CODE_DIR/scenarios/scenario_llm_explore.sh"
   # utilise des placeholders, runner exige start/target pour logger
   run_one "LLM" "LLM" "${CUSTOM_SNAP_MODE:-3}" \
     "$DELAY_LAUNCH" "$DELAY_TAP" "$DELAY_TYPE" "$DELAY_PICK" "$DELAY_SEARCH" \
