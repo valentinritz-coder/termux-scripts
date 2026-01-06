@@ -11,6 +11,9 @@ Discipline upgrades (the point):
 
 from __future__ import annotations
 
+import hashlib
+import time
+from datetime import datetime, timezone
 import argparse
 import ast
 import json
@@ -56,6 +59,59 @@ def _chat_completions_url() -> str:
 
 
 # ---------- UI model ----------
+
+def _utc_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+def state_signature(compact: Dict) -> str:
+    """
+    Hash stable de l'état compact (sans les centres si tu veux),
+    pour détecter 'même écran, mêmes candidats, même contexte'.
+    """
+    # On peut garder center, mais ça bouge parfois avec des animations.
+    # Donc on le retire pour une signature plus stable.
+    c = json.loads(json.dumps(compact))  # deep copy JSON-safe
+    for cand in c.get("candidates", []):
+        cand.pop("center", None)
+    payload = json.dumps(c, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12]
+
+def load_history(path: str, limit: int = 10) -> List[Dict]:
+    if not path or not os.path.exists(path):
+        return []
+    items: List[Dict] = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                items.append(json.loads(line))
+            except Exception:
+                continue
+    return items[-limit:]
+
+def append_history(path: str, item: Dict) -> None:
+    if not path:
+        return
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+def history_for_prompt(history: List[Dict], limit: int = 8) -> str:
+    """
+    Format compact lisible pour le LLM (pas un dump).
+    """
+    h = history[-limit:]
+    lines = []
+    for it in h:
+        act = it.get("action", {})
+        lines.append(
+            f"- ts={it.get('ts','?')} phase={it.get('phase','?')} sig={it.get('state_sig','?')} "
+            f"action={act.get('action','?')} tidx={act.get('target_idx',None)} key={act.get('keycode',None)} "
+            f"text={(act.get('text','') or '')[:24]} reason={(act.get('reason','') or '')[:60]}"
+        )
+    return "\n".join(lines) if lines else "(none)"
 
 
 @dataclass(frozen=True)
@@ -436,29 +492,21 @@ def rule_based_action(all_nodes: List[Candidate], phase: str, targets: Dict[str,
 # ---------- prompt + LLM ----------
 
 
-def build_prompt(instruction: str, compact: Dict) -> str:
-    """
-    LLM sees:
-    - objective + constraints (from instruction + parsed constraints)
-    - UI state (compact JSON)
-    It must pick ONE action, and for taps MUST pick target_idx from the candidate list.
-    """
+def build_prompt(instruction: str, compact: Dict, history_text: str, state_sig: str) -> str:
     return textwrap.dedent(
         f"""
         You are controlling an Android app using adb + uiautomator.
-        Your job is NOT to be clever. Your job is to be deterministic and state-driven.
+        Your job is deterministic progress, not creativity.
 
         OBJECTIVE:
         {instruction}
 
-        CONSTRAINTS (must respect):
-        - Use the provided UI state only. Do not invent buttons or coordinates.
-        - Exactly ONE action this turn.
-        - For taps: you MUST choose target_idx from state.candidates[].idx (no raw x/y).
-        - Never tap on keyboard keys (ESC/ALT/CTRL/etc). Use action=type or action=key.
-        - If typing is needed but the field is not focused: tap the input field first (and type next turn).
+        LOOP AVOIDANCE (MANDATORY):
+        - The UI state signature for THIS turn is: {state_sig}
+        - If the last step has the SAME state_sig, you MUST NOT repeat the same action on the same target_idx.
+        - If you tapped an input field last time and state_sig is unchanged, next step should be type (if appropriate) or BACK.
 
-        OUTPUT: return STRICT JSON only (no markdown), schema:
+        OUTPUT: strict JSON only:
         {{
           "action": "tap|type|key|done",
           "target_idx": number|null,
@@ -467,12 +515,16 @@ def build_prompt(instruction: str, compact: Dict) -> str:
           "reason": string
         }}
 
+        RECENT HISTORY:
+        {history_text}
+
         UI STATE (compact JSON):
         {json.dumps(compact, ensure_ascii=False)}
 
         Decide the next single action now.
         """
     ).strip()
+
 
 
 def parse_llm_response(content: str) -> Dict:
@@ -618,6 +670,19 @@ def validate_action(action: Dict, size: Dict[str, int], surfaced_by_idx: Dict[in
 
     return safe
 
+def is_repeat_loop(hist: List[Dict], sig: str, action: Dict) -> bool:
+    if not hist:
+        return False
+    last = hist[-1]
+    if last.get("state_sig") != sig:
+        return False
+    last_act = last.get("action", {})
+    return (
+        last_act.get("action") == action.get("action")
+        and last_act.get("target_idx") == action.get("target_idx")
+        and (last_act.get("keycode") == action.get("keycode"))
+        and (last_act.get("text","") == action.get("text",""))
+    )
 
 # ---------- main ----------
 
@@ -629,6 +694,8 @@ def main() -> int:
     parser.add_argument("--model", default=os.environ.get("LLM_MODEL", "local-model"))
     parser.add_argument("--limit", type=int, default=90, help="Max surfaced candidates")
     parser.add_argument("--no_llm", action="store_true", help="Only rule-based decisions (debug)")
+    parser.add_argument("--history_file", default=os.environ.get("LLM_HISTORY_FILE", ""), help="Path to history JSONL")
+    parser.add_argument("--history_limit", type=int, default=int(os.environ.get("LLM_HISTORY_LIMIT", "10")), help="How many past steps to load")
     args = parser.parse_args()
 
     all_nodes, size, dominant_pkg = extract_candidates(args.xml)
@@ -639,6 +706,10 @@ def main() -> int:
     surfaced = surface_candidates(all_nodes, dominant_pkg, limit=args.limit)
     state = build_state(surfaced, size, phase, targets, constraints)
     compact = compact_state(state)
+    hist = load_history(args.history_file, limit=args.history_limit)
+    sig = state_signature(compact)
+    hist_text = history_for_prompt(hist)
+
 
     log("Compact state (what the LLM actually gets):")
     log(json.dumps(compact, ensure_ascii=False, indent=2))
@@ -648,8 +719,29 @@ def main() -> int:
     # rule-based fast path (still outputs disciplined schema)
     rb = rule_based_action(all_nodes, phase, targets)
     if rb:
+        append_history(
+    args.history_file,
+    {
+        "ts": _utc_iso(),
+        "phase": phase,
+        "state_sig": sig,
+        "instruction": args.instruction[:200],
+        "action": {
+            "action": action.get("action"),
+            "target_idx": action.get("target_idx"),
+            "keycode": action.get("keycode"),
+            "text": action.get("text", ""),
+            "reason": action.get("reason", ""),
+        },
+    },
+)
+
         action = validate_action(rb, size, surfaced_by_idx)
         log(f"Rule-based action: {action}")
+        if is_repeat_loop(hist, sig, action):
+    warn("Detected repeat-loop on identical state_sig; forcing BACK.")
+    action = {"action": "key", "target_idx": None, "x": None, "y": None, "text": "", "keycode": 4, "reason": "Loop breaker: BACK"}
+
         print(json.dumps(action, ensure_ascii=False))
         return 0
 
@@ -657,7 +749,7 @@ def main() -> int:
         print(json.dumps({"action": "done", "reason": "Rule-based had no decision and --no_llm set", "target_idx": None, "x": None, "y": None, "text": "", "keycode": None}, ensure_ascii=False))
         return 0
 
-    prompt = build_prompt(args.instruction, compact)
+    prompt = build_prompt(args.instruction, compact, hist_text, sig)
 
     try:
         raw_action = call_llm(prompt, args.model)
