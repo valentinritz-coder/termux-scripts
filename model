@@ -21,3 +21,7 @@ export LLM_TEMPERATURE=0
 ---
 
 bash runner.sh --instruction "Ouvre CFL et fais un itinéraire Luxembourg -> Arlon"
+
+----
+chmod +x ~/cfl/watch/tools/cfl_dump_loop.sh
+~/cfl/watch/tools/cfl_dump_loop.sh
