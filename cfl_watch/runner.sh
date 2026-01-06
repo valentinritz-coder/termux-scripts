@@ -83,11 +83,21 @@ serve_latest(){
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --scenario) CFL_SCENARIO_SCRIPT="$2"; shift 2 ;;
-    --start) CUSTOM_START="$2"; shift 2 ;;
-    --target) CUSTOM_TARGET="$2"; shift 2 ;;
-    --snap-mode) CUSTOM_SNAP_MODE="$2"; shift 2 ;;
-    --instruction) LLM_INSTRUCTION="$2"; shift 2 ;;
+    --scenario)
+      [ $# -ge 2 ] || die "--scenario requires a PATH"
+      CFL_SCENARIO_SCRIPT="$2"; shift 2 ;;
+    --start)
+      [ $# -ge 2 ] || die "--start requires TEXT"
+      CUSTOM_START="$2"; shift 2 ;;
+    --target)
+      [ $# -ge 2 ] || die "--target requires TEXT"
+      CUSTOM_TARGET="$2"; shift 2 ;;
+    --snap-mode)
+      [ $# -ge 2 ] || die "--snap-mode requires N"
+      CUSTOM_SNAP_MODE="$2"; shift 2 ;;
+    --instruction)
+      [ $# -ge 2 ] || die "--instruction requires TEXT"
+      LLM_INSTRUCTION="$2"; shift 2 ;;
     --dry-run) CFL_DRY_RUN=1; shift ;;
     --latest-run) latest_run; exit $? ;;
     --serve) serve_latest; exit $? ;;
@@ -97,6 +107,7 @@ while [ $# -gt 0 ]; do
     *) usage; exit 2 ;;
   esac
 done
+
 
 ensure_dirs
 attach_log "runner"
