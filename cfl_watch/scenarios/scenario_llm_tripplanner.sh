@@ -9,15 +9,12 @@ CFL_BASE_DIR="$CFL_CODE_DIR"
 . "$CFL_CODE_DIR/lib/common.sh"
 . "$CFL_CODE_DIR/lib/snap.sh"
 
-. "$CFL_CODE_DIR/lib/snap.sh"
-. "$CFL_CODE_DIR/lib/common.sh"
-
 instruction="${LLM_INSTRUCTION:-}"
 if [ -z "$instruction" ]; then
-  die "LLM_INSTRUCTION is required. Example: LLM_INSTRUCTION='Luxembourg -> Arlon, train only, now' bash $0"
+  die "LLM_INSTRUCTION is required. Example: LLM_INSTRUCTION='Recherche un trajet Luxembourg -> Arlon en train uniquement maintenant' bash $0"
 fi
 
-# logging (standalone)
+# keep runner redirection intact
 if [ -z "${CFL_LOG_FILE:-}" ]; then
   attach_log "llm_tripplanner"
 fi
@@ -27,24 +24,17 @@ ensure_dirs
 : "${CFL_TMP_DIR:="$CFL_ARTIFACT_DIR/tmp"}"
 export CFL_TMP_DIR
 
-LLM_STEPS="${LLM_STEPS:-25}"
+LLM_STEPS="${LLM_STEPS:-30}"
 LLM_STEP_SLEEP="${LLM_STEP_SLEEP:-0.5}"
 kill_switch="${LLM_KILL_SWITCH:-$CFL_ARTIFACT_DIR/STOP}"
 dump_path="$CFL_TMP_DIR/live_dump.xml"
-SNAP_MODE="${SNAP_MODE:-3}"
-
-# LLM endpoint/model
-export OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://127.0.0.1:8001}"
-export LLM_MODEL="${LLM_MODEL:-local-model}"
-export LLM_MAX_TOKENS="${LLM_MAX_TOKENS:-200}"
-export LLM_TEMPERATURE="${LLM_TEMPERATURE:-0}"
+LLM_DEBUG_TAP="${LLM_DEBUG_TAP:-1}"
 
 run_name="llm_tripplanner_$(safe_name "$instruction")"
 snap_init "$run_name"
 
-# history per run (kept inside SNAP_DIR)
-export LLM_HISTORY_FILE="${LLM_HISTORY_FILE:-$SNAP_DIR/history.jsonl}"
-export LLM_HISTORY_LIMIT="${LLM_HISTORY_LIMIT:-10}"
+history_file="$SNAP_DIR/history.jsonl"
+plan_file="$SNAP_DIR/trip_plan.json"
 
 finish(){
   local rc=$?
@@ -58,7 +48,6 @@ finish(){
 }
 trap finish EXIT
 
-# deps
 python - <<'PY' >/dev/null 2>&1 || die "Python dependency missing: requests (run: pip install requests)"
 import requests  # noqa
 PY
@@ -77,22 +66,23 @@ dump_ui(){
     warn "UI dump invalid (no <hierarchy): $dump_path"
     return 1
   fi
+
   return 0
 }
 
 log "Instruction: $instruction"
-log "OPENAI_BASE_URL=$OPENAI_BASE_URL"
-log "LLM_MODEL=$LLM_MODEL"
-log "CFL_TMP_DIR=$CFL_TMP_DIR"
 log "SNAP_DIR=$SNAP_DIR"
-log "History: $LLM_HISTORY_FILE"
+log "CFL_TMP_DIR=$CFL_TMP_DIR"
 log "Kill switch: $kill_switch"
 log "Steps: $LLM_STEPS, sleep=$LLM_STEP_SLEEP"
-log "SNAP_MODE=$SNAP_MODE"
+log "History: $history_file"
 
-# runner should have launched the app already, but keep a safety net
-maybe cfl_launch
-sleep_s 0.8
+# Build trip plan once (heuristic by default; add --plan_llm if you want)
+if [ ! -s "$plan_file" ]; then
+  log "Build trip plan -> $plan_file"
+  python "$CFL_CODE_DIR/tools/llm_explore.py" --emit_plan --instruction "$instruction" > "$plan_file"
+  log "Trip plan: $(cat "$plan_file")"
+fi
 
 dump_ui || true
 snap "00_state" "$SNAP_MODE"
@@ -111,53 +101,69 @@ for step in $(seq 1 "$LLM_STEPS"); do
 
   snap "$(printf '%02d' "$step")" "$SNAP_MODE"
 
-  log "Calling llm_explore.py (tripplanner mode)"
+  log "Calling tripplanner LLM stepper"
   action_json="$(
     python "$CFL_CODE_DIR/tools/llm_explore.py" \
       --instruction "$instruction" \
-      --xml "$dump_path"
+      --xml "$dump_path" \
+      --history_file "$history_file"
   )"
 
   log "Action JSON: $action_json"
 
-  # Extract fields (avoid jq dependency)
-  action="$(
-    python -c '
+  # extract fields for shell
+  parsed="$(
+    python - <<'PY' <<<"$action_json"
 import json, sys
 d=json.loads(sys.stdin.read())
-def v(k):
-    x=d.get(k,"")
-    return "" if x is None else str(x)
-print("|".join([v("action"), v("x"), v("y"), v("text"), v("keycode"), v("target_idx"), v("reason")]))
-' <<<"$action_json"
+def s(k):
+  v=d.get(k,"")
+  return "" if v is None else str(v)
+out=[d.get("action",""), s("x"), s("y"), s("text"), s("keycode"), s("reason")]
+print("|".join(out))
+PY
   )"
 
-  IFS="|" read -r act x y text keycode tidx reason <<<"$action"
+  IFS="|" read -r act x y text keycode reason <<<"$parsed"
   act="${act//$'\r'/}"; x="${x//$'\r'/}"; y="${y//$'\r'/}"
-  text="${text//$'\r'/}"; keycode="${keycode//$'\r'/}"; tidx="${tidx//$'\r'/}"
+  text="${text//$'\r'/}"; keycode="${keycode//$'\r'/}"
   reason="${reason//$'\r'/}"
+
+  log "Decision: act=$act x=$x y=$y key=$keycode text='${text:0:40}' reason='${reason:0:120}'"
 
   case "$act" in
     tap)
-      log "LLM -> tap tidx=$tidx x=$x y=$y reason=$reason"
       if [ -z "${x:-}" ] || [ -z "${y:-}" ]; then
         warn "tap coords empty -> abort"
         break
       fi
-      maybe tap "$x" "$y"
-      sleep_s 0.8
-      snap "$(printf '%02d' "$step")_after_tap" "$SNAP_MODE"
+
+      if [ "$LLM_DEBUG_TAP" = "1" ]; then
+        set +e
+        serial_args=()
+        if [ -n "${ANDROID_SERIAL:-}" ]; then
+          serial_args=(-s "$ANDROID_SERIAL")
+        fi
+        adb "${serial_args[@]}" shell input tap "$x" "$y"
+        rc=$?
+        set -e
+        log "adb tap rc=$rc"
+        sleep_s 0.8
+        snap "$(printf '%02d' "$step")_after_tap" "$SNAP_MODE"
+      else
+        maybe tap "$x" "$y"
+      fi
       ;;
     type)
-      log "LLM -> type: $text reason=$reason"
+      log "Type: $text"
       maybe type_text "$text"
       ;;
     key)
-      log "LLM -> keycode: $keycode reason=$reason"
+      log "Key: $keycode"
       maybe key "$keycode"
       ;;
     done)
-      log "LLM -> done reason=$reason"
+      log "Done."
       break
       ;;
     *)
