@@ -27,6 +27,10 @@ chmod +x ~/cfl_watch/tools/cfl_snap_watch.sh
 ~/cfl_watch/tools/cfl_snap_watch.sh "cfl_pages"
 
 ----
+~/termux-scripts $ ~/cfl_watch/tools/cfl_snap_watch.sh "cfl_pages"
+[*] SNAP_DIR=/sdcard/cfl_watch/runs/2026-01-06_10-58-28_cfl_pages (SNAP_MODE=3)
+[*] Watching UI changes -> /sdcard/cfl_watch/runs/2026-01-06_10-58-28_cfl_pages
+[*] Ctrl+C to stop
 
 
 ----
