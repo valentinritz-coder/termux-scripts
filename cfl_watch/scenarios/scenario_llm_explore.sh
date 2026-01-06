@@ -9,13 +9,15 @@ CFL_BASE_DIR="$CFL_CODE_DIR"
 . "$CFL_CODE_DIR/lib/common.sh"
 . "$CFL_CODE_DIR/lib/snap.sh"
 
-instruction="${LLM_INSTRUCTION:-}"
+# Runner ne passe pas d'args -> env obligatoire
+instruction="${LLM_TRIP_INSTRUCTION:-${LLM_INSTRUCTION:-}}"
 if [ -z "$instruction" ]; then
-  die "LLM_INSTRUCTION is required. Example: LLM_INSTRUCTION='Cherche un itinéraire Luxembourg -> Arlon...' bash runner.sh"
+  die "LLM_TRIP_INSTRUCTION (or LLM_INSTRUCTION) is required."
 fi
 
+# Ne pas casser la redirection du runner: attach_log seulement si standalone
 if [ -z "${CFL_LOG_FILE:-}" ]; then
-  attach_log "llm_explore"
+  attach_log "llm_tripplanner"
 fi
 
 ensure_dirs
@@ -23,23 +25,25 @@ ensure_dirs
 : "${CFL_TMP_DIR:="$CFL_ARTIFACT_DIR/tmp"}"
 export CFL_TMP_DIR
 
+# Tuning
 LLM_STEPS="${LLM_STEPS:-30}"
 LLM_STEP_SLEEP="${LLM_STEP_SLEEP:-0.5}"
 kill_switch="${LLM_KILL_SWITCH:-$CFL_ARTIFACT_DIR/STOP}"
 dump_path="$CFL_TMP_DIR/live_dump.xml"
 LLM_DEBUG_TAP="${LLM_DEBUG_TAP:-1}"
 
-run_name="llm_explore_$(safe_name "$instruction")"
+run_name="llm_tripplanner_$(safe_name "$instruction")"
 snap_init "$run_name"
 
-# Per-run history (nice and isolated)
-history_file="${LLM_HISTORY_FILE:-$SNAP_DIR/llm_history.jsonl}"
+# Persisted artifacts for the run
+history_file="$SNAP_DIR/history.jsonl"
+plan_file="$SNAP_DIR/trip_plan.json"
 
 finish(){
   local rc=$?
   trap - EXIT
   if [ "$rc" -ne 0 ]; then
-    warn "llm_explore FAILED (rc=$rc) -> viewer"
+    warn "llm_tripplanner FAILED (rc=$rc) -> viewer"
     "$CFL_CODE_DIR/lib/viewer.sh" "$SNAP_DIR" >/dev/null 2>&1 || true
     log "Viewer: $SNAP_DIR/viewers/index.html"
   fi
@@ -47,6 +51,7 @@ finish(){
 }
 trap finish EXIT
 
+# Déps python (requests)
 python - <<'PY' >/dev/null 2>&1 || die "Python dependency missing: requests (run: pip install requests)"
 import requests  # noqa
 PY
@@ -64,12 +69,10 @@ dump_ui(){
     warn "UI dump missing/empty: $dump_path"
     return 1
   fi
-
   if ! grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
     warn "UI dump invalid (no <hierarchy): $dump_path"
     return 1
   fi
-
   return 0
 }
 
@@ -79,6 +82,7 @@ log "SNAP_DIR=$SNAP_DIR"
 log "Kill switch: $kill_switch"
 log "Steps: $LLM_STEPS, sleep=$LLM_STEP_SLEEP"
 log "History: $history_file"
+log "Plan: $plan_file"
 
 dump_ui || true
 snap "00_state" "$SNAP_MODE"
@@ -97,12 +101,13 @@ for step in $(seq 1 "$LLM_STEPS"); do
 
   snap "$(printf '%02d' "$step")" "$SNAP_MODE"
 
-  log "Calling LLM explorer"
+  log "Calling LLM tripplanner (disciplined)"
   action_json="$(
     python "$CFL_CODE_DIR/tools/llm_explore.py" \
       --instruction "$instruction" \
       --xml "$dump_path" \
-      --history_file "$history_file"
+      --history_file "$history_file" \
+      --plan_file "$plan_file"
   )"
 
   log "Action JSON: $action_json"
@@ -114,22 +119,17 @@ d=json.loads(sys.stdin.read())
 def val(k):
     v=d.get(k,"")
     return "" if v is None else str(v)
-print("|".join([d.get("action",""), val("target_idx"), val("x"), val("y"), val("text"), val("keycode"), val("reason")]))
+print("|".join([d.get("action",""), val("x"), val("y"), val("text"), val("keycode")]))
 ' <<<"$action_json"
   )"
 
-  IFS="|" read -r act tidx x y text keycode reason <<<"$action"
-  act="${act//$'\r'/}"
-  tidx="${tidx//$'\r'/}"
-  x="${x//$'\r'/}"
-  y="${y//$'\r'/}"
-  text="${text//$'\r'/}"
-  keycode="${keycode//$'\r'/}"
-  reason="${reason//$'\r'/}"
+  IFS="|" read -r act x y text keycode <<<"$action"
+  act="${act//$'\r'/}"; x="${x//$'\r'/}"; y="${y//$'\r'/}"
+  text="${text//$'\r'/}"; keycode="${keycode//$'\r'/}"
 
   case "$act" in
     tap)
-      log "LLM -> tap tidx=$tidx x=$x y=$y reason=$reason"
+      log "LLM -> tap $x,$y (debug=$LLM_DEBUG_TAP)"
       if [ -z "${x:-}" ] || [ -z "${y:-}" ]; then
         warn "tap coords empty -> abort"
         break
@@ -151,30 +151,18 @@ print("|".join([d.get("action",""), val("target_idx"), val("x"), val("y"), val("
         maybe tap "$x" "$y"
       fi
       ;;
-
     type)
-      log "LLM -> type: '$text' reason=$reason"
-      if [ -z "${text:-}" ]; then
-        warn "type text empty -> abort"
-        break
-      fi
+      log "LLM -> type: $text"
       maybe type_text "$text"
       ;;
-
     key)
-      log "LLM -> keycode: $keycode reason=$reason"
-      if [ -z "${keycode:-}" ]; then
-        warn "keycode empty -> abort"
-        break
-      fi
+      log "LLM -> keycode: $keycode"
       maybe key "$keycode"
       ;;
-
     done)
-      log "LLM -> done reason=$reason"
+      log "LLM -> done"
       break
       ;;
-
     *)
       warn "Unknown action: $act"
       break
@@ -184,5 +172,5 @@ print("|".join([d.get("action",""), val("target_idx"), val("x"), val("y"), val("
   sleep_s "$LLM_STEP_SLEEP"
 done
 
-log "llm_explore finished."
+log "llm_tripplanner finished."
 exit 0
