@@ -7,9 +7,6 @@ dummycd ~/src/llama.cpp
 
 
 ----
-
-export LLM_INSTRUCTION="Luxembourg -> Arlon, train only, now"
-export OPENAI_BASE_URL="http://127.0.0.1:8001"
-export OPENAI_API_KEY="dummy"   # ou ton token si besoin
-export LLM_MODEL="local-model"
-bash ~/cfl_watch/runner.sh --scenario scenario_llm_tripplanner.sh
+export SNAP_MODE=3
+export LLM_STEPS=25
+bash "$HOME/cfl_watch/runner.sh" --instruction "Recherche un trajet Luxembourg -> Arlon en train uniquement maintenant"
