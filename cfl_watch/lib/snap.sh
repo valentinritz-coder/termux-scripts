@@ -25,17 +25,28 @@ snap_init(){
 _snap_do(){
   local base="$1"
   local mode="$2"
+
+  check_file(){
+    local f="$1"
+    adb -s "$SERIAL" shell "test -s '$f'" >/dev/null 2>&1
+  }
+
   case "$mode" in
     0) return 0 ;;
     1)
       adb -s "$SERIAL" shell screencap -p "${base}.png" >/dev/null 2>&1 || warn "screencap failed"
+      check_file "${base}.png" || warn "png missing/empty: ${base}.png"
       ;;
     2)
       adb -s "$SERIAL" shell uiautomator dump --compressed "${base}.xml" >/dev/null 2>&1 || warn "uiautomator dump failed"
+      check_file "${base}.xml" || warn "xml missing/empty: ${base}.xml"
       ;;
     3)
       adb -s "$SERIAL" shell uiautomator dump --compressed "${base}.xml" >/dev/null 2>&1 || warn "uiautomator dump failed"
+      check_file "${base}.xml" || warn "xml missing/empty: ${base}.xml"
+
       adb -s "$SERIAL" shell screencap -p "${base}.png" >/dev/null 2>&1 || warn "screencap failed"
+      check_file "${base}.png" || warn "png missing/empty: ${base}.png"
       ;;
     *)
       warn "SNAP_MODE invalide: $mode (0/1/2/3 attendu)"
