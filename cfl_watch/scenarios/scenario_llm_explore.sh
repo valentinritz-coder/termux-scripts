@@ -9,24 +9,20 @@ CFL_BASE_DIR="$CFL_CODE_DIR"
 . "$CFL_CODE_DIR/lib/common.sh"
 . "$CFL_CODE_DIR/lib/snap.sh"
 
-# Instruction LLM: runner ne passe pas d'args -> env obligatoire
 instruction="${LLM_INSTRUCTION:-}"
 if [ -z "$instruction" ]; then
-  die "LLM_INSTRUCTION is required (runner does not pass args). Example: LLM_INSTRUCTION='Ouvre CFL...' bash runner.sh --instruction '...'"
+  die "LLM_INSTRUCTION is required. Example: LLM_INSTRUCTION='Cherche un itinéraire Luxembourg -> Arlon...' bash runner.sh"
 fi
 
-# Ne pas casser la redirection du runner: attach_log seulement si standalone
 if [ -z "${CFL_LOG_FILE:-}" ]; then
   attach_log "llm_explore"
 fi
 
 ensure_dirs
 
-# IMPORTANT: dump uiautomator doit être dans un chemin accessible via adb shell
 : "${CFL_TMP_DIR:="$CFL_ARTIFACT_DIR/tmp"}"
 export CFL_TMP_DIR
 
-# Tuning
 LLM_STEPS="${LLM_STEPS:-30}"
 LLM_STEP_SLEEP="${LLM_STEP_SLEEP:-0.5}"
 kill_switch="${LLM_KILL_SWITCH:-$CFL_ARTIFACT_DIR/STOP}"
@@ -35,6 +31,9 @@ LLM_DEBUG_TAP="${LLM_DEBUG_TAP:-1}"
 
 run_name="llm_explore_$(safe_name "$instruction")"
 snap_init "$run_name"
+
+# Per-run history (nice and isolated)
+history_file="${LLM_HISTORY_FILE:-$SNAP_DIR/llm_history.jsonl}"
 
 finish(){
   local rc=$?
@@ -48,12 +47,10 @@ finish(){
 }
 trap finish EXIT
 
-# Déps python (requests)
 python - <<'PY' >/dev/null 2>&1 || die "Python dependency missing: requests (run: pip install requests)"
 import requests  # noqa
 PY
 
-# Check endpoint
 if [ -z "${OPENAI_BASE_URL:-}" ]; then
   warn "OPENAI_BASE_URL is not set. Example: export OPENAI_BASE_URL=http://127.0.0.1:8001"
 fi
@@ -63,13 +60,11 @@ dump_ui(){
   inject rm -f "$dump_path" >/dev/null 2>&1 || true
   inject uiautomator dump --compressed "$dump_path" 2>&1 | sed 's/^/[uia] /' >&2 || true
 
-  # présence + taille (côté device)
   if ! inject test -s "$dump_path" >/dev/null 2>&1; then
     warn "UI dump missing/empty: $dump_path"
     return 1
   fi
 
-  # validation du contenu (côté Termux, car /sdcard est lisible localement)
   if ! grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
     warn "UI dump invalid (no <hierarchy): $dump_path"
     return 1
@@ -78,14 +73,13 @@ dump_ui(){
   return 0
 }
 
-
 log "Instruction: $instruction"
 log "CFL_TMP_DIR=$CFL_TMP_DIR"
 log "SNAP_DIR=$SNAP_DIR"
 log "Kill switch: $kill_switch"
 log "Steps: $LLM_STEPS, sleep=$LLM_STEP_SLEEP"
+log "History: $history_file"
 
-# Snapshot initial (runner a déjà launch l'app)
 dump_ui || true
 snap "00_state" "$SNAP_MODE"
 
@@ -107,7 +101,8 @@ for step in $(seq 1 "$LLM_STEPS"); do
   action_json="$(
     python "$CFL_CODE_DIR/tools/llm_explore.py" \
       --instruction "$instruction" \
-      --xml "$dump_path"
+      --xml "$dump_path" \
+      --history_file "$history_file"
   )"
 
   log "Action JSON: $action_json"
@@ -119,17 +114,22 @@ d=json.loads(sys.stdin.read())
 def val(k):
     v=d.get(k,"")
     return "" if v is None else str(v)
-print("|".join([d.get("action",""), val("x"), val("y"), val("text"), val("keycode")]))
+print("|".join([d.get("action",""), val("target_idx"), val("x"), val("y"), val("text"), val("keycode"), val("reason")]))
 ' <<<"$action_json"
   )"
 
-  IFS="|" read -r act x y text keycode <<<"$action"
-  act="${act//$'\r'/}"; x="${x//$'\r'/}"; y="${y//$'\r'/}"
-  text="${text//$'\r'/}"; keycode="${keycode//$'\r'/}"
+  IFS="|" read -r act tidx x y text keycode reason <<<"$action"
+  act="${act//$'\r'/}"
+  tidx="${tidx//$'\r'/}"
+  x="${x//$'\r'/}"
+  y="${y//$'\r'/}"
+  text="${text//$'\r'/}"
+  keycode="${keycode//$'\r'/}"
+  reason="${reason//$'\r'/}"
 
   case "$act" in
     tap)
-      log "LLM -> tap $x,$y (debug=$LLM_DEBUG_TAP)"
+      log "LLM -> tap tidx=$tidx x=$x y=$y reason=$reason"
       if [ -z "${x:-}" ] || [ -z "${y:-}" ]; then
         warn "tap coords empty -> abort"
         break
@@ -151,18 +151,30 @@ print("|".join([d.get("action",""), val("x"), val("y"), val("text"), val("keycod
         maybe tap "$x" "$y"
       fi
       ;;
+
     type)
-      log "LLM -> type: $text"
+      log "LLM -> type: '$text' reason=$reason"
+      if [ -z "${text:-}" ]; then
+        warn "type text empty -> abort"
+        break
+      fi
       maybe type_text "$text"
       ;;
+
     key)
-      log "LLM -> keycode: $keycode"
+      log "LLM -> keycode: $keycode reason=$reason"
+      if [ -z "${keycode:-}" ]; then
+        warn "keycode empty -> abort"
+        break
+      fi
       maybe key "$keycode"
       ;;
+
     done)
-      log "LLM -> done"
+      log "LLM -> done reason=$reason"
       break
       ;;
+
     *)
       warn "Unknown action: $act"
       break
