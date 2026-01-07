@@ -474,15 +474,17 @@ tap_by_selector "start suggestion (desc contains)" "$dump_cache" "content-desc=$
   || tap_first_result "start suggestion (first)" "$dump_cache"
 
 # After selecting start, destination field should be reachable
-wait_resid_present "$ID_TARGET" || sleep_s 2
+d="$(wait_dump_grep 'content-desc="[^"]*destination[^"]*"' "$WAIT_LONG" "$WAIT_POLL")" || d="$(dump_ui)"
 snap "04_after_pick_start" "$SNAP_MODE"
 
-# DESTINATION
-snap "05_before_tap_destination" "$SNAP_MODE"
-dump_cache="$(dump_ui)"
-
-tap_by_selector "destination field (id)" "$dump_cache" "resource-id=$ID_TARGET" \
-  || tap_by_selector "destination field (content-desc)" "$dump_cache" "content-desc=Select destination"
+# DESTINATION (tap sur LE dump qui a matché)
+tap_by_selector "destination field (desc)" "$d" \
+  "class=android.view.View" \
+  "clickable=true" \
+  "focusable=true" \
+  "content-desc=destination" \
+  || tap_by_selector "destination field (desc exact EN)" "$d" "content-desc=Select destination" \
+  || tap_by_selector "destination field (id)" "$d" "resource-id=$ID_TARGET"
 
 snap "06_after_tap_destination" "$SNAP_MODE"
 
