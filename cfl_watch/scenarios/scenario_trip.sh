@@ -78,6 +78,10 @@ dump_ui(){
   local t0 t1 t2 dump_ms cat_ms total_ms
   t0=$(date +%s%N)
 
+  # Nettoyage pour éviter les dumps stales
+  inject rm -f "$remote_path" >/dev/null 2>&1 || true
+  rm -f "$local_path" >/dev/null 2>&1 || true
+
   # 1) dump côté device (remote)
   inject uiautomator dump --compressed "$remote_path" >/dev/null 2>&1 || true
   t1=$(date +%s%N)
@@ -129,7 +133,7 @@ wait_dump_grep(){
   # usage: wait_dump_grep "<regex>" [timeout_s] [interval_s]
   local regex="$1"
   local timeout_s="${2:-10}"
-  local interval_s="${3:-0.25}"
+  local interval_s="${3:-1.0}"
   local end=$(( $(date +%s) + timeout_s ))
 
   while [ "$(date +%s)" -lt "$end" ]; do
@@ -149,7 +153,7 @@ wait_dump_grep(){
 wait_resid_present(){
   local resid="$1"
   local timeout_s="${2:-10}"
-  local interval_s="${3:-0.25}"
+  local interval_s="${3:-1.0}"
 
   local pat
   pat="$(resid_regex "$resid")"
@@ -182,36 +186,7 @@ wait_resid_absent(){
   return 1
 }
 
-wait_focused_resid(){
-  # Wait until a node matching resid has focused="true"
-  local resid="$1"
-  local timeout_s="${2:-8}"
-  local interval_s="${3:-0.25}"
-  local end=$(( $(date +%s) + timeout_s ))
-
-  local pat
-  pat="$(resid_regex "$resid")"
-
-  while [ "$(date +%s)" -lt "$end" ]; do
-    local d; d="$(dump_ui)"
-    # Approche robuste: on cherche resid ET focused="true" n'importe où dans le dump.
-    # (Pas parfait, mais fiable en pratique sans parser XML à chaque poll.)
-    if grep -Eq "$pat" "$d" 2>/dev/null && grep -Fq 'focused="true"' "$d" 2>/dev/null; then
-      # petite amélioration: exige que focused et resid apparaissent proches (même ligne) si possible
-      if grep -Eq "$pat.*focused=\"true\"|focused=\"true\".*$pat" "$d" 2>/dev/null; then
-        return 0
-      fi
-      # sinon on accepte quand même (certains dumps multi-lignes / reformat)
-      return 0
-    fi
-    sleep "$interval_s"
-  done
-
-  warn "wait_focused_resid timeout: resid=$resid"
-  return 1
-}
-
-wait_results_ready_v2(){
+wait_results_ready(){
   # Attendre que les suggestions soient prêtes après saisie.
   # - 1 seule boucle
   # - 1 dump UI par itération
@@ -222,7 +197,7 @@ wait_results_ready_v2(){
   #   OK "faible": list présente (certains écrans n'ont pas le loader)
   #
   # Usage:
-  #   wait_results_ready_v2 12 1.0 || true
+  #   wait_results_ready 12 1.0 || true
 
   local timeout_s="${1:-12}"
   local interval_s="${2:-1.0}"
@@ -247,7 +222,7 @@ wait_results_ready_v2(){
 
     # debug compact (optionnel)
     last_state="iter=$iter list=$has_list loader=$has_loader"
-    [ "${CFL_DUMP_TIMING:-1}" = "1" ] && log "wait_results_ready_v2: $last_state"
+    [ "${CFL_DUMP_TIMING:-1}" = "1" ] && log "wait_results_ready: $last_state"
 
     # OK fort
     if [ "$has_list" -eq 1 ] && [ "$has_loader" -eq 0 ]; then
@@ -261,34 +236,7 @@ wait_results_ready_v2(){
     sleep "$interval_s"
   done
 
-  warn "wait_results_ready_v2 timeout ($timeout_s s) last=$last_state"
-  return 1
-}
-
-wait_results_ready(){
-  # Wait until results list is present, and ideally loader is absent.
-  local timeout_s="${1:-10}"
-  local interval_s="${2:-0.25}"
-  local end=$(( $(date +%s) + timeout_s ))
-
-  local re_list
-  local re_loader
-  re_list="$(resid_regex "$ID_RESULTS")"
-  re_loader="$(resid_regex "$ID_PROGRESS")"
-
-  while [ "$(date +%s)" -lt "$end" ]; do
-    local d; d="$(dump_ui)"
-    local has_list=0 has_loader=0
-    grep -Eq "$re_list" "$d" 2>/dev/null && has_list=1 || true
-    grep -Eq "$re_loader" "$d" 2>/dev/null && has_loader=1 || true
-
-    [ "$has_list" -eq 1 ] && [ "$has_loader" -eq 0 ] && return 0
-    [ "$has_list" -eq 1 ] && return 0
-
-    sleep "$interval_s"
-  done
-
-  warn "wait_results_ready timeout (list/loader not in expected state)"
+  warn "wait_results_ready timeout ($timeout_s s) last=$last_state"
   return 1
 }
 
@@ -485,7 +433,7 @@ log "Type start: $START_TEXT"
 sleep_s 0.15
 maybe type_text "$START_TEXT"
 
-wait_results_ready_v2 12 1.0 || true
+wait_results_ready 12 1.0 || true
 snap "03_after_type_start" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
@@ -510,7 +458,7 @@ log "Type destination: $TARGET_TEXT"
 sleep_s 0.15
 maybe type_text "$TARGET_TEXT"
 
-wait_results_ready_v2 12 1.0 || true
+wait_results_ready 12 1.0 || true
 snap "07_after_type_destination" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
