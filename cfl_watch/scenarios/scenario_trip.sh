@@ -211,6 +211,60 @@ wait_focused_resid(){
   return 1
 }
 
+wait_results_ready_v2(){
+  # Attendre que les suggestions soient prêtes après saisie.
+  # - 1 seule boucle
+  # - 1 dump UI par itération
+  # - interval conseillé: 1.0s (vu que dump_ui coûte déjà 2-3s...)
+  #
+  # Conditions de sortie:
+  #   OK "fort": list présente ET loader absent
+  #   OK "faible": list présente (certains écrans n'ont pas le loader)
+  #
+  # Usage:
+  #   wait_results_ready_v2 12 1.0 || true
+
+  local timeout_s="${1:-12}"
+  local interval_s="${2:-1.0}"
+
+  # match "n'importe quel package:id/xxx"
+  local re_list='resource-id="[^"]*:id/list_location_results"'
+  local re_loader='resource-id="[^"]*:id/progress_location_loading"'
+
+  local end=$(( $(date +%s) + timeout_s ))
+
+  local iter=0
+  local last_state=""
+  while [ "$(date +%s)" -lt "$end" ]; do
+    iter=$((iter+1))
+
+    local d
+    d="$(dump_ui)"
+
+    local has_list=0 has_loader=0
+    grep -Eq "$re_list" "$d" 2>/dev/null && has_list=1 || true
+    grep -Eq "$re_loader" "$d" 2>/dev/null && has_loader=1 || true
+
+    # debug compact (optionnel)
+    last_state="iter=$iter list=$has_list loader=$has_loader"
+    [ "${CFL_DUMP_TIMING:-1}" = "1" ] && log "wait_results_ready_v2: $last_state"
+
+    # OK fort
+    if [ "$has_list" -eq 1 ] && [ "$has_loader" -eq 0 ]; then
+      return 0
+    fi
+    # OK faible
+    if [ "$has_list" -eq 1 ]; then
+      return 0
+    fi
+
+    sleep "$interval_s"
+  done
+
+  warn "wait_results_ready_v2 timeout ($timeout_s s) last=$last_state"
+  return 1
+}
+
 wait_results_ready(){
   # Wait until results list is present, and ideally loader is absent.
   local timeout_s="${1:-10}"
@@ -428,10 +482,10 @@ tap_by_selector "start field (id)" "$dump_cache" "resource-id=$ID_START" \
 snap "02_after_tap_start" "$SNAP_MODE"
 
 log "Type start: $START_TEXT"
-wait_focused_resid "$ID_START" 6 0.25 || true
+sleep_s 0.15
 maybe type_text "$START_TEXT"
 
-wait_results_ready 10 0.25 || true
+wait_results_ready_v2 12 1.0 || true
 snap "03_after_type_start" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
@@ -453,10 +507,10 @@ tap_by_selector "destination field (id)" "$dump_cache" "resource-id=$ID_TARGET" 
 snap "06_after_tap_destination" "$SNAP_MODE"
 
 log "Type destination: $TARGET_TEXT"
-wait_focused_resid "$ID_TARGET" 6 0.25 || true
+sleep_s 0.15
 maybe type_text "$TARGET_TEXT"
 
-wait_results_ready 10 0.25 || true
+wait_results_ready_v2 12 1.0 || true
 snap "07_after_type_destination" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
