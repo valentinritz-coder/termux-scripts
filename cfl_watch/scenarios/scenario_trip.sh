@@ -162,6 +162,11 @@ wait_dump_grep(){
   local interval_s="${3:-$WAIT_POLL}"
   local end=$(( $(date +%s) + timeout_s ))
 
+  # si interval=0 / 0.0 / 0.00... on ne dort pas
+  if [[ ! "$interval_s" =~ ^0(\.0+)?$ ]]; then
+    sleep "$interval_s"
+  fi
+
   while [ "$(date +%s)" -lt "$end" ]; do
     local d
     d="$(dump_ui)"
@@ -180,8 +185,13 @@ wait_resid_present(){
   local resid="$1"
   local timeout_s="${2:-$WAIT_SHORT}"
   local interval_s="${3:-$WAIT_POLL}"
-
   local pat
+  
+  # si interval=0 / 0.0 / 0.00... on ne dort pas
+  if [[ ! "$interval_s" =~ ^0(\.0+)?$ ]]; then
+    sleep "$interval_s"
+  fi
+  
   pat="$(resid_regex "$resid")"
   wait_dump_grep "$pat" "$timeout_s" "$interval_s" >/dev/null
 }
@@ -192,8 +202,13 @@ wait_resid_absent(){
   local interval_s="${3:-$WAIT_POLL}"
   local stable_n="${4:-2}"
   local end=$(( $(date +%s) + timeout_s ))
-
   local pat
+  
+  # si interval=0 / 0.0 / 0.00... on ne dort pas
+  if [[ ! "$interval_s" =~ ^0(\.0+)?$ ]]; then
+    sleep "$interval_s"
+  fi
+  
   pat="$(resid_regex "$resid")"
 
   local ok=0
@@ -238,6 +253,12 @@ wait_results_ready(){
   local iter=0
   local last_state=""
   local m
+    
+  # si interval=0 / 0.0 / 0.00... on ne dort pas
+  if [[ ! "$interval_s" =~ ^0(\.0+)?$ ]]; then
+    sleep "$interval_s"
+  fi
+  
   while [ "$(date +%s)" -lt "$end" ]; do
     iter=$((iter+1))
 
@@ -477,7 +498,6 @@ snap_from_dump "03_after_pick_start" "$dump_cache" "$SNAP_MODE"
 
 # DESTINATION (tap sur LE dump qui a matché)
 tap_by_selector "destination field (desc)" "$dump_cache" \
-  "class=android.view.View" \
   "clickable=true" \
   "focusable=true" \
   "content-desc=destination" \
@@ -499,7 +519,8 @@ tap_by_selector "destination suggestion (desc contains)" "$dump_cache" "content-
   || tap_first_result "destination suggestion (first)" "$dump_cache"
 
 # Wait for search button (any known form)
-wait_dump_grep "$(resid_regex "$ID_BTN_SEARCH_DEFAULT")|$(resid_regex "$ID_BTN_SEARCH")|text=\"Rechercher\"|text=\"Itinéraires\"" >/dev/null || sleep_s 1
+dump_cache="$(wait_dump_grep "$(resid_regex "$ID_BTN_SEARCH_DEFAULT")|$(resid_regex "$ID_BTN_SEARCH")|text=\"Rechercher\"|text=\"Itinéraires\"" \
+  "$WAIT_LONG" "$WAIT_POLL" || dump_ui)"
 snap_from_dump "05_after_pick_destination" "$dump_cache" "$SNAP_MODE"
 
 # SEARCH
