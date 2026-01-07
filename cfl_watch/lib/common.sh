@@ -211,3 +211,51 @@ wait_ui_resid(){
   return 1
 }
 
+ime_is_shown(){
+  local out vis
+  out="$(adb shell dumpsys input_method 2>/dev/null | tr -d '\r' || true)"
+
+  # Cas fréquents selon version Android
+  if printf '%s' "$out" | grep -Eq 'mInputShown=true|mIsInputViewShown=true'; then
+    return 0
+  fi
+
+  # Fallback: visibilité IME en hex (souvent présent)
+  vis="$(printf '%s' "$out" | grep -Eo 'mImeWindowVis=0x[0-9a-f]+' | head -n1 | cut -d= -f2)"
+  [ -n "$vis" ] || return 1
+  [ "$vis" != "0x0" ]
+}
+
+wait_keyboard_shown(){
+  local timeout_s="${1:-5}"
+  local interval_s="${2:-0.15}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  while [ "$(date +%s)" -lt "$end" ]; do
+    if ime_is_shown; then
+      return 0
+    fi
+    sleep "$interval_s"
+  done
+
+  warn "wait_keyboard_shown timeout"
+  return 1
+}
+
+wait_keyboard_hidden(){
+  local timeout_s="${1:-5}"
+  local interval_s="${2:-0.15}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  while [ "$(date +%s)" -lt "$end" ]; do
+    if ! ime_is_shown; then
+      return 0
+    fi
+    sleep "$interval_s"
+  done
+
+  warn "wait_keyboard_hidden timeout"
+  return 1
+}
+
+
