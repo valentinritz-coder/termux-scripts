@@ -474,7 +474,7 @@ tap_by_selector "start suggestion (desc contains)" "$dump_cache" "content-desc=$
   || tap_first_result "start suggestion (first)" "$dump_cache"
 
 # After selecting start, destination field should be reachable
-wait_resid_present "$ID_TARGET" || wait_dump_grep 'content-desc="Select destination"' >/dev/null || sleep_s 1
+wait_resid_present "$ID_TARGET" || sleep_s 2
 snap "04_after_pick_start" "$SNAP_MODE"
 
 # DESTINATION
