@@ -1,16 +1,5 @@
 ADB_TCP_PORT=37099 \
-CFL_REMOTE_TMP_DIR=/sdcard/cfl_watch/tmp \
-CFL_TMP_DIR=$HOME/.cache/cfl_watch \
-bash "$HOME/cfl_watch/runner.sh" --no-anim \
-  --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
-
-
---
-
-ADB_TCP_PORT=37099 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
-CFL_TMP_DIR=$HOME/.cache/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
 bash "$HOME/cfl_watch/runner.sh" --no-anim \
   --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
-
-
