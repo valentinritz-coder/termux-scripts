@@ -258,4 +258,31 @@ wait_keyboard_hidden(){
   return 1
 }
 
+wait_ui_absent_resid(){
+  # Attend que le resource-id disparaisse de l'ui.xml
+  local resid="$1"
+  local timeout_s="${2:-10}"
+  local interval_s="${3:-0.30}"
+  local stable_n="${4:-2}"   # doit être absent N dumps d'affilée (anti-flicker)
+  local end=$(( $(date +%s) + timeout_s ))
 
+  local ok=0
+  while [ "$(date +%s)" -lt "$end" ]; do
+    local xml
+    xml="$(ui_dump)"
+
+    if printf '%s' "$xml" | grep -Fq "resource-id=\"$resid\""; then
+      ok=0
+    else
+      ok=$((ok+1))
+      if [ "$ok" -ge "$stable_n" ]; then
+        return 0
+      fi
+    fi
+
+    sleep "$interval_s"
+  done
+
+  warn "wait_ui_absent_resid timeout: resid=$resid"
+  return 1
+}
