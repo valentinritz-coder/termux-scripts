@@ -449,51 +449,49 @@ maybe cfl_launch
 
 # Wait for start input
 wait_resid_present "$ID_START" || sleep_s 2
-snap "00_launch" "$SNAP_MODE"
 
 # START
-snap "01_before_tap_start" "$SNAP_MODE"
 dump_cache="$(dump_ui)"
+snap_from_dump "01_CFL_Mobile" "$dump_cache" "$SNAP_MODE"
 
 # Prefer stable id first; content-desc often changes with locale/accessibility
 tap_by_selector "start field (id)" "$dump_cache" "resource-id=$ID_START" \
   || tap_by_selector "start field (content-desc)" "$dump_cache" "content-desc=Select start"
-
-snap "02_after_tap_start" "$SNAP_MODE"
 
 log "Type start: $START_TEXT"
 sleep_s 0.30
 maybe type_text "$START_TEXT"
 
 wait_results_ready || true
-snap "03_after_type_start" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
+snap_from_dump "02_after_type_start" "$dump_cache" "$SNAP_MODE"
+
 tap_by_selector "start suggestion (desc contains)" "$dump_cache" "content-desc=$START_TEXT" \
   || tap_by_selector "start suggestion (text contains)" "$dump_cache" "text=$START_TEXT" \
   || tap_first_result "start suggestion (first)" "$dump_cache"
 
 # After selecting start, destination field should be reachable
-d="$(wait_dump_grep 'content-desc="[^"]*destination[^"]*"' "$WAIT_LONG" "$WAIT_POLL")" || d="$(dump_ui)"
-snap "04_after_pick_start" "$SNAP_MODE"
+dump_cache="$(wait_dump_grep 'content-desc="[^"]*destination[^"]*"' "$WAIT_LONG" "$WAIT_POLL")" || dump_cache="$(dump_ui)"
+snap_from_dump "03_after_pick_start" "$dump_cache" "$SNAP_MODE"
 
 # DESTINATION (tap sur LE dump qui a matché)
-tap_by_selector "destination field (desc)" "$d" \
+tap_by_selector "destination field (desc)" "$dump_cache" \
   "class=android.view.View" \
   "clickable=true" \
   "focusable=true" \
   "content-desc=destination" \
-  || tap_by_selector "destination field (desc exact EN)" "$d" "content-desc=Select destination" \
-  || tap_by_selector "destination field (id)" "$d" "resource-id=$ID_TARGET"
-
-snap "06_after_tap_destination" "$SNAP_MODE"
+  || tap_by_selector "destination field (desc exact EN)" "$dump_cache" "content-desc=Select destination" \
+  || tap_by_selector "destination field (id)" "$dump_cache" "resource-id=$ID_TARGET"
 
 log "Type destination: $TARGET_TEXT"
 sleep_s 0.30
 maybe type_text "$TARGET_TEXT"
 
 wait_results_ready || true
-snap "07_after_type_destination" "$SNAP_MODE"
+
+dump_cache="$(dump_ui)"
+snap_from_dump "04_after_type_destination" "$dump_cache" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
 tap_by_selector "destination suggestion (desc contains)" "$dump_cache" "content-desc=$TARGET_TEXT" \
@@ -502,11 +500,11 @@ tap_by_selector "destination suggestion (desc contains)" "$dump_cache" "content-
 
 # Wait for search button (any known form)
 wait_dump_grep "$(resid_regex "$ID_BTN_SEARCH_DEFAULT")|$(resid_regex "$ID_BTN_SEARCH")|text=\"Rechercher\"|text=\"Itinéraires\"" >/dev/null || sleep_s 1
-snap "08_after_pick_destination" "$SNAP_MODE"
+snap_from_dump "05_after_pick_destination" "$dump_cache" "$SNAP_MODE"
 
 # SEARCH
-snap "09_before_search" "$SNAP_MODE"
 dump_cache="$(dump_ui)"
+snap_from_dump "06_before_search" "$dump_cache" "$SNAP_MODE"
 
 if ! (
   tap_by_selector "search button (id default)" "$dump_cache" "resource-id=$ID_BTN_SEARCH_DEFAULT" \
@@ -518,8 +516,9 @@ if ! (
   maybe key 66 || true
 fi
 
-# Force full artifacts here even if SNAP_MODE=1/2, because it's the important step
-snap "10_after_search" 3
+# SEARCH
+dump_cache="$(dump_ui)"
+snap_from_dump "07_after_search" "$dump_cache" 3
 
 # Quick heuristic on last xml (if any)
 latest_xml="$(ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true)"
