@@ -79,11 +79,11 @@ adb_ping(){
 }
 
 cfl_force_stop(){
-  adb -s "$CFL_SERIAL" shell am force-stop "$CFL_PKG" >/dev/null 2>&1 || true
+  maybe adb -s "$CFL_SERIAL" shell am force-stop "$CFL_PKG" >/dev/null 2>&1 || true
 }
 
 cfl_launch(){
-  adb -s "$CFL_SERIAL" shell monkey -p "$CFL_PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+  maybe adb -s "$CFL_SERIAL" shell monkey -p "$CFL_PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
 }
 
 # Dry-run guard: if CFL_DRY_RUN=1 we only log actions
@@ -103,17 +103,57 @@ self_check(){
   ensure_dirs
   need adb
   need python
+  need grep
+  need sed
+  need awk
   log "Code dir: $CFL_CODE_DIR"
   log "Artifacts: $CFL_ARTIFACT_DIR (runs=$CFL_RUNS_DIR logs=$CFL_LOG_DIR)"
+  log "Tmp dir: $CFL_TMP_DIR"
   log "Serial: $CFL_SERIAL"
   log "Package: $CFL_PKG"
+
+  if [ ! -d "/sdcard" ]; then
+    die "/sdcard inaccessible. Run: termux-setup-storage"
+  fi
+
+  mkdir -p "$CFL_ARTIFACT_DIR" "$CFL_RUNS_DIR" "$CFL_LOG_DIR" "$CFL_TMP_DIR"
+  if ! touch "$CFL_ARTIFACT_DIR/.perm_check" >/dev/null 2>&1; then
+    die "Impossible d'écrire dans $CFL_ARTIFACT_DIR (termux-setup-storage ?)"
+  fi
+  rm -f "$CFL_ARTIFACT_DIR/.perm_check" >/dev/null 2>&1 || true
+
+  if [[ "$CFL_TMP_DIR" == /data/data/com.termux/* ]]; then
+    die "CFL_TMP_DIR est dans /data/data/com.termux (uiautomator n'y accède pas). Choisissez /sdcard/..."
+  fi
+
   adb start-server >/dev/null 2>&1 || true
   if adb_ping; then
     log "Device reachable via adb"
     adb -s "$CFL_SERIAL" shell getprop ro.product.model 2>/dev/null | head -n1 || true
   else
-    warn "Device NOT reachable on $CFL_SERIAL"
+    die "Device NOT reachable on $CFL_SERIAL (start adb_local.sh ?)"
   fi
+
+  if ! adb -s "$CFL_SERIAL" shell pm path "$CFL_PKG" >/dev/null 2>&1; then
+    warn "Package non trouvé via adb: $CFL_PKG"
+  fi
+
+  if ! inject sh -c "mkdir -p '$CFL_TMP_DIR' && echo ok > '$CFL_TMP_DIR/.adb_check'" >/dev/null 2>&1; then
+    die "ADB n'arrive pas à écrire dans $CFL_TMP_DIR"
+  fi
+  inject sh -c "rm -f '$CFL_TMP_DIR/.adb_check'" >/dev/null 2>&1 || true
+
+  local dump_path
+  dump_path="$CFL_TMP_DIR/_self_check.xml"
+  if ! inject sh -c "uiautomator dump --compressed '$dump_path' >/dev/null 2>&1"; then
+    die "uiautomator dump a échoué (uiautomator dispo ?)"
+  fi
+  if ! inject sh -c "test -s '$dump_path' && grep -q '<hierarchy' '$dump_path'" >/dev/null 2>&1; then
+    die "uiautomator dump vide/invalide: $dump_path"
+  fi
+  inject sh -c "rm -f '$dump_path'" >/dev/null 2>&1 || true
+
+  log "Self-check OK."
 }
 
 current_activity(){

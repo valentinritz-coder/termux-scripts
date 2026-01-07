@@ -1,188 +1,83 @@
 # CFL Watch (Termux)
 
-Automation scripts for the **CFL mobile app** designed to run **directly on an Android phone** inside **Termux**.
-
-- **Code** lives in: `$HOME/cfl_watch`
-- **Artifacts** (runs + logs + viewers) live in: `/sdcard/cfl_watch/{runs,logs}`
-- Uses **ADB over TCP** (root required) and can capture snapshots (PNG/XML) + build HTML viewers.
-
-> Important: do **not** rely on `~` inside variables. Use `$HOME`.
-> If you see errors claiming `lib/common.sh` is missing under `cfl_watch`, that's the tilde trap.
+Automatisation **CFL** (Android) qui s’exécute **directement sur le téléphone** via **Termux** + **ADB TCP local**.  
+**Le mode sans LLM est la voie par défaut**: robuste, simple, et recommandé.
 
 ---
 
-## Requirements
+## Objectif
 
-- Termux installed
-- Root available (`su` works in Termux)
-- Packages:
-  - `android-tools` (adb)
-  - `python` (viewer server + scripts)
+- Lancer des scénarios d’automatisation (ex: `scenario_trip.sh`).
+- Capturer des artefacts (PNG/XML) et générer un viewer HTML.
+- Garder l’option LLM **minimale et non bloquante**.
 
 ---
 
-## Quickstart
+## Prérequis
 
-### 0) Allow storage access (once)
-```bash
-termux-setup-storage
-```
+- Pixel **rooté** (ADB TCP local).
+- Termux installé.
+- Accès stockage partagé Termux (`termux-setup-storage`).
 
-### 1) Clone or update the repo
+---
 
-#### Fresh clone (recommended path)
+## Installation (copier/coller)
+
 ```bash
 pkg install -y git
+
 git clone https://github.com/valentinritz-coder/termux-scripts.git "$HOME/termux-scripts"
-cd "$HOME/termux-scripts"
+
+bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
 ```
 
-#### Update an existing clone (preferred over re-cloning)
+Mise à jour (pull + perms + self-check):
 ```bash
-cd "$HOME/termux-scripts"
-git pull --rebase
-```
-
-#### If you insist on nuking everything (only if needed)
-```bash
-rm -rf "$HOME/termux-scripts"
-git clone https://github.com/valentinritz-coder/termux-scripts.git "$HOME/termux-scripts"
-cd "$HOME/termux-scripts"
-```
-
-> If you get: `fatal: destination path 'termux-scripts' already exists...`
-> you are trying to clone into a non-empty directory. Use `git pull` or delete the folder.
-
----
-
-### 2) Install into `$HOME/cfl_watch` + create `/sdcard/cfl_watch` artifacts + shims
-Run this from inside the repo:
-```bash
-bash cfl_watch/tools/install_termux.sh
-```
-
-After install you should have:
-- `$HOME/cfl_watch` (real code)
-- `/sdcard/cfl_watch/runs` and `/sdcard/cfl_watch/logs` (artifacts)
-- `/sdcard/cfl_watch/runner.sh` and `/sdcard/cfl_watch/console.sh` (shims)
-
----
-
-### 3) Self-check
-```bash
-bash "$HOME/cfl_watch/tools/self_check.sh"
-```
-
-If dependencies are missing:
-```bash
-pkg install -y android-tools python
+bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh" --update
 ```
 
 ---
 
-## Tilde gotcha (and canonical commands)
+## Utilisation (sans LLM par défaut)
 
-`~` inside variables is **not expanded by Bash**. Always prefer `$HOME` or absolute paths.
-
-Canonical invocations:
-```bash
-ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --check
-ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh"
-```
-
-Optional overrides (if you moved things):
-```bash
-CFL_CODE_DIR="$HOME/cfl_watch" CFL_ARTIFACT_DIR="/sdcard/cfl_watch" \
-  ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --list
-```
-
----
-
-### 4) Start local ADB TCP (root)
+### 1) Démarrer ADB local (root)
 ```bash
 ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/lib/adb_local.sh" start
 adb devices -l
 ```
 
-Expected: you see `127.0.0.1:37099 device` (not offline).
-
----
-
-### 5) Run scenarios
-
-#### List bundled scenarios
+### 2) Lancer un run
 ```bash
-ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --list
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh"
 ```
 
-#### Run default scenario list (fast screenshots only)
-```bash
-ADB_TCP_PORT=37099 SNAP_MODE=1 bash "$HOME/cfl_watch/runner.sh"
-```
-
-#### Full debug (PNG + XML)
-```bash
-ADB_TCP_PORT=37099 SNAP_MODE=3 bash "$HOME/cfl_watch/runner.sh"
-```
-
-#### Run one custom trip
+### 3) Un trajet précis
 ```bash
 ADB_TCP_PORT=37099 SNAP_MODE=3 bash "$HOME/cfl_watch/runner.sh" \
   --start "LUXEMBOURG" --target "ARLON"
 ```
 
-#### Run one trip with LLM
-```bash
-export OPENAI_BASE_URL=http://127.0.0.1:8001
-export OPENAI_API_KEY=dummy
-export LLM_MODEL=local-model
-export SNAP_MODE=3
-export LLM_DEBUG_TAP=1
-
-bash runner.sh --instruction "Ouvre CFL et fais un itinéraire Luxembourg -> Arlon"
-```
-
----
-
-## Viewers
-
-### Print newest run directory
-```bash
-bash "$HOME/cfl_watch/runner.sh" --latest-run
-```
-
-### Serve latest viewer (auto-generate if missing)
+### 4) Viewer
 ```bash
 bash "$HOME/cfl_watch/runner.sh" --serve
 ```
 
-Manual way:
-```bash
-latest="$(bash "$HOME/cfl_watch/runner.sh" --latest-run)"
-cd "$latest/viewers"
-python -m http.server 8000
-```
+---
 
-Then open on your phone:
-- `http://127.0.0.1:8000`
+## Options utiles
+
+- `--list` : scénarios intégrés
+- `--check` : self-check (adb, uiautomator, /sdcard, python)
+- `--dry-run` : log sans input events
+- `--latest-run` : imprime le dernier run
+- `--serve` : génère/sert le viewer (python -m http.server)
+- `--no-anim` : désactiver temporairement les animations Android
+
+`SNAP_MODE` : `0=off`, `1=png`, `2=xml`, `3=png+xml`
 
 ---
 
-## Snapshot modes
-
-`SNAP_MODE` controls what `snap` captures:
-
-- `0` = off
-- `1` = PNG only (fast)
-- `2` = XML only
-- `3` = PNG + XML (best for debugging)
-
-Per-step override is supported inside scenarios:
-- `snap "tag" 2` forces XML-only for that step.
-
----
-
-## Layout
+## Structure du repo (Termux)
 
 ### Code (Termux home)
 ```
@@ -194,70 +89,67 @@ $HOME/cfl_watch
 │   ├── snap.sh
 │   └── viewer.sh
 ├── scenarios/
-├── tools/
-└── tmp/
+└── tools/
 ```
 
-### Artifacts (shared storage)
+### Artefacts (stockage partagé)
 ```
 /sdcard/cfl_watch
-├── runner.sh    # shim -> $HOME/cfl_watch/runner.sh
-├── console.sh   # shim
-├── runs/        # per-run artifacts
-└── logs/        # runner logs
+├── runs/      # artefacts par run (PNG/XML)
+├── logs/      # logs des runs
+└── tmp/       # uiautomator dumps
 ```
 
 ---
 
-## Common env vars
+## Conventions & variables d’environnement
 
-- `ADB_TCP_PORT` (default `37099`)
-- `ADB_HOST` (default `127.0.0.1`)
-- `ANDROID_SERIAL` (default `${ADB_HOST}:${ADB_TCP_PORT}`)
-- `SNAP_MODE` (0..3)
-- Delays:
-  - `DELAY_LAUNCH`, `DELAY_TAP`, `DELAY_TYPE`, `DELAY_PICK`, `DELAY_SEARCH`
+- `CFL_CODE_DIR` (par défaut `$HOME/cfl_watch`)
+- `CFL_ARTIFACT_DIR` (par défaut `/sdcard/cfl_watch`)
+- `CFL_TMP_DIR` (par défaut `$CFL_ARTIFACT_DIR/tmp`)
+- `CFL_PKG` (par défaut `de.hafas.android.cfl`)
+- `ADB_TCP_PORT`, `ADB_HOST`, `ANDROID_SERIAL`
+- Delays: `DELAY_LAUNCH`, `DELAY_TAP`, `DELAY_TYPE`, `DELAY_PICK`, `DELAY_SEARCH`
+
+> `CFL_TMP_DIR` doit être sur `/sdcard` pour que `uiautomator dump` fonctionne via adb.
 
 ---
 
 ## Troubleshooting
 
-### `lib/common.sh` not found (tilde not expanded)
-You hit the `~` expansion trap. Use `$HOME` or absolute paths.
-Example:
-```bash
-ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --check
-```
+### “Scenario introuvable”
+- Vérifie le chemin du script et `CFL_CODE_DIR`.
+- Utilise `--list` pour lister les scénarios.
 
-### `tar: .: file changed as we read it`
-You likely ran install while copying a directory onto itself (source == destination).
-Always run:
-- from the repo: `$HOME/termux-scripts`
-- installing to: `$HOME/cfl_watch`
+### “$2 unbound variable”
+- Argument manquant (ex: `--start` ou `--target`).
+- Lance `bash "$HOME/cfl_watch/runner.sh" --help`.
 
-### Selectors not found / scenario fails early
-Run with full debug:
-```bash
-ADB_TCP_PORT=37099 SNAP_MODE=3 bash "$HOME/cfl_watch/runner.sh" --start "LUXEMBOURG" --target "ARLON"
-```
-Then inspect the viewer to adjust selectors to the real UI state.
+### “pas de ui.xml” / dump vide
+- `uiautomator` ne peut pas écrire dans `CFL_TMP_DIR`.
+- Lance `bash "$HOME/cfl_watch/tools/self_check.sh"`.
 
-### Device not reachable in self-check
-Start ADB TCP first:
+### “adb not found”
+- Installe les deps: `pkg install -y android-tools`.
+
+### ADB TCP non reachable
+- `adb_local.sh start` (root requis), puis `adb devices -l`.
+
+---
+
+## LLM (optionnel)
+
+Le LLM est **secondaire** et **optionnel**. Il ne doit pas être le chemin par défaut.
+
+Activation rapide:
 ```bash
-ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/lib/adb_local.sh" start
-adb devices -l
+export LLM_INSTRUCTION="Ouvre CFL et fais un itinéraire Luxembourg -> Arlon"
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --instruction "$LLM_INSTRUCTION"
 ```
 
 ---
 
 ## Notes
 
-- Root is required for enabling ADB TCP (via `setprop service.adb.tcp.port` + restarting `adbd`).
-- Keeping artifacts on `/sdcard` makes it easy to serve viewers (`python -m http.server`) and retrieve files.
-
-## Quick verification
-- `rg "~/cfl_watch"` inside the repo should return nothing (defaults now use `$HOME`).
-- `bash "$HOME/cfl_watch/tools/self_check.sh"` works without `CFL_BASE_DIR`.
-- `bash "$HOME/cfl_watch/runner.sh" --list` works without `CFL_BASE_DIR`.
-- `CFL_CODE_DIR=~/cfl_watch bash "$HOME/cfl_watch/runner.sh" --list` still works because tilde normalization is built in.
+- Évitez `~` dans les variables (préférez `$HOME`).
+- Le viewer se sert via `python -m http.server` dans le dossier `viewers/`.
