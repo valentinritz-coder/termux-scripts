@@ -115,3 +115,99 @@ self_check(){
     warn "Device NOT reachable on $CFL_SERIAL"
   fi
 }
+
+current_activity(){
+  # Exemple de sortie: com.package/.MainActivity
+  adb shell dumpsys activity activities 2>/dev/null \
+    | tr -d '\r' \
+    | grep -m1 -E 'mResumedActivity|topResumedActivity' \
+    | sed -E 's/.* ([^ ]+) .*/\1/' \
+    || true
+}
+
+wait_activity(){
+  local expected="$1"
+  local timeout_s="${2:-12}"
+  local interval_s="${3:-0.20}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  while [ "$(date +%s)" -lt "$end" ]; do
+    local cur
+    cur="$(current_activity)"
+    if printf '%s' "$cur" | grep -Fq "$expected"; then
+      return 0
+    fi
+    sleep "$interval_s"
+  done
+
+  warn "wait_activity timeout: expected='$expected' got='$(current_activity)'"
+  return 1
+}
+
+ui_dump(){
+  # Dump sur /sdcard puis cat
+  # Evite les dossiers qui n'existent pas: fichier direct dans /sdcard
+  local tmp="/sdcard/tmp_ui.xml"
+  adb shell "uiautomator dump --compressed $tmp >/dev/null 2>&1 && cat $tmp" \
+    | tr -d '\r' \
+    || true
+}
+
+wait_ui_grep(){
+  local regex="$1"
+  local timeout_s="${2:-10}"
+  local interval_s="${3:-0.30}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  while [ "$(date +%s)" -lt "$end" ]; do
+    local xml
+    xml="$(ui_dump)"
+    if printf '%s' "$xml" | grep -Eq "$regex"; then
+      return 0
+    fi
+    sleep "$interval_s"
+  done
+
+  warn "wait_ui_grep timeout: regex=$regex"
+  return 1
+}
+
+wait_ui_text(){
+  local text="$1"
+  local timeout_s="${2:-10}"
+  local interval_s="${3:-0.30}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  while [ "$(date +%s)" -lt "$end" ]; do
+    local xml
+    xml="$(ui_dump)"
+    # fixed-string (évite les surprises regex)
+    if printf '%s' "$xml" | grep -Fq "text=\"$text\""; then
+      return 0
+    fi
+    sleep "$interval_s"
+  done
+
+  warn "wait_ui_text timeout: text=$text"
+  return 1
+}
+
+wait_ui_resid(){
+  local resid="$1"
+  local timeout_s="${2:-10}"
+  local interval_s="${3:-0.30}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  while [ "$(date +%s)" -lt "$end" ]; do
+    local xml
+    xml="$(ui_dump)"
+    if printf '%s' "$xml" | grep -Fq "resource-id=\"$resid\""; then
+      return 0
+    fi
+    sleep "$interval_s"
+  done
+
+  warn "wait_ui_resid timeout: resid=$resid"
+  return 1
+}
+
