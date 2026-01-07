@@ -78,29 +78,42 @@ dump_ui(){
   local t0 t1 t2 dump_ms cat_ms total_ms
   t0=$(date +%s%N)
 
-  # Nettoyage pour éviter les dumps stales
+  # Nettoyage remote uniquement (évite stale côté device)
   inject rm -f "$remote_path" >/dev/null 2>&1 || true
-  rm -f "$local_path" >/dev/null 2>&1 || true
 
   # 1) dump côté device (remote)
   inject uiautomator dump --compressed "$remote_path" >/dev/null 2>&1 || true
   t1=$(date +%s%N)
 
-  # détecte dump remote vide/inexistant (debug utile)
   if ! inject test -s "$remote_path" >/dev/null 2>&1; then
     warn "dump_ui: remote dump absent/vide: $remote_path"
   fi
 
-  # 2) rapatrier en local (safe, jamais cat > même fichier)
-  local tmp="$local_path.tmp.$$"
-  if inject cat "$remote_path" > "$tmp" 2>/dev/null; then
-    mv -f "$tmp" "$local_path"
+  # 2) rapatrier en local Termux via tmp + mv (atomic-ish)
+  local tmp_local="$local_path.tmp.$$"
+  if inject cat "$remote_path" > "$tmp_local" 2>/dev/null && [ -s "$tmp_local" ]; then
+    mv -f "$tmp_local" "$local_path"
   else
-    rm -f "$tmp" >/dev/null 2>&1 || true
+    rm -f "$tmp_local" >/dev/null 2>&1 || true
     warn "dump_ui: impossible de lire $remote_path (fallback sdcard)"
-    local_path="/sdcard/cfl_watch/tmp/live_dump.xml"
-    inject mkdir -p "/sdcard/cfl_watch/tmp" >/dev/null 2>&1 || true
-    inject uiautomator dump --compressed "$local_path" >/dev/null 2>&1 || true
+
+    # fallback sdcard (anti-stale + tmp + mv)
+    local sd_dir="/sdcard/cfl_watch/tmp"
+    local sd_path="$sd_dir/live_dump.xml"
+    local sd_tmp="$sd_path.tmp.$$"
+
+    inject mkdir -p "$sd_dir" >/dev/null 2>&1 || true
+    inject rm -f "$sd_path" >/dev/null 2>&1 || true
+
+    inject uiautomator dump --compressed "$sd_tmp" >/dev/null 2>&1 || true
+    if inject test -s "$sd_tmp" >/dev/null 2>&1; then
+      inject mv -f "$sd_tmp" "$sd_path" >/dev/null 2>&1 || true
+      local_path="$sd_path"
+    else
+      inject rm -f "$sd_tmp" >/dev/null 2>&1 || true
+      # on garde local_path tel quel: si tu as un ancien $local_path valide, il reste utilisable
+      warn "dump_ui: fallback sdcard dump absent/vide: $sd_tmp"
+    fi
   fi
   t2=$(date +%s%N)
 
@@ -108,20 +121,18 @@ dump_ui(){
   cat_ms=$(( (t2-t1)/1000000 ))
   total_ms=$(( (t2-t0)/1000000 ))
 
-  # validations
+  # validations (sur ce qu'on retourne)
   if [ ! -s "$local_path" ]; then
     warn "UI dump absent/vide: $local_path"
   elif ! grep -q "<hierarchy" "$local_path" 2>/dev/null; then
     warn "UI dump invalide (pas de <hierarchy): $local_path"
   fi
 
-  # timings sur stderr (ne pollue pas stdout)
   if [ "${CFL_DUMP_TIMING:-1}" = "1" ]; then
     printf '[*] ui_dump: dump=%sms cat=%sms total=%sms -> %s\n' \
       "$dump_ms" "$cat_ms" "$total_ms" "$local_path" >&2
   fi
 
-  # stdout: uniquement le chemin
   printf '%s' "$local_path"
 }
 
@@ -163,7 +174,7 @@ wait_resid_present(){
 wait_resid_absent(){
   local resid="$1"
   local timeout_s="${2:-10}"
-  local interval_s="${3:-0.25}"
+  local interval_s="${3:-1}"
   local stable_n="${4:-2}"
   local end=$(( $(date +%s) + timeout_s ))
 
@@ -221,8 +232,11 @@ wait_results_ready(){
     grep -Eq "$re_loader" "$d" 2>/dev/null && has_loader=1 || true
 
     # debug compact (optionnel)
-    last_state="iter=$iter list=$has_list loader=$has_loader"
-    [ "${CFL_DUMP_TIMING:-1}" = "1" ] && log "wait_results_ready: $last_state"
+    local state="iter=$iter list=$has_list loader=$has_loader"
+    if [ "${CFL_DUMP_TIMING:-1}" = "1" ] && [ "$state" != "$last_state" ]; then
+      log "wait_results_ready: $state"
+      last_state="$state"
+    fi
 
     # OK fort
     if [ "$has_list" -eq 1 ] && [ "$has_loader" -eq 0 ]; then
@@ -416,7 +430,7 @@ log "CFL_REMOTE_TMP_DIR=${CFL_REMOTE_TMP_DIR:-<unset>}"
 maybe cfl_launch
 
 # Wait for start input
-wait_resid_present "$ID_START" 12 0.20 || sleep_s 2
+wait_resid_present "$ID_START" 12 1.5 || sleep_s 2
 snap "00_launch" "$SNAP_MODE"
 
 # START
@@ -430,10 +444,10 @@ tap_by_selector "start field (id)" "$dump_cache" "resource-id=$ID_START" \
 snap "02_after_tap_start" "$SNAP_MODE"
 
 log "Type start: $START_TEXT"
-sleep_s 0.15
+sleep_s 0.10
 maybe type_text "$START_TEXT"
 
-wait_results_ready 12 1.0 || true
+wait_results_ready 12 1.5 || true
 snap "03_after_type_start" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
@@ -442,7 +456,7 @@ tap_by_selector "start suggestion (desc contains)" "$dump_cache" "content-desc=$
   || tap_first_result "start suggestion (first)" "$dump_cache"
 
 # After selecting start, destination field should be reachable
-wait_resid_present "$ID_TARGET" 12 0.25 || wait_dump_grep 'content-desc="Select destination"' 12 0.25 >/dev/null || sleep_s 1
+wait_resid_present "$ID_TARGET" 12 1.5 || wait_dump_grep 'content-desc="Select destination"' 12 0.25 >/dev/null || sleep_s 1
 snap "04_after_pick_start" "$SNAP_MODE"
 
 # DESTINATION
@@ -455,10 +469,10 @@ tap_by_selector "destination field (id)" "$dump_cache" "resource-id=$ID_TARGET" 
 snap "06_after_tap_destination" "$SNAP_MODE"
 
 log "Type destination: $TARGET_TEXT"
-sleep_s 0.15
+sleep_s 0.10
 maybe type_text "$TARGET_TEXT"
 
-wait_results_ready 12 1.0 || true
+wait_results_ready 12 1.5 || true
 snap "07_after_type_destination" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
@@ -467,7 +481,7 @@ tap_by_selector "destination suggestion (desc contains)" "$dump_cache" "content-
   || tap_first_result "destination suggestion (first)" "$dump_cache"
 
 # Wait for search button (any known form)
-wait_dump_grep "$(resid_regex "$ID_BTN_SEARCH_DEFAULT")|$(resid_regex "$ID_BTN_SEARCH")|text=\"Rechercher\"|text=\"Itinéraires\"" 12 0.25 >/dev/null || sleep_s 1
+wait_dump_grep "$(resid_regex "$ID_BTN_SEARCH_DEFAULT")|$(resid_regex "$ID_BTN_SEARCH")|text=\"Rechercher\"|text=\"Itinéraires\"" 12 1.5 >/dev/null || sleep_s 1
 snap "08_after_pick_destination" "$SNAP_MODE"
 
 # SEARCH
