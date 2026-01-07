@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}")"
 CFL_BASE_DIR="$CFL_CODE_DIR"
+
 . "$CFL_CODE_DIR/lib/common.sh"
 . "$CFL_CODE_DIR/lib/snap.sh"
 
@@ -16,6 +17,7 @@ START_TEXT="${START_TEXT:-LUXEMBOURG}"
 TARGET_TEXT="${TARGET_TEXT:-ARLON}"
 SNAP_MODE="${SNAP_MODE:-1}"
 
+# Default delays (kept, but we try to avoid sleeping blindly)
 DELAY_LAUNCH="${DELAY_LAUNCH:-2.0}"
 DELAY_SEARCH="${DELAY_SEARCH:-0.40}"
 DELAY_TAP="${DELAY_TAP:-0.15}"
@@ -23,6 +25,17 @@ DELAY_TYPE="${DELAY_TYPE:-0.15}"
 DELAY_PICK="${DELAY_PICK:-0.15}"
 
 : "${CFL_TMP_DIR:=/sdcard/cfl_watch/tmp}"
+
+# Hafas/CFL ids (keep consistent everywhere)
+PKG="de.hafas.android.cfl"
+ID_START="$PKG:id/input_start"
+ID_TARGET="$PKG:id/input_target"
+ID_PROGRESS="$PKG:id/progress_location_loading"
+ID_RESULTS="$PKG:id/list_location_results"
+ID_BTN_SEARCH="$PKG:id/button_search"
+ID_BTN_SEARCH_DEFAULT="$PKG:id/button_search_default"
+
+need python
 
 dump_ui(){
   local dump_path="$CFL_TMP_DIR/live_dump.xml"
@@ -41,11 +54,126 @@ dump_ui(){
   printf '%s' "$dump_path"
 }
 
+# ---- Wait helpers based on dump file (single source of truth) ----
+
+wait_dump_grep(){
+  # Wait until grep matches in freshly dumped UI
+  # usage: wait_dump_grep "<regex>" [timeout_s] [interval_s]
+  local regex="$1"
+  local timeout_s="${2:-10}"
+  local interval_s="${3:-0.25}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  while [ "$(date +%s)" -lt "$end" ]; do
+    local d
+    d="$(dump_ui)"
+    if grep -Eq "$regex" "$d" 2>/dev/null; then
+      printf '%s' "$d"
+      return 0
+    fi
+    sleep "$interval_s"
+  done
+
+  warn "wait_dump_grep timeout: regex=$regex"
+  return 1
+}
+
+wait_resid_present(){
+  # Wait until resource-id is present in dump
+  local resid="$1"
+  local timeout_s="${2:-10}"
+  local interval_s="${3:-0.25}"
+  wait_dump_grep "resource-id=\"${resid//./\\.}\"" "$timeout_s" "$interval_s" >/dev/null
+}
+
+wait_resid_absent(){
+  # Wait until resource-id disappears (stable for N dumps)
+  local resid="$1"
+  local timeout_s="${2:-10}"
+  local interval_s="${3:-0.25}"
+  local stable_n="${4:-2}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  local ok=0
+  while [ "$(date +%s)" -lt "$end" ]; do
+    local d
+    d="$(dump_ui)"
+    if grep -Fq "resource-id=\"$resid\"" "$d" 2>/dev/null; then
+      ok=0
+    else
+      ok=$((ok+1))
+      if [ "$ok" -ge "$stable_n" ]; then
+        return 0
+      fi
+    fi
+    sleep "$interval_s"
+  done
+
+  warn "wait_resid_absent timeout: resid=$resid"
+  return 1
+}
+
+wait_focused_resid(){
+  # Wait until a node with resource-id has focused="true" (more reliable than keyboard visibility)
+  local resid="$1"
+  local timeout_s="${2:-8}"
+  local interval_s="${3:-0.25}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  while [ "$(date +%s)" -lt "$end" ]; do
+    local d
+    d="$(dump_ui)"
+    # Usually each node is a single line in uiautomator dump, so this is fine.
+    if grep -F "resource-id=\"$resid\"" "$d" 2>/dev/null | grep -Fq 'focused="true"'; then
+      return 0
+    fi
+    sleep "$interval_s"
+  done
+
+  warn "wait_focused_resid timeout: resid=$resid"
+  return 1
+}
+
+wait_results_ready(){
+  # Wait until results are "ready enough" after typing:
+  # - Either list appears (ID_RESULTS)
+  # - Prefer: list present AND loader absent (ID_PROGRESS)
+  local timeout_s="${1:-10}"
+  local interval_s="${2:-0.25}"
+  local end=$(( $(date +%s) + timeout_s ))
+
+  while [ "$(date +%s)" -lt "$end" ]; do
+    local d
+    d="$(dump_ui)"
+
+    local has_list=0 has_loader=0
+    grep -Fq "resource-id=\"$ID_RESULTS\"" "$d" 2>/dev/null && has_list=1 || true
+    grep -Fq "resource-id=\"$ID_PROGRESS\"" "$d" 2>/dev/null && has_loader=1 || true
+
+    # Best case
+    if [ "$has_list" -eq 1 ] && [ "$has_loader" -eq 0 ]; then
+      return 0
+    fi
+
+    # Acceptable (some UIs don't show loader)
+    if [ "$has_list" -eq 1 ]; then
+      return 0
+    fi
+
+    sleep "$interval_s"
+  done
+
+  warn "wait_results_ready timeout (list/loader not in expected state)"
+  return 1
+}
+
+# ---- Selector/tap helpers (python-based center) ----
 
 node_center(){
   local dump="$1"; shift
   python - "$dump" "$@" <<'PY' 2>/dev/null
 import sys, re, xml.etree.ElementTree as ET
+
 dump = sys.argv[1]
 pairs = [a.split("=",1) for a in sys.argv[2:]]
 criteria = [(k,v) for k,v in pairs]
@@ -94,6 +222,7 @@ first_result_center(){
   local dump="$1"
   python - "$dump" <<'PY' 2>/dev/null
 import re, sys, xml.etree.ElementTree as ET
+
 dump = sys.argv[1]
 LIST_ID = "de.hafas.android.cfl:id/list_location_results"
 _bounds = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
@@ -173,6 +302,8 @@ tap_first_result(){
   return 0
 }
 
+# ---- Run setup ----
+
 run_name="trip_$(safe_name "$START_TEXT")_to_$(safe_name "$TARGET_TEXT")"
 snap_init "$run_name"
 
@@ -189,82 +320,91 @@ finish(){
 trap finish EXIT
 
 log "Scenario: $START_TEXT -> $TARGET_TEXT (SNAP_MODE=$SNAP_MODE)"
-
 log "CFL_CODE_DIR=$CFL_CODE_DIR"
 log "CFL_BASE_DIR=$CFL_BASE_DIR"
 log "CFL_TMP_DIR=${CFL_TMP_DIR:-<unset>}"
 
+# ---- Scenario ----
 
-# App should already be launched by runner, but ok to keep a launch safety net:
+# App should already be launched by runner, but keep a safety net:
 maybe cfl_launch
-wait_ui_resid "de.hafas.android.cfl:id/input_start" 12 0.20 || sleep_s 2
+
+# Wait for start input OR at least the app UI to be there
+wait_resid_present "$ID_START" 12 0.20 || sleep_s 2
 snap "00_launch" "$SNAP_MODE"
 
 # START
 snap "01_before_tap_start" "$SNAP_MODE"
 dump_cache="$(dump_ui)"
-tap_by_selector "start field" "$dump_cache" "content-desc=Select start" \
-  || tap_by_selector "start field (history)" "$dump_cache" "resource-id=de.hafas.android.cfl:id/input_start"
-#sleep_s "$DELAY_TAP"
+
+# Prefer stable id first; content-desc often changes with locale/accessibility
+tap_by_selector "start field (id)" "$dump_cache" "resource-id=$ID_START" \
+  || tap_by_selector "start field (content-desc)" "$dump_cache" "content-desc=Select start"
+
 snap "02_after_tap_start" "$SNAP_MODE"
 
 log "Type start: $START_TEXT"
-wait_keyboard_shown 5 0.15 || sleep_s 0.3
+# Wait for focus instead of keyboard
+wait_focused_resid "$ID_START" 6 0.25 || true
 maybe type_text "$START_TEXT"
-# (optionnel) attendre que le loader apparaisse, pour être sûr que la recherche est lancée
-wait_ui_resid "de.hafas.android.cfl:id/progress_location_loading" 4 0.15 || true
-# attendre qu'il disparaisse = résultats chargés
-wait_ui_absent_resid "de.hafas.android.cfl:id/progress_location_loading" 8 0.25 2 || sleep_s 0.3
+
+# Wait for suggestions/results to be ready
+wait_results_ready 10 0.25 || true
 snap "03_after_type_start" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
-tap_by_selector "start suggestion" "$dump_cache" "content-desc=$START_TEXT" \
-  || tap_by_selector "start suggestion (text)" "$dump_cache" "text=$START_TEXT" \
+tap_by_selector "start suggestion (exact desc)" "$dump_cache" "content-desc=$START_TEXT" \
+  || tap_by_selector "start suggestion (exact text)" "$dump_cache" "text=$START_TEXT" \
   || tap_first_result "start suggestion (first)" "$dump_cache"
-wait_ui_resid "de.hafas.android.cfl:id/input_target" 12 0.20 || sleep_s 2
+
+# After selecting start, destination field should be reachable
+# Wait for target input OR a known fallback selector
+wait_dump_grep "resource-id=\"${ID_TARGET//./\\.}\"|content-desc=\"Select destination\"" 12 0.25 >/dev/null || sleep_s 1
 snap "04_after_pick_start" "$SNAP_MODE"
 
 # DESTINATION
 snap "05_before_tap_destination" "$SNAP_MODE"
 dump_cache="$(dump_ui)"
-tap_by_selector "destination field" "$dump_cache" "resource-id=de.hafas.android.cfl:id/input_target" \
-  || tap_by_selector "destination field (fallback)" "$dump_cache" "content-desc=Select destination"
-# sleep_s "$DELAY_TAP"
+
+tap_by_selector "destination field (id)" "$dump_cache" "resource-id=$ID_TARGET" \
+  || tap_by_selector "destination field (content-desc)" "$dump_cache" "content-desc=Select destination"
+
 snap "06_after_tap_destination" "$SNAP_MODE"
 
 log "Type destination: $TARGET_TEXT"
-wait_keyboard_shown 5 0.15 || sleep_s 0.3
+wait_focused_resid "$ID_TARGET" 6 0.25 || true
 maybe type_text "$TARGET_TEXT"
-# (optionnel) attendre que le loader apparaisse, pour être sûr que la recherche est lancée
-wait_ui_resid "de.hafas.android.cfl:id/progress_location_loading" 4 0.15 || true
-# attendre qu'il disparaisse = résultats chargés
-wait_ui_absent_resid "de.hafas.android.cfl:id/progress_location_loading" 8 0.25 2 || sleep_s 0.3
+
+wait_results_ready 10 0.25 || true
 snap "07_after_type_destination" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
-tap_by_selector "destination suggestion" "$dump_cache" "content-desc=$TARGET_TEXT" \
-  || tap_by_selector "destination suggestion (text)" "$dump_cache" "text=$TARGET_TEXT" \
+tap_by_selector "destination suggestion (exact desc)" "$dump_cache" "content-desc=$TARGET_TEXT" \
+  || tap_by_selector "destination suggestion (exact text)" "$dump_cache" "text=$TARGET_TEXT" \
   || tap_first_result "destination suggestion (first)" "$dump_cache"
-wait_ui_resid "de.hafas.android.cfl:id/button_search" 12 0.20 || sleep_s 2
+
+# Wait for search button in any known form
+wait_dump_grep "resource-id=\"${ID_BTN_SEARCH_DEFAULT//./\\.}\"|resource-id=\"${ID_BTN_SEARCH//./\\.}\"|text=\"Rechercher\"|text=\"Itinéraires\"" 12 0.25 >/dev/null || sleep_s 1
 snap "08_after_pick_destination" "$SNAP_MODE"
 
 # SEARCH
 snap "09_before_search" "$SNAP_MODE"
 dump_cache="$(dump_ui)"
+
 if ! (
-  tap_by_selector "search button (id default)" "$dump_cache" "resource-id=de.hafas.android.cfl:id/button_search_default" \
-  || tap_by_selector "search button (id home)"    "$dump_cache" "resource-id=de.hafas.android.cfl:id/button_search" \
+  tap_by_selector "search button (id default)" "$dump_cache" "resource-id=$ID_BTN_SEARCH_DEFAULT" \
+  || tap_by_selector "search button (id home)"    "$dump_cache" "resource-id=$ID_BTN_SEARCH" \
   || tap_by_selector "search button (text FR)"    "$dump_cache" "text=Rechercher" \
   || tap_by_selector "search button (text trips)" "$dump_cache" "text=Itinéraires"
 ); then
   warn "Search button not found -> ENTER fallback"
   maybe key 66 || true
 fi
-# sleep_s "$DELAY_SEARCH"
+
 # Force full artifacts here even if SNAP_MODE=1/2, because it's the important step
 snap "10_after_search" 3
 
-# quick heuristic on last xml (if any)
+# Quick heuristic on last xml (if any)
 latest_xml="$(ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true)"
 if [[ -n "${latest_xml:-}" ]] && grep -qiE 'Results|Résultats|Itinéraire|Itinéraires|Trajet' "$latest_xml"; then
   log "Scenario success (keyword detected)"
