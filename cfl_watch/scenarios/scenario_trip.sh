@@ -41,6 +41,11 @@ ID_RESULTS=":id/list_location_results"
 ID_BTN_SEARCH=":id/button_search"
 ID_BTN_SEARCH_DEFAULT=":id/button_search_default"
 
+WAIT_POLL="${WAIT_POLL:-0.0}"      # petit, car dump_ui est déjà lent
+WAIT_SHORT="${WAIT_SHORT:-20}"     # ~6-8 itérations
+WAIT_LONG="${WAIT_LONG:-30}"       # ~10-12 itérations
+
+
 need python
 
 # -------------------------
@@ -83,8 +88,15 @@ dump_ui(){
 
   # 1) dump côté device (remote)
   inject uiautomator dump --compressed "$remote_path" >/dev/null 2>&1 || true
+  
+  # mini retry si vide (uiautomator fait parfois ça en transition)
+  if ! inject test -s "$remote_path" >/dev/null 2>&1; then
+    sleep 0.10
+    inject uiautomator dump --compressed "$remote_path" >/dev/null 2>&1 || true
+  fi
+  
   t1=$(date +%s%N)
-
+  
   if ! inject test -s "$remote_path" >/dev/null 2>&1; then
     warn "dump_ui: remote dump absent/vide: $remote_path"
   fi
@@ -108,10 +120,13 @@ dump_ui(){
     inject uiautomator dump --compressed "$sd_tmp" >/dev/null 2>&1 || true
     if inject test -s "$sd_tmp" >/dev/null 2>&1; then
       inject mv -f "$sd_tmp" "$sd_path" >/dev/null 2>&1 || true
-      local_path="$sd_path"
+      if inject test -s "$sd_path" >/dev/null 2>&1; then
+        local_path="$sd_path"
+      else
+        warn "dump_ui: fallback sdcard mv failed (no final file): $sd_path"
+      fi
     else
       inject rm -f "$sd_tmp" >/dev/null 2>&1 || true
-      # on garde local_path tel quel: si tu as un ancien $local_path valide, il reste utilisable
       warn "dump_ui: fallback sdcard dump absent/vide: $sd_tmp"
     fi
   fi
@@ -143,8 +158,8 @@ dump_ui(){
 wait_dump_grep(){
   # usage: wait_dump_grep "<regex>" [timeout_s] [interval_s]
   local regex="$1"
-  local timeout_s="${2:-10}"
-  local interval_s="${3:-1.0}"
+  local timeout_s="${2:-$WAIT_SHORT}"
+  local interval_s="${3:-$WAIT_POLL}"
   local end=$(( $(date +%s) + timeout_s ))
 
   while [ "$(date +%s)" -lt "$end" ]; do
@@ -163,8 +178,8 @@ wait_dump_grep(){
 
 wait_resid_present(){
   local resid="$1"
-  local timeout_s="${2:-10}"
-  local interval_s="${3:-1.0}"
+  local timeout_s="${2:-$WAIT_SHORT}"
+  local interval_s="${3:-$WAIT_POLL}"
 
   local pat
   pat="$(resid_regex "$resid")"
@@ -173,8 +188,8 @@ wait_resid_present(){
 
 wait_resid_absent(){
   local resid="$1"
-  local timeout_s="${2:-10}"
-  local interval_s="${3:-1}"
+  local timeout_s="${2:-$WAIT_SHORT}"
+  local interval_s="${3:-$WAIT_POLL}"
   local stable_n="${4:-2}"
   local end=$(( $(date +%s) + timeout_s ))
 
@@ -197,6 +212,7 @@ wait_resid_absent(){
   return 1
 }
 
+
 wait_results_ready(){
   # Attendre que les suggestions soient prêtes après saisie.
   # - 1 seule boucle
@@ -210,8 +226,8 @@ wait_results_ready(){
   # Usage:
   #   wait_results_ready 12 1.0 || true
 
-  local timeout_s="${1:-12}"
-  local interval_s="${2:-1.0}"
+  local timeout_s="${1:-$WAIT_LONG}"
+  local interval_s="${2:-$WAIT_POLL}"
 
   # match "n'importe quel package:id/xxx"
   local re_list='resource-id="[^"]*:id/list_location_results"'
@@ -221,6 +237,7 @@ wait_results_ready(){
 
   local iter=0
   local last_state=""
+  local m
   while [ "$(date +%s)" -lt "$end" ]; do
     iter=$((iter+1))
 
@@ -228,8 +245,9 @@ wait_results_ready(){
     d="$(dump_ui)"
 
     local has_list=0 has_loader=0
-    grep -Eq "$re_list" "$d" 2>/dev/null && has_list=1 || true
-    grep -Eq "$re_loader" "$d" 2>/dev/null && has_loader=1 || true
+    m="$(grep -Eo "$re_list|$re_loader" "$d" 2>/dev/null | tr '\n' ' ')"
+    [[ "$m" == *list_location_results* ]] && has_list=1 || has_list=0
+    [[ "$m" == *progress_location_loading* ]] && has_loader=1 || has_loader=0
 
     # debug compact (optionnel)
     local state="iter=$iter list=$has_list loader=$has_loader"
@@ -430,7 +448,7 @@ log "CFL_REMOTE_TMP_DIR=${CFL_REMOTE_TMP_DIR:-<unset>}"
 maybe cfl_launch
 
 # Wait for start input
-wait_resid_present "$ID_START" 12 1.5 || sleep_s 2
+wait_resid_present "$ID_START" || sleep_s 2
 snap "00_launch" "$SNAP_MODE"
 
 # START
@@ -444,10 +462,10 @@ tap_by_selector "start field (id)" "$dump_cache" "resource-id=$ID_START" \
 snap "02_after_tap_start" "$SNAP_MODE"
 
 log "Type start: $START_TEXT"
-sleep_s 0.10
+sleep_s 0.30
 maybe type_text "$START_TEXT"
 
-wait_results_ready 12 1.5 || true
+wait_results_ready || true
 snap "03_after_type_start" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
@@ -456,7 +474,7 @@ tap_by_selector "start suggestion (desc contains)" "$dump_cache" "content-desc=$
   || tap_first_result "start suggestion (first)" "$dump_cache"
 
 # After selecting start, destination field should be reachable
-wait_resid_present "$ID_TARGET" 12 1.5 || wait_dump_grep 'content-desc="Select destination"' 12 0.25 >/dev/null || sleep_s 1
+wait_resid_present "$ID_TARGET" || wait_dump_grep 'content-desc="Select destination"' >/dev/null || sleep_s 1
 snap "04_after_pick_start" "$SNAP_MODE"
 
 # DESTINATION
@@ -469,10 +487,10 @@ tap_by_selector "destination field (id)" "$dump_cache" "resource-id=$ID_TARGET" 
 snap "06_after_tap_destination" "$SNAP_MODE"
 
 log "Type destination: $TARGET_TEXT"
-sleep_s 0.10
+sleep_s 0.30
 maybe type_text "$TARGET_TEXT"
 
-wait_results_ready 12 1.5 || true
+wait_results_ready || true
 snap "07_after_type_destination" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
@@ -481,7 +499,7 @@ tap_by_selector "destination suggestion (desc contains)" "$dump_cache" "content-
   || tap_first_result "destination suggestion (first)" "$dump_cache"
 
 # Wait for search button (any known form)
-wait_dump_grep "$(resid_regex "$ID_BTN_SEARCH_DEFAULT")|$(resid_regex "$ID_BTN_SEARCH")|text=\"Rechercher\"|text=\"Itinéraires\"" 12 1.5 >/dev/null || sleep_s 1
+wait_dump_grep "$(resid_regex "$ID_BTN_SEARCH_DEFAULT")|$(resid_regex "$ID_BTN_SEARCH")|text=\"Rechercher\"|text=\"Itinéraires\"" >/dev/null || sleep_s 1
 snap "08_after_pick_destination" "$SNAP_MODE"
 
 # SEARCH
