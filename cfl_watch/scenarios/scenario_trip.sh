@@ -436,6 +436,43 @@ tap_first_result(){
   return 0
 }
 
+# --- Mini API lisible (pour éviter les regex partout) ---
+
+dump_cache=""
+
+ui_refresh() {               # "prends un dump maintenant"
+  dump_cache="$(dump_ui)"
+}
+
+ui_wait_contentdesc() {             # "attends qu'un content-desc contienne X"
+  local label="$1"
+  local needle="$2"
+  local timeout="${3:-$WAIT_LONG}"
+  dump_cache="$(wait_dump_grep "content-desc=\"[^\"]*${needle}[^\"]*\"" "$timeout" "$WAIT_POLL" || dump_ui)"
+  log "wait ok: $label"
+}
+
+ui_wait_resourceid() {            # "attends qu'un resource-id existe"
+  local label="$1"
+  local resid="$2"
+  local timeout="${3:-$WAIT_LONG}"
+  dump_cache="$(wait_dump_grep "$(resid_regex "$resid")" "$timeout" "$WAIT_POLL" || dump_ui)"
+  log "wait ok: $label"
+}
+
+ui_tap_contentdesc() {              # "tape un élément dont content-desc contient X"
+  local label="$1"
+  local needle="$2"
+  tap_by_selector "$label" "$dump_cache" "content-desc=$needle"
+}
+
+ui_tap_resourceid() {             # "tape un élément par id"
+  local label="$1"
+  local resid="$2"
+  tap_by_selector "$label" "$dump_cache" "resource-id=$resid"
+}
+
+
 # -------------------------
 # Run setup
 # -------------------------
