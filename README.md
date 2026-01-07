@@ -33,7 +33,11 @@ bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
 
 Mise à jour (pull + perms + self-check):
 ```bash
-bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh" --update
+cd "$HOME/termux-scripts"
+
+git pull --rebase
+
+bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
 ```
 
 ---
