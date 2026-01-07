@@ -197,7 +197,7 @@ log "CFL_TMP_DIR=${CFL_TMP_DIR:-<unset>}"
 
 # App should already be launched by runner, but ok to keep a launch safety net:
 maybe cfl_launch
-sleep_s "$DELAY_LAUNCH"
+wait_ui_resid "de.hafas.android.cfl:id/input_start" 12 0.20 || sleep_s 2
 snap "00_launch" "$SNAP_MODE"
 
 # START
@@ -205,19 +205,23 @@ snap "01_before_tap_start" "$SNAP_MODE"
 dump_cache="$(dump_ui)"
 tap_by_selector "start field" "$dump_cache" "content-desc=Select start" \
   || tap_by_selector "start field (history)" "$dump_cache" "resource-id=de.hafas.android.cfl:id/input_start"
-sleep_s "$DELAY_TAP"
+#sleep_s "$DELAY_TAP"
 snap "02_after_tap_start" "$SNAP_MODE"
 
 log "Type start: $START_TEXT"
+wait_keyboard_shown 5 0.15 || sleep_s 0.3
 maybe type_text "$START_TEXT"
-sleep_s "$DELAY_TYPE"
+# (optionnel) attendre que le loader apparaisse, pour être sûr que la recherche est lancée
+wait_ui_resid "de.hafas.android.cfl:id/progress_location_loading" 4 0.15 || true
+# attendre qu'il disparaisse = résultats chargés
+wait_ui_absent_resid "de.hafas.android.cfl:id/progress_location_loading" 8 0.25 2 || sleep_s 0.3
 snap "03_after_type_start" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
 tap_by_selector "start suggestion" "$dump_cache" "content-desc=$START_TEXT" \
   || tap_by_selector "start suggestion (text)" "$dump_cache" "text=$START_TEXT" \
   || tap_first_result "start suggestion (first)" "$dump_cache"
-sleep_s "$DELAY_PICK"
+wait_ui_resid "de.hafas.android.cfl:id/input_target" 12 0.20 || sleep_s 2
 snap "04_after_pick_start" "$SNAP_MODE"
 
 # DESTINATION
@@ -225,19 +229,23 @@ snap "05_before_tap_destination" "$SNAP_MODE"
 dump_cache="$(dump_ui)"
 tap_by_selector "destination field" "$dump_cache" "resource-id=de.hafas.android.cfl:id/input_target" \
   || tap_by_selector "destination field (fallback)" "$dump_cache" "content-desc=Select destination"
-sleep_s "$DELAY_TAP"
+# sleep_s "$DELAY_TAP"
 snap "06_after_tap_destination" "$SNAP_MODE"
 
 log "Type destination: $TARGET_TEXT"
+wait_keyboard_shown 5 0.15 || sleep_s 0.3
 maybe type_text "$TARGET_TEXT"
-sleep_s "$DELAY_TYPE"
+# (optionnel) attendre que le loader apparaisse, pour être sûr que la recherche est lancée
+wait_ui_resid "de.hafas.android.cfl:id/progress_location_loading" 4 0.15 || true
+# attendre qu'il disparaisse = résultats chargés
+wait_ui_absent_resid "de.hafas.android.cfl:id/progress_location_loading" 8 0.25 2 || sleep_s 0.3
 snap "07_after_type_destination" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
 tap_by_selector "destination suggestion" "$dump_cache" "content-desc=$TARGET_TEXT" \
   || tap_by_selector "destination suggestion (text)" "$dump_cache" "text=$TARGET_TEXT" \
   || tap_first_result "destination suggestion (first)" "$dump_cache"
-sleep_s "$DELAY_PICK"
+wait_ui_resid "de.hafas.android.cfl:id/button_search" 12 0.20 || sleep_s 2
 snap "08_after_pick_destination" "$SNAP_MODE"
 
 # SEARCH
@@ -252,8 +260,7 @@ if ! (
   warn "Search button not found -> ENTER fallback"
   maybe key 66 || true
 fi
-
-sleep_s "$DELAY_SEARCH"
+# sleep_s "$DELAY_SEARCH"
 # Force full artifacts here even if SNAP_MODE=1/2, because it's the important step
 snap "10_after_search" 3
 
