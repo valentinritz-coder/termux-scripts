@@ -1,0 +1,60 @@
+[*] Log: /sdcard/cfl_watch/logs/2026-01-07_09-15-00_runner.log
+[*] Start ADB local on 127.0.0.1:37099
+[*] Activation ADB TCP sur 127.0.0.1:37099 (root)
+[*] Redémarrage adbd
+[*] Attente adbd=running
+[*] adb connect (retry) -> 127.0.0.1:37099
+[*] connected to 127.0.0.1:37099
+[*] getprop:
+37099
+running
+[*] adb devices -l:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Tip: export ANDROID_SERIAL=127.0.0.1:37099
+[*] Device list:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] === RUN: LUXEMBOURG -> ARLON (SNAP_MODE=1) ===
+[*] SNAP_DIR=/sdcard/cfl_watch/runs/2026-01-07_09-15-06_trip_LUXEMBOURG_to_ARLON (SNAP_MODE=1)
+[*] Scenario: LUXEMBOURG -> ARLON (SNAP_MODE=1)
+[*] CFL_CODE_DIR=/data/data/com.termux/files/home/cfl_watch
+[*] CFL_BASE_DIR=/data/data/com.termux/files/home/cfl_watch
+[*] CFL_TMP_DIR=/sdcard/cfl_watch/tmp
+[*] snap: 09-15-09_00_launch (mode=1)
+[*] snap: 09-15-10_01_before_tap_start (mode=1)
+[uia] UI hierchary dumped to: /sdcard/cfl_watch/tmp/live_dump.xml
+[!] Selector introuvable: start field (criteria: content-desc=Select start)
+[*] Tap start field (history) at 518,407
+[*] snap: 09-15-14_02_after_tap_start (mode=1)
+[*] Type start: LUXEMBOURG
+[!] wait_keyboard_shown timeout
+[!] wait_ui_resid timeout: resid=de.hafas.android.cfl:id/progress_location_loading
+[*] snap: 09-15-29_03_after_type_start (mode=1)
+[uia] UI hierchary dumped to: /sdcard/cfl_watch/tmp/live_dump.xml
+[*] Tap start suggestion at 540,700
+[!] wait_ui_resid timeout: resid=de.hafas.android.cfl:id/input_target
+[*] snap: 09-15-48_04_after_pick_start (mode=1)
+[*] snap: 09-15-48_05_before_tap_destination (mode=1)
+[uia] UI hierchary dumped to: /sdcard/cfl_watch/tmp/live_dump.xml
+[!] Selector introuvable: destination field (criteria: resource-id=de.hafas.android.cfl:id/input_target)
+[*] Tap destination field (fallback) at 534,473
+[*] snap: 09-15-52_06_after_tap_destination (mode=1)
+[*] Type destination: ARLON
+[!] wait_keyboard_shown timeout
+[!] wait_ui_resid timeout: resid=de.hafas.android.cfl:id/progress_location_loading
+[*] snap: 09-16-06_07_after_type_destination (mode=1)
+[uia] UI hierchary dumped to: /sdcard/cfl_watch/tmp/live_dump.xml
+[*] Tap destination suggestion at 540,700
+[!] wait_ui_resid timeout: resid=de.hafas.android.cfl:id/button_search
+[*] snap: 09-16-25_08_after_pick_destination (mode=1)
+[*] snap: 09-16-25_09_before_search (mode=1)
+[uia] UI hierchary dumped to: /sdcard/cfl_watch/tmp/live_dump.xml
+[*] Tap search button (id default) at 540,720
+[*] snap: 09-16-29_10_after_search (mode=3)
+[*] Scenario success (keyword detected)
+[*] RC=0
+[*] Run artifacts: /sdcard/cfl_watch/runs/2026-01-07_09-15-06_trip_LUXEMBOURG_to_ARLON
+[*] Done. fail_count=0
