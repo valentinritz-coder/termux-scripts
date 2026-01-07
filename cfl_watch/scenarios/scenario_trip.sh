@@ -3,6 +3,11 @@ set -euo pipefail
 
 # Parameterized CFL trip scenario
 # Env: START_TEXT, TARGET_TEXT, SNAP_MODE, DELAY_*, CFL_DRY_RUN
+#
+# Notes:
+# - IDs sont gérés en suffixe ":id/..." pour ne pas dépendre du package.
+# - dump_ui écrit le chemin du fichier sur stdout (pour d="$(dump_ui)"),
+#   et loggue uniquement sur stderr.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/../lib/path.sh"
@@ -24,20 +29,41 @@ DELAY_TAP="${DELAY_TAP:-0.15}"
 DELAY_TYPE="${DELAY_TYPE:-0.15}"
 DELAY_PICK="${DELAY_PICK:-0.15}"
 
-: "${CFL_TMP_DIR:=$HOME/.cache/cfl_watch}"          # local Termux (lecture rapide)
-: "${CFL_REMOTE_TMP_DIR:=/data/local/tmp/cfl_watch}" # côté adb shell (écriture rapide)
-: "${CFL_DUMP_TIMING:=1}"                            # 1 = log timings, 0 = silence
+: "${CFL_TMP_DIR:=$HOME/.cache/cfl_watch}"            # local Termux (lecture rapide)
+: "${CFL_REMOTE_TMP_DIR:=/data/local/tmp/cfl_watch}"  # côté adb shell (écriture rapide)
+: "${CFL_DUMP_TIMING:=1}"                             # 1 = log timings, 0 = silence
 
-# Hafas/CFL ids (keep consistent everywhere)
-PKG="de.hafas.android.cfl"
-ID_START="$PKG:id/input_start"
-ID_TARGET="$PKG:id/input_target"
-ID_PROGRESS="$PKG:id/progress_location_loading"
-ID_RESULTS="$PKG:id/list_location_results"
-ID_BTN_SEARCH="$PKG:id/button_search"
-ID_BTN_SEARCH_DEFAULT="$PKG:id/button_search_default"
+# IDs en suffixe (robuste)
+ID_START=":id/input_start"
+ID_TARGET=":id/input_target"
+ID_PROGRESS=":id/progress_location_loading"
+ID_RESULTS=":id/list_location_results"
+ID_BTN_SEARCH=":id/button_search"
+ID_BTN_SEARCH_DEFAULT=":id/button_search_default"
 
 need python
+
+# -------------------------
+# Helpers: regex resource-id
+# -------------------------
+
+resid_regex(){
+  # Build a regex that matches a resource-id in uiautomator dump.
+  # If resid is ":id/foo" -> resource-id="ANY:id/foo"
+  # Else assume full id and match exactly-ish.
+  local resid="$1"
+  if [[ "$resid" == :id/* ]]; then
+    local suffix="${resid#:id/}"
+    printf 'resource-id="[^"]*:id/%s"' "$suffix"
+  else
+    # escape dots for regex
+    printf 'resource-id="%s"' "${resid//./\\.}"
+  fi
+}
+
+# -------------------------
+# UI dump (remote -> local)
+# -------------------------
 
 dump_ui(){
   local remote_dir="$CFL_REMOTE_TMP_DIR"
@@ -52,14 +78,22 @@ dump_ui(){
   local t0 t1 t2 dump_ms cat_ms total_ms
   t0=$(date +%s%N)
 
-  # 1) dump rapide côté shell (remote)
+  # 1) dump côté device (remote)
   inject uiautomator dump --compressed "$remote_path" >/dev/null 2>&1 || true
   t1=$(date +%s%N)
 
-  # 2) rapatrier le XML en local Termux (lisible par grep/python)
-  if ! inject cat "$remote_path" > "$local_path" 2>/dev/null; then
+  # détecte dump remote vide/inexistant (debug utile)
+  if ! inject test -s "$remote_path" >/dev/null 2>&1; then
+    warn "dump_ui: remote dump absent/vide: $remote_path"
+  fi
+
+  # 2) rapatrier en local (safe, jamais cat > même fichier)
+  local tmp="$local_path.tmp.$$"
+  if inject cat "$remote_path" > "$tmp" 2>/dev/null; then
+    mv -f "$tmp" "$local_path"
+  else
+    rm -f "$tmp" >/dev/null 2>&1 || true
     warn "dump_ui: impossible de lire $remote_path (fallback sdcard)"
-    # fallback: dump direct sur sdcard si tu veux sauver la mise
     local_path="/sdcard/cfl_watch/tmp/live_dump.xml"
     inject mkdir -p "/sdcard/cfl_watch/tmp" >/dev/null 2>&1 || true
     inject uiautomator dump --compressed "$local_path" >/dev/null 2>&1 || true
@@ -70,24 +104,28 @@ dump_ui(){
   cat_ms=$(( (t2-t1)/1000000 ))
   total_ms=$(( (t2-t0)/1000000 ))
 
-  # validations (sur le fichier local Termux ou sdcard fallback)
+  # validations
   if [ ! -s "$local_path" ]; then
     warn "UI dump absent/vide: $local_path"
   elif ! grep -q "<hierarchy" "$local_path" 2>/dev/null; then
     warn "UI dump invalide (pas de <hierarchy): $local_path"
   fi
 
+  # timings sur stderr (ne pollue pas stdout)
   if [ "${CFL_DUMP_TIMING:-1}" = "1" ]; then
-    log "ui_dump: dump=${dump_ms}ms cat=${cat_ms}ms total=${total_ms}ms -> $local_path"
+    printf '[*] ui_dump: dump=%sms cat=%sms total=%sms -> %s\n' \
+      "$dump_ms" "$cat_ms" "$total_ms" "$local_path" >&2
   fi
 
+  # stdout: uniquement le chemin
   printf '%s' "$local_path"
 }
 
-# ---- Wait helpers based on dump file (single source of truth) ----
+# -------------------------
+# Wait helpers (dump + grep)
+# -------------------------
 
 wait_dump_grep(){
-  # Wait until grep matches in freshly dumped UI
   # usage: wait_dump_grep "<regex>" [timeout_s] [interval_s]
   local regex="$1"
   local timeout_s="${2:-10}"
@@ -109,32 +147,33 @@ wait_dump_grep(){
 }
 
 wait_resid_present(){
-  # Wait until resource-id is present in dump
   local resid="$1"
   local timeout_s="${2:-10}"
   local interval_s="${3:-0.25}"
-  wait_dump_grep "resource-id=\"${resid//./\\.}\"" "$timeout_s" "$interval_s" >/dev/null
+
+  local pat
+  pat="$(resid_regex "$resid")"
+  wait_dump_grep "$pat" "$timeout_s" "$interval_s" >/dev/null
 }
 
 wait_resid_absent(){
-  # Wait until resource-id disappears (stable for N dumps)
   local resid="$1"
   local timeout_s="${2:-10}"
   local interval_s="${3:-0.25}"
   local stable_n="${4:-2}"
   local end=$(( $(date +%s) + timeout_s ))
 
+  local pat
+  pat="$(resid_regex "$resid")"
+
   local ok=0
   while [ "$(date +%s)" -lt "$end" ]; do
-    local d
-    d="$(dump_ui)"
-    if grep -Fq "resource-id=\"$resid\"" "$d" 2>/dev/null; then
+    local d; d="$(dump_ui)"
+    if grep -Eq "$pat" "$d" 2>/dev/null; then
       ok=0
     else
       ok=$((ok+1))
-      if [ "$ok" -ge "$stable_n" ]; then
-        return 0
-      fi
+      [ "$ok" -ge "$stable_n" ] && return 0
     fi
     sleep "$interval_s"
   done
@@ -144,17 +183,25 @@ wait_resid_absent(){
 }
 
 wait_focused_resid(){
-  # Wait until a node with resource-id has focused="true" (more reliable than keyboard visibility)
+  # Wait until a node matching resid has focused="true"
   local resid="$1"
   local timeout_s="${2:-8}"
   local interval_s="${3:-0.25}"
   local end=$(( $(date +%s) + timeout_s ))
 
+  local pat
+  pat="$(resid_regex "$resid")"
+
   while [ "$(date +%s)" -lt "$end" ]; do
-    local d
-    d="$(dump_ui)"
-    # Usually each node is a single line in uiautomator dump, so this is fine.
-    if grep -F "resource-id=\"$resid\"" "$d" 2>/dev/null | grep -Fq 'focused="true"'; then
+    local d; d="$(dump_ui)"
+    # Approche robuste: on cherche resid ET focused="true" n'importe où dans le dump.
+    # (Pas parfait, mais fiable en pratique sans parser XML à chaque poll.)
+    if grep -Eq "$pat" "$d" 2>/dev/null && grep -Fq 'focused="true"' "$d" 2>/dev/null; then
+      # petite amélioration: exige que focused et resid apparaissent proches (même ligne) si possible
+      if grep -Eq "$pat.*focused=\"true\"|focused=\"true\".*$pat" "$d" 2>/dev/null; then
+        return 0
+      fi
+      # sinon on accepte quand même (certains dumps multi-lignes / reformat)
       return 0
     fi
     sleep "$interval_s"
@@ -165,30 +212,24 @@ wait_focused_resid(){
 }
 
 wait_results_ready(){
-  # Wait until results are "ready enough" after typing:
-  # - Either list appears (ID_RESULTS)
-  # - Prefer: list present AND loader absent (ID_PROGRESS)
+  # Wait until results list is present, and ideally loader is absent.
   local timeout_s="${1:-10}"
   local interval_s="${2:-0.25}"
   local end=$(( $(date +%s) + timeout_s ))
 
+  local re_list
+  local re_loader
+  re_list="$(resid_regex "$ID_RESULTS")"
+  re_loader="$(resid_regex "$ID_PROGRESS")"
+
   while [ "$(date +%s)" -lt "$end" ]; do
-    local d
-    d="$(dump_ui)"
-
+    local d; d="$(dump_ui)"
     local has_list=0 has_loader=0
-    grep -Fq "resource-id=\"$ID_RESULTS\"" "$d" 2>/dev/null && has_list=1 || true
-    grep -Fq "resource-id=\"$ID_PROGRESS\"" "$d" 2>/dev/null && has_loader=1 || true
+    grep -Eq "$re_list" "$d" 2>/dev/null && has_list=1 || true
+    grep -Eq "$re_loader" "$d" 2>/dev/null && has_loader=1 || true
 
-    # Best case
-    if [ "$has_list" -eq 1 ] && [ "$has_loader" -eq 0 ]; then
-      return 0
-    fi
-
-    # Acceptable (some UIs don't show loader)
-    if [ "$has_list" -eq 1 ]; then
-      return 0
-    fi
+    [ "$has_list" -eq 1 ] && [ "$has_loader" -eq 0 ] && return 0
+    [ "$has_list" -eq 1 ] && return 0
 
     sleep "$interval_s"
   done
@@ -197,7 +238,9 @@ wait_results_ready(){
   return 1
 }
 
-# ---- Selector/tap helpers (python-based center) ----
+# -------------------------
+# Selector/tap helpers
+# -------------------------
 
 node_center(){
   local dump="$1"; shift
@@ -229,6 +272,7 @@ parent = {c:p for p in root.iter() for c in p}
 def matches(node):
     for attr, expected in criteria:
         actual = node.get(attr,"") or ""
+        # contains (case-insensitive)
         if expected.lower() not in actual.lower():
             return False
     return True
@@ -244,6 +288,7 @@ for node in root.iter("node"):
     if c:
         print(f"{c[0]} {c[1]}")
         sys.exit(0)
+
 sys.exit(0)
 PY
 }
@@ -254,7 +299,8 @@ first_result_center(){
 import re, sys, xml.etree.ElementTree as ET
 
 dump = sys.argv[1]
-LIST_ID = "de.hafas.android.cfl:id/list_location_results"
+LIST_SUFFIX = ":id/list_location_results"
+
 _bounds = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 
 def parse(b):
@@ -277,9 +323,11 @@ except Exception:
 
 list_node = None
 for n in root.iter("node"):
-    if n.get("resource-id") == LIST_ID:
+    rid = n.get("resource-id","")
+    if rid.endswith(LIST_SUFFIX):
         list_node = n
         break
+
 if list_node is None:
     sys.exit(0)
 
@@ -296,6 +344,7 @@ for child in list_node.iter("node"):
         x,y = ctr(bb)
         print(f"{x} {y}")
         sys.exit(0)
+
 sys.exit(0)
 PY
 }
@@ -332,7 +381,9 @@ tap_first_result(){
   return 0
 }
 
-# ---- Run setup ----
+# -------------------------
+# Run setup
+# -------------------------
 
 run_name="trip_$(safe_name "$START_TEXT")_to_$(safe_name "$TARGET_TEXT")"
 snap_init "$run_name"
@@ -353,13 +404,16 @@ log "Scenario: $START_TEXT -> $TARGET_TEXT (SNAP_MODE=$SNAP_MODE)"
 log "CFL_CODE_DIR=$CFL_CODE_DIR"
 log "CFL_BASE_DIR=$CFL_BASE_DIR"
 log "CFL_TMP_DIR=${CFL_TMP_DIR:-<unset>}"
+log "CFL_REMOTE_TMP_DIR=${CFL_REMOTE_TMP_DIR:-<unset>}"
 
-# ---- Scenario ----
+# -------------------------
+# Scenario
+# -------------------------
 
 # App should already be launched by runner, but keep a safety net:
 maybe cfl_launch
 
-# Wait for start input OR at least the app UI to be there
+# Wait for start input
 wait_resid_present "$ID_START" 12 0.20 || sleep_s 2
 snap "00_launch" "$SNAP_MODE"
 
@@ -374,22 +428,19 @@ tap_by_selector "start field (id)" "$dump_cache" "resource-id=$ID_START" \
 snap "02_after_tap_start" "$SNAP_MODE"
 
 log "Type start: $START_TEXT"
-# Wait for focus instead of keyboard
 wait_focused_resid "$ID_START" 6 0.25 || true
 maybe type_text "$START_TEXT"
 
-# Wait for suggestions/results to be ready
 wait_results_ready 10 0.25 || true
 snap "03_after_type_start" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
-tap_by_selector "start suggestion (exact desc)" "$dump_cache" "content-desc=$START_TEXT" \
-  || tap_by_selector "start suggestion (exact text)" "$dump_cache" "text=$START_TEXT" \
+tap_by_selector "start suggestion (desc contains)" "$dump_cache" "content-desc=$START_TEXT" \
+  || tap_by_selector "start suggestion (text contains)" "$dump_cache" "text=$START_TEXT" \
   || tap_first_result "start suggestion (first)" "$dump_cache"
 
 # After selecting start, destination field should be reachable
-# Wait for target input OR a known fallback selector
-wait_dump_grep "resource-id=\"${ID_TARGET//./\\.}\"|content-desc=\"Select destination\"" 12 0.25 >/dev/null || sleep_s 1
+wait_resid_present "$ID_TARGET" 12 0.25 || wait_dump_grep 'content-desc="Select destination"' 12 0.25 >/dev/null || sleep_s 1
 snap "04_after_pick_start" "$SNAP_MODE"
 
 # DESTINATION
@@ -409,12 +460,12 @@ wait_results_ready 10 0.25 || true
 snap "07_after_type_destination" "$SNAP_MODE"
 
 dump_cache="$(dump_ui)"
-tap_by_selector "destination suggestion (exact desc)" "$dump_cache" "content-desc=$TARGET_TEXT" \
-  || tap_by_selector "destination suggestion (exact text)" "$dump_cache" "text=$TARGET_TEXT" \
+tap_by_selector "destination suggestion (desc contains)" "$dump_cache" "content-desc=$TARGET_TEXT" \
+  || tap_by_selector "destination suggestion (text contains)" "$dump_cache" "text=$TARGET_TEXT" \
   || tap_first_result "destination suggestion (first)" "$dump_cache"
 
-# Wait for search button in any known form
-wait_dump_grep "resource-id=\"${ID_BTN_SEARCH_DEFAULT//./\\.}\"|resource-id=\"${ID_BTN_SEARCH//./\\.}\"|text=\"Rechercher\"|text=\"Itinéraires\"" 12 0.25 >/dev/null || sleep_s 1
+# Wait for search button (any known form)
+wait_dump_grep "$(resid_regex "$ID_BTN_SEARCH_DEFAULT")|$(resid_regex "$ID_BTN_SEARCH")|text=\"Rechercher\"|text=\"Itinéraires\"" 12 0.25 >/dev/null || sleep_s 1
 snap "08_after_pick_destination" "$SNAP_MODE"
 
 # SEARCH
