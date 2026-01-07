@@ -64,6 +64,54 @@ _snap_do(){
   esac
 }
 
+# snap_from_dump "tag" "/path/to/dump.xml" [mode_override]
+# - si mode inclut XML: on COPIE le dump fourni (0 coût uiautomator)
+# - si mode inclut PNG: on fait screencap (coût normal)
+snap_from_dump(){
+  local tag="${1:-snap}"
+  local dump_xml="${2:-}"
+  local mode="${3:-$SNAP_MODE}"
+
+  if [ -z "$SNAP_DIR" ]; then
+    SNAP_DIR="${CFL_RUNS_DIR:-/sdcard/cfl_watch/runs}/$(date +%Y-%m-%d_%H-%M-%S)_run"
+  fi
+  mkdir -p "$SNAP_DIR"
+
+  local ts base
+  ts="$(date +%H-%M-%S)"
+  base="$SNAP_DIR/${ts}_$(safe_tag "$tag")"
+
+  case "$mode" in
+    0) return 0 ;;
+    1)
+      adb -s "$SERIAL" shell screencap -p "${base}.png" >/dev/null 2>&1 || warn "screencap failed"
+      ;;
+    2)
+      if [ -n "$dump_xml" ] && [ -s "$dump_xml" ]; then
+        cp -f "$dump_xml" "${base}.xml"
+      else
+        warn "snap_from_dump: dump_xml missing -> fallback uiautomator"
+        adb -s "$SERIAL" shell uiautomator dump --compressed "${base}.xml" >/dev/null 2>&1 || warn "uiautomator dump failed"
+      fi
+      ;;
+    3)
+      if [ -n "$dump_xml" ] && [ -s "$dump_xml" ]; then
+        cp -f "$dump_xml" "${base}.xml"
+      else
+        warn "snap_from_dump: dump_xml missing -> fallback uiautomator"
+        adb -s "$SERIAL" shell uiautomator dump --compressed "${base}.xml" >/dev/null 2>&1 || warn "uiautomator dump failed"
+      fi
+      adb -s "$SERIAL" shell screencap -p "${base}.png" >/dev/null 2>&1 || warn "screencap failed"
+      ;;
+    *)
+      warn "snap_from_dump: SNAP_MODE invalide: $mode"
+      return 1
+      ;;
+  esac
+
+  log "snap_from_dump: ${ts}_${tag} (mode=$mode)"
+}
+
 # snap "tag" [mode_override]
 snap(){
   local tag="${1:-snap}"
