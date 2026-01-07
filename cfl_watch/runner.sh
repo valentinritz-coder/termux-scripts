@@ -143,6 +143,10 @@ read_anim_scales(){
 }
 
 disable_animations(){
+  if [ "${CFL_DRY_RUN:-0}" = "1" ]; then
+    log "[dry-run] skip animation toggles"
+    return 0
+  fi
   log "Disable Android animations (temporary)"
   read_anim_scales
   adb shell settings put global window_animation_scale 0 >/dev/null
@@ -159,17 +163,23 @@ restore_animations(){
 }
 
 cleanup(){
-  if [ "$CFL_DISABLE_ANIM" = "1" ]; then
+  if [ "$CFL_DISABLE_ANIM" = "1" ] && [ "${CFL_DRY_RUN:-0}" != "1" ]; then
     restore_animations
   fi
-  ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_CODE_DIR/lib/adb_local.sh" stop >/dev/null 2>&1 || true
+  if [ "${CFL_DRY_RUN:-0}" != "1" ]; then
+    ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_CODE_DIR/lib/adb_local.sh" stop >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
 
 log "Start ADB local on ${CFL_DEFAULT_HOST}:${CFL_DEFAULT_PORT}"
-ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_CODE_DIR/lib/adb_local.sh" start
-log "Device list:"
-adb devices -l || true
+if [ "${CFL_DRY_RUN:-0}" != "1" ]; then
+  ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_CODE_DIR/lib/adb_local.sh" start
+  log "Device list:"
+  adb devices -l || true
+else
+  log "[dry-run] skip adb_local start/devices"
+fi
 
 if [ "$CFL_DISABLE_ANIM" = "1" ]; then
   disable_animations
@@ -182,9 +192,9 @@ run_one(){
   log "=== RUN: $start -> $target (SNAP_MODE=$snap_mode) ==="
 
   # clean state + cold start
-  cfl_force_stop
+  maybe cfl_force_stop
   sleep_s 0.7
-  cfl_launch
+  maybe cfl_launch
   sleep_s 1
 
   local before_latest after_latest
@@ -210,7 +220,7 @@ run_one(){
 
   log "RC=$rc"
 
-  cfl_force_stop
+  maybe cfl_force_stop
   sleep_s 0.8
 
   after_latest="$(latest_run_dir)"
