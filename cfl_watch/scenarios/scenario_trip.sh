@@ -24,7 +24,9 @@ DELAY_TAP="${DELAY_TAP:-0.15}"
 DELAY_TYPE="${DELAY_TYPE:-0.15}"
 DELAY_PICK="${DELAY_PICK:-0.15}"
 
-: "${CFL_TMP_DIR:=/sdcard/cfl_watch/tmp}"
+: "${CFL_TMP_DIR:=$HOME/.cache/cfl_watch}"          # local Termux (lecture rapide)
+: "${CFL_REMOTE_TMP_DIR:=/data/local/tmp/cfl_watch}" # côté adb shell (écriture rapide)
+: "${CFL_DUMP_TIMING:=1}"                            # 1 = log timings, 0 = silence
 
 # Hafas/CFL ids (keep consistent everywhere)
 PKG="de.hafas.android.cfl"
@@ -38,20 +40,48 @@ ID_BTN_SEARCH_DEFAULT="$PKG:id/button_search_default"
 need python
 
 dump_ui(){
-  local dump_path="$CFL_TMP_DIR/live_dump.xml"
+  local remote_dir="$CFL_REMOTE_TMP_DIR"
+  local remote_path="$remote_dir/live_dump.xml"
 
-  inject mkdir -p "$CFL_TMP_DIR" >/dev/null 2>&1 || true
-  inject rm -f "$dump_path" >/dev/null 2>&1 || true
+  local local_dir="$CFL_TMP_DIR"
+  local local_path="$local_dir/live_dump.xml"
 
-  inject uiautomator dump --compressed "$dump_path" 2>&1 | sed 's/^/[uia] /' >&2 || true
+  mkdir -p "$local_dir" >/dev/null 2>&1 || true
+  inject mkdir -p "$remote_dir" >/dev/null 2>&1 || true
 
-  if ! inject test -s "$dump_path" >/dev/null 2>&1; then
-    warn "UI dump absent/vide: $dump_path"
-  elif ! grep -q "<hierarchy" "$dump_path" >/dev/null 2>&1; then
-    warn "UI dump invalide (pas de <hierarchy): $dump_path"
+  local t0 t1 t2 dump_ms cat_ms total_ms
+  t0=$(date +%s%N)
+
+  # 1) dump rapide côté shell (remote)
+  inject uiautomator dump --compressed "$remote_path" >/dev/null 2>&1 || true
+  t1=$(date +%s%N)
+
+  # 2) rapatrier le XML en local Termux (lisible par grep/python)
+  if ! inject cat "$remote_path" > "$local_path" 2>/dev/null; then
+    warn "dump_ui: impossible de lire $remote_path (fallback sdcard)"
+    # fallback: dump direct sur sdcard si tu veux sauver la mise
+    local_path="/sdcard/cfl_watch/tmp/live_dump.xml"
+    inject mkdir -p "/sdcard/cfl_watch/tmp" >/dev/null 2>&1 || true
+    inject uiautomator dump --compressed "$local_path" >/dev/null 2>&1 || true
+  fi
+  t2=$(date +%s%N)
+
+  dump_ms=$(( (t1-t0)/1000000 ))
+  cat_ms=$(( (t2-t1)/1000000 ))
+  total_ms=$(( (t2-t0)/1000000 ))
+
+  # validations (sur le fichier local Termux ou sdcard fallback)
+  if [ ! -s "$local_path" ]; then
+    warn "UI dump absent/vide: $local_path"
+  elif ! grep -q "<hierarchy" "$local_path" 2>/dev/null; then
+    warn "UI dump invalide (pas de <hierarchy): $local_path"
   fi
 
-  printf '%s' "$dump_path"
+  if [ "${CFL_DUMP_TIMING:-1}" = "1" ]; then
+    log "ui_dump: dump=${dump_ms}ms cat=${cat_ms}ms total=${total_ms}ms -> $local_path"
+  fi
+
+  printf '%s' "$local_path"
 }
 
 # ---- Wait helpers based on dump file (single source of truth) ----
