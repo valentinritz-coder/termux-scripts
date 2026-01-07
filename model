@@ -1,2 +1,2 @@
 unset LLM_INSTRUCTION
-ADB_TCP_PORT=37099 bash -x "$HOME/cfl_watch/runner.sh" --start LUXEMBOURG --target ARLON --snap-mode 3
+ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --no-anim --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
