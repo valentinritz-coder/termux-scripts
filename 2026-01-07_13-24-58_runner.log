@@ -1,0 +1,60 @@
+[*] Log: /sdcard/cfl_watch/logs/2026-01-07_13-24-58_runner.log
+[*] Start ADB local on 127.0.0.1:37099
+[*] Activation ADB TCP sur 127.0.0.1:37099 (root)
+[*] Redémarrage adbd
+[*] Attente adbd=running
+[*] adb connect (retry) -> 127.0.0.1:37099
+[*] connected to 127.0.0.1:37099
+[*] getprop:
+37099
+running
+[*] adb devices -l:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Tip: export ANDROID_SERIAL=127.0.0.1:37099
+[*] Device list:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Disable Android animations (temporary)
+[*] === RUN: LUXEMBOURG -> ARLON (SNAP_MODE=1) ===
+[*] SNAP_DIR=/sdcard/cfl_watch/runs/2026-01-07_13-25-05_trip_LUXEMBOURG_to_ARLON (SNAP_MODE=1)
+[*] Scenario: LUXEMBOURG -> ARLON (SNAP_MODE=1)
+[*] CFL_CODE_DIR=/data/data/com.termux/files/home/cfl_watch
+[*] CFL_BASE_DIR=/data/data/com.termux/files/home/cfl_watch
+[*] CFL_TMP_DIR=/data/data/com.termux/files/home/.cache/cfl_watch
+[*] CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch
+[*] ui_dump: dump=2687ms cat=96ms total=2783ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] snap: 13-25-08_00_launch (mode=1)
+[*] snap: 13-25-09_01_before_tap_start (mode=1)
+[*] ui_dump: dump=2409ms cat=170ms total=2580ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] Tap start field (id) at 518,407
+[*] snap: 13-25-12_02_after_tap_start (mode=1)
+[*] Type start: LUXEMBOURG
+[*] ui_dump: dump=3516ms cat=155ms total=3672ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] wait_results_ready: iter=1 list=1 loader=0
+[*] snap: 13-25-17_03_after_type_start (mode=1)
+[*] ui_dump: dump=2462ms cat=176ms total=2638ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] Tap start suggestion (desc contains) at 540,700
+[*] ui_dump: dump=2447ms cat=178ms total=2626ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] snap: 13-25-23_04_after_pick_start (mode=1)
+[*] Tap destination field (desc) at 534,473
+[*] snap: 13-25-24_06_after_tap_destination (mode=1)
+[*] Type destination: ARLON
+[*] ui_dump: dump=3681ms cat=161ms total=3843ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] wait_results_ready: iter=1 list=1 loader=0
+[*] snap: 13-25-29_07_after_type_destination (mode=1)
+[*] ui_dump: dump=2433ms cat=189ms total=2623ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] Tap destination suggestion (desc contains) at 540,700
+[*] ui_dump: dump=2370ms cat=173ms total=2544ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] snap: 13-25-36_08_after_pick_destination (mode=1)
+[*] snap: 13-25-36_09_before_search (mode=1)
+[*] ui_dump: dump=2491ms cat=168ms total=2660ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] Tap search button (id default) at 540,720
+[*] snap: 13-25-40_10_after_search (mode=3)
+[*] Scenario success (keyword detected)
+[*] RC=0
+[*] Run artifacts: /sdcard/cfl_watch/runs/2026-01-07_13-25-05_trip_LUXEMBOURG_to_ARLON
+[*] Done. fail_count=0
+[*] Restore Android animations: W=1.0 T=1.0 A=1
