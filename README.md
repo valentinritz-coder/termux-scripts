@@ -57,8 +57,11 @@ ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh"
 
 ### 3) Un trajet précis
 ```bash
-ADB_TCP_PORT=37099 SNAP_MODE=3 bash "$HOME/cfl_watch/runner.sh" \
-  --start "LUXEMBOURG" --target "ARLON"
+ADB_TCP_PORT=37099 \
+CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
+bash "$HOME/cfl_watch/runner.sh" --no-anim \
+  --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
 ```
 
 ### 4) Viewer
