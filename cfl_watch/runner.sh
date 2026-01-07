@@ -12,6 +12,7 @@ CFL_DEFAULT_HOST="${ADB_HOST:-127.0.0.1}"
 CFL_SCENARIO_SCRIPT="${CFL_SCENARIO_SCRIPT:-$CFL_CODE_DIR/scenarios/scenario_trip.sh}"
 CFL_SCENARIO_SCRIPT="$(expand_tilde_path "$CFL_SCENARIO_SCRIPT")"
 CFL_DRY_RUN="${CFL_DRY_RUN:-0}"
+CFL_DISABLE_ANIM="${CFL_DISABLE_ANIM:-0}"
 
 DELAY_LAUNCH="${DELAY_LAUNCH:-1.0}"
 DELAY_TAP="${DELAY_TAP:-0.20}"
@@ -34,6 +35,7 @@ Usage: ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" [options]
 --dry-run            Log actions without input events
 --list               Show bundled scenarios and exit
 --check              Run self-check and exit
+--no-anim            Disable system animations during the run (restore after)
 EOF
 }
 
@@ -103,6 +105,7 @@ while [ $# -gt 0 ]; do
     --serve) serve_latest; exit $? ;;
     --list) print_list; exit 0 ;;
     --check) self_check; exit 0 ;;
+    --no-anim) CFL_DISABLE_ANIM=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) usage; exit 2 ;;
   esac
@@ -124,7 +127,41 @@ fi
 
 chmod +x "$CFL_CODE_DIR"/lib/*.sh "$CFL_CODE_DIR"/scenarios/*.sh "$CFL_CODE_DIR"/tools/*.sh >/dev/null 2>&1 || true
 
+ANIM_W=""
+ANIM_T=""
+ANIM_A=""
+
+read_anim_scales(){
+  ANIM_W="$(adb shell settings get global window_animation_scale 2>/dev/null | tr -d '\r')"
+  ANIM_T="$(adb shell settings get global transition_animation_scale 2>/dev/null | tr -d '\r')"
+  ANIM_A="$(adb shell settings get global animator_duration_scale 2>/dev/null | tr -d '\r')"
+
+  # fallback si "null" ou vide
+  [ -n "$ANIM_W" ] && [ "$ANIM_W" != "null" ] || ANIM_W="1"
+  [ -n "$ANIM_T" ] && [ "$ANIM_T" != "null" ] || ANIM_T="1"
+  [ -n "$ANIM_A" ] && [ "$ANIM_A" != "null" ] || ANIM_A="1"
+}
+
+disable_animations(){
+  log "Disable Android animations (temporary)"
+  read_anim_scales
+  adb shell settings put global window_animation_scale 0 >/dev/null
+  adb shell settings put global transition_animation_scale 0 >/dev/null
+  adb shell settings put global animator_duration_scale 0 >/dev/null
+}
+
+restore_animations(){
+  [ -n "${ANIM_W:-}" ] || return 0
+  log "Restore Android animations: W=$ANIM_W T=$ANIM_T A=$ANIM_A"
+  adb shell settings put global window_animation_scale "$ANIM_W" >/dev/null 2>&1 || true
+  adb shell settings put global transition_animation_scale "$ANIM_T" >/dev/null 2>&1 || true
+  adb shell settings put global animator_duration_scale "$ANIM_A" >/dev/null 2>&1 || true
+}
+
 cleanup(){
+  if [ "$CFL_DISABLE_ANIM" = "1" ]; then
+    restore_animations
+  fi
   ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_CODE_DIR/lib/adb_local.sh" stop >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -133,6 +170,10 @@ log "Start ADB local on ${CFL_DEFAULT_HOST}:${CFL_DEFAULT_PORT}"
 ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_CODE_DIR/lib/adb_local.sh" start
 log "Device list:"
 adb devices -l || true
+
+if [ "$CFL_DISABLE_ANIM" = "1" ]; then
+  disable_animations
+fi
 
 run_one(){
   local start="$1" target="$2" snap_mode="$3"
