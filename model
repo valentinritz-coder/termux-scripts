@@ -1,2 +1,6 @@
-unset LLM_INSTRUCTION
-ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --no-anim --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
+ADB_TCP_PORT=37099 SNAP_MODE=3 bash "$HOME/cfl_watch/runner.sh" --start "LUXEMBOURG" --target "ARLON"
+
+--
+
+ADB_TCP_PORT=37099 SNAP_MODE=3 CFL_REMOTE_TMP_DIR=/sdcard/cfl_watch/tmp \
+  bash "$HOME/cfl_watch/runner.sh" --start "LUXEMBOURG" --target "ARLON"
