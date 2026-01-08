@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # CFL trip scenario (API version, readable)
-# Env: START_TEXT, TARGET_TEXT, SNAP_MODE, WAIT_* , CFL_DRY_RUN
+# Env: START_TEXT, TARGET_TEXT, VIA_TEXT (optional), SNAP_MODE, WAIT_*, CFL_DRY_RUN
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/../lib/path.sh"
@@ -16,6 +16,7 @@ CFL_CODE_DIR="${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 CFL_CODE_DIR="$(expand_tilde_path "$CFL_CODE_DIR")"
 CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 
+# Load env overrides (optional)
 if [ -f "$CFL_CODE_DIR/env.sh" ]; then
   . "$CFL_CODE_DIR/env.sh"
 fi
@@ -23,19 +24,26 @@ if [ -f "$CFL_CODE_DIR/env.local.sh" ]; then
   . "$CFL_CODE_DIR/env.local.sh"
 fi
 
+# Re-resolve after env (in case env overrides CFL_CODE_DIR)
 CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}")"
 CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 
 . "$CFL_CODE_DIR/lib/common.sh"
 . "$CFL_CODE_DIR/lib/snap.sh"
 
-# UI libs (new)
+# UI libs
 . "$CFL_CODE_DIR/lib/ui_core.sh"
 . "$CFL_CODE_DIR/lib/ui_select.sh"
 . "$CFL_CODE_DIR/lib/ui_api.sh"
 
+# Inputs
 START_TEXT="${START_TEXT:-LUXEMBOURG}"
 TARGET_TEXT="${TARGET_TEXT:-ARLON}"
+
+# VIA is optional: empty/undefined => skip
+VIA_TEXT="${VIA_TEXT:-}"
+VIA_TEXT_TRIM="$(printf '%s' "$VIA_TEXT" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
 if [ "$SNAP_MODE_SET" -eq 0 ]; then
   SNAP_MODE=2   # 2 = xml only (fast), 3 = xml+png (slower)
 fi
@@ -43,6 +51,8 @@ fi
 # IDs (suffix) used by ui_wait_search_button
 ID_START=":id/input_start"
 ID_TARGET=":id/input_target"
+ID_SETTING=":id/button_options"
+ID_VIA=":id/input_via"
 ID_BTN_SEARCH=":id/button_search"
 ID_BTN_SEARCH_DEFAULT=":id/button_search_default"
 
@@ -51,12 +61,14 @@ WAIT_POLL="${WAIT_POLL:-0.0}"
 WAIT_SHORT="${WAIT_SHORT:-20}"
 WAIT_LONG="${WAIT_LONG:-30}"
 
-need python
-
+# Snap run name
 run_name="trip_$(safe_name "$START_TEXT")_to_$(safe_name "$TARGET_TEXT")"
+if [[ -n "$VIA_TEXT_TRIM" ]]; then
+  run_name="${run_name}_via_$(safe_name "$VIA_TEXT_TRIM")"
+fi
 snap_init "$run_name"
 
-finish(){
+finish() {
   local rc=$?
   trap - EXIT
   if [ "$rc" -ne 0 ]; then
@@ -69,16 +81,15 @@ finish(){
 trap finish EXIT
 
 # -------------------------
-# -------------------------
-# -------------------------
-# -------------------------
 # Scenario
-# -------------------------
-# -------------------------
-# -------------------------
 # -------------------------
 
 log "Scenario: $START_TEXT -> $TARGET_TEXT (SNAP_MODE=$SNAP_MODE)"
+if [[ -n "$VIA_TEXT_TRIM" ]]; then
+  log "VIA enabled: $VIA_TEXT_TRIM"
+else
+  log "VIA skipped (VIA_TEXT empty)"
+fi
 
 maybe cfl_launch
 
@@ -128,6 +139,48 @@ ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"
 ui_refresh
 ui_snap "08_after_pick_destination" "$SNAP_MODE"
 
+# VIA (optional)
+if [[ -n "$VIA_TEXT_TRIM" ]]; then
+  # attendre bouton options
+  if ui_wait_resid "options button visible" "$ID_SETTING" "$WAIT_LONG"; then
+    # tap options
+    ui_tap_any "options button" \
+      "desc:Extended search options" \
+      "resid:$ID_SETTING" \
+    || true
+    ui_snap_here "08a_after_open_options" "$SNAP_MODE"
+
+    # attendre champ via
+    if ui_wait_resid "via field visible" "$ID_VIA" "$WAIT_LONG"; then
+      # tap champ via
+      ui_tap_any "tap via field" \
+        "text:Enter stop" \
+        "resid:$ID_VIA" \
+      || true
+      ui_snap_here "08b_after_tap_via" "$SNAP_MODE"
+
+      # taper + suggestions
+      ui_type_and_wait_results "via" "$VIA_TEXT_TRIM"
+      ui_snap "08c_after_type_via" "$SNAP_MODE"
+
+      # choisir suggestion
+      ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM"
+      ui_refresh
+      ui_snap "08d_after_pick_via" "$SNAP_MODE"
+
+      # revenir (navigate up)
+      ui_tap_any "tap back button" \
+        "desc:Navigate up" \
+      || true
+      ui_snap_here "08e_after_back_from_via" "$SNAP_MODE"
+    else
+      warn "VIA enabled but via field not found -> skipping VIA"
+    fi
+  else
+    warn "VIA enabled but options button not found -> skipping VIA"
+  fi
+fi
+
 # 8) SEARCH: attendre bouton
 ui_wait_search_button "$WAIT_LONG"
 ui_snap "09_search_ready" "$SNAP_MODE"
@@ -143,6 +196,7 @@ then
   maybe key 66 || true
 fi
 
+# Force xml+png after search for debugging even if SNAP_MODE=2
 ui_snap_here "10_after_search" 3
 
 # Heuristique de succès (optionnel)
