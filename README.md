@@ -63,9 +63,12 @@ adb devices -l
 ADB_TCP_PORT=37099 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh" \
+CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime.sh" \
+VIA_TEXT="BETTEMBOURG" \
+DATE_YMD="2026-01-10" \
+TIME_HM="17:48" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
-  --start "LUXEMBOURG" --via "BETTEMBOURG" --target "ARLON" --snap-mode 3
+  --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
 ```
 
 ### 3) Trois trajets aléatoires (N=3)
