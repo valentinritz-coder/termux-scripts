@@ -33,7 +33,7 @@ name="${1:-ui_watch}"
 snap_init "$name"
 
 # UI dump is slow (2-3s). We do stability based on elapsed time, not "N loops".
-STABLE_SECS="${STABLE_SECS:-3}"          # wait this long with same UI hash
+STABLE_SECS="${STABLE_SECS:-6}"          # wait this long with same UI hash
 POLL_SLEEP_S="${POLL_SLEEP_S:-0.2}"      # extra sleep between dumps (dump itself already costs time)
 
 # Put the live dump in a temp dir (faster, fewer perms headaches)
