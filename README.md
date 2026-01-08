@@ -24,11 +24,7 @@ Automatisation **CFL** (Android) qui s’exécute **directement sur le télépho
 ## Installation (copier/coller)
 
 ```bash
-pkg install -y git
-
-git clone https://github.com/valentinritz-coder/termux-scripts.git "$HOME/termux-scripts"
-
-bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
+pkg install -y git && git clone https://github.com/valentinritz-coder/termux-scripts.git "$HOME/termux-scripts" && bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
 ```
 
 Mise à jour (pull + perms + self-check):
@@ -38,15 +34,7 @@ cd "$HOME/termux-scripts" && git fetch --all --prune && git reset --hard @{u} &&
 
 Reset:
 ```bash
-cd "$HOME/termux-scripts"
-
-git fetch origin --prune
-
-git reset --hard origin/main
-
-git clean -fd
-
-bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
+cd "$HOME/termux-scripts" && git fetch origin --prune && git reset --hard origin/main && git clean -fd && bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
 ```
 
 ---
