@@ -110,6 +110,18 @@ fi
 log "Fix CRLF + permissions inside code dir"
 bash "$CODE_DIR/tools/fix_perms_and_crlf.sh" "$CODE_DIR"
 
+if ! command -v adb >/dev/null 2>&1; then
+  warn "watch_ui_dump.sh nécessite adb"
+fi
+
+WATCH_UI_DUMP="$CODE_DIR/tools/watch_ui_dump.sh"
+if [ -f "$WATCH_UI_DUMP" ]; then
+  log "Ensure watch_ui_dump.sh is executable"
+  chmod +x "$WATCH_UI_DUMP"
+else
+  warn "watch_ui_dump.sh not found at $WATCH_UI_DUMP (skip)"
+fi
+
 log "Write /sdcard shims -> $ARTIFACT_DIR"
 mkdir -p "$ARTIFACT_DIR"
 cat >"$ARTIFACT_DIR/runner.sh" <<'SHIM'
