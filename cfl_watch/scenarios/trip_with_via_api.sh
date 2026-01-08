@@ -36,6 +36,7 @@ CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 
 START_TEXT="${START_TEXT:-LUXEMBOURG}"
 TARGET_TEXT="${TARGET_TEXT:-ARLON}"
+VIA_TEXT="${VIA_TEXT:-BETTEMBOURG}"
 if [ "$SNAP_MODE_SET" -eq 0 ]; then
   SNAP_MODE=2   # 2 = xml only (fast), 3 = xml+png (slower)
 fi
@@ -43,6 +44,8 @@ fi
 # IDs (suffix) used by ui_wait_search_button
 ID_START=":id/input_start"
 ID_TARGET=":id/input_target"
+ID_SETTING=":id/button_options"
+ID_VIA=":id/input_via"
 ID_BTN_SEARCH=":id/button_search"
 ID_BTN_SEARCH_DEFAULT=":id/button_search_default"
 
@@ -127,6 +130,49 @@ ui_snap "07_after_type_destination" "$SNAP_MODE"
 ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"
 ui_refresh
 ui_snap "08_after_pick_destination" "$SNAP_MODE"
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 4) VIA : attendre bouton options
+ui_wait_resid "options button visible" "$ID_SETTING" "$WAIT_LONG"
+
+# 5) VIA: tap options bouton
+ui_tap_any "options button" \
+  "desc:Extended search options" \
+  "resid:$ID_SETTING" \
+|| true
+
+ui_wait_resid "via field visible" "$ID_VIA" "$WAIT_LONG"
+
+# 5) VIA: tap options bouton
+ui_tap_any "tap via field" \
+  "text:Enter stop" \
+  "resid:$ID_VIA" \
+|| true
+
+# 6) DEST: taper + suggestions
+ui_type_and_wait_results "via" "$VIA_TEXT"
+ui_snap "07_after_type_via" "$SNAP_MODE"
+
+# 7) DEST: choisir suggestion
+ui_pick_suggestion "via suggestion" "$VIA_TEXT"
+ui_refresh
+ui_snap "08_after_pick_via" "$SNAP_MODE"
+
+# 4) VIA : attendre bouton options
+ui_tap_any "tap back button" \
+  "desc:Navigate up" \
+|| true
 
 # 8) SEARCH: attendre bouton
 ui_wait_search_button "$WAIT_LONG"
