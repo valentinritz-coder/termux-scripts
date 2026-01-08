@@ -96,5 +96,3 @@ done < "$TRIPS_FILE"
 
 echo "[*] DONE: ok=$ok fail=$fail total=$((ok+fail))"
 [ "$fail" -eq 0 ] || exit 1
-
-chmod +x "$HOME/cfl_watch/batch_trips.sh"
