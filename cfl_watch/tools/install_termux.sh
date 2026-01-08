@@ -122,6 +122,18 @@ else
   warn "watch_ui_dump.sh not found at $WATCH_UI_DUMP (skip)"
 fi
 
+if ! command -v adb >/dev/null 2>&1; then
+  warn "adb_session.sh nécessite adb"
+fi
+
+ADB_SESSION="$CODE_DIR/tools/adb_session.sh"
+if [ -f "$ADB_SESSION" ]; then
+  log "Ensure adb_session.sh is executable"
+  chmod +x "$ADB_SESSION"
+else
+  warn "adb_session.sh not found at $ADB_SESSION (skip)"
+fi
+
 log "Write /sdcard shims -> $ARTIFACT_DIR"
 mkdir -p "$ARTIFACT_DIR"
 cat >"$ARTIFACT_DIR/runner.sh" <<'SHIM'
