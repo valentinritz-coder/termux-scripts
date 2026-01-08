@@ -1,15 +1,15 @@
-#!/usr/bin/env bash
+#!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
 usage() {
   cat <<'USAGE'
 Usage: watch_ui_dump.sh [-i SECONDS] [-o DIR] [--dry-run] [-h]
 
-Continuously capture Android UI screenshots and UIAutomator XML dumps.
+Continuously capture Android UI screenshots (PNG) + UIAutomator XML dumps.
 
 Options:
   -i SECONDS   Interval between captures (default: 2)
-  -o DIR       Output directory (default: $HOME/storage/shared/cfl_watch/captures)
+  -o DIR       Output directory (default: $CFL_ARTIFACT_DIR/captures OR /sdcard/cfl_watch/captures)
   --dry-run    Show commands without executing captures
   -h, --help   Show this help message
 
@@ -19,69 +19,55 @@ USAGE
 }
 
 interval=2
-outdir="${HOME}/storage/shared/cfl_watch/captures"
 dry_run=false
+
+# Default outdir: prefer CFL_ARTIFACT_DIR if set, else /sdcard
+default_outdir="${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}/captures"
+outdir="$default_outdir"
 
 while getopts ":i:o:h-:" opt; do
   case "$opt" in
-    i)
-      interval="$OPTARG"
-      ;;
-    o)
-      outdir="$OPTARG"
-      ;;
-    h)
-      usage
-      exit 0
-      ;;
+    i) interval="$OPTARG" ;;
+    o) outdir="$OPTARG" ;;
+    h) usage; exit 0 ;;
     -)
       case "$OPTARG" in
-        dry-run)
-          dry_run=true
-          ;;
-        help)
-          usage
-          exit 0
-          ;;
-        *)
-          echo "Unknown option --$OPTARG" >&2
-          usage
-          exit 1
-          ;;
+        dry-run) dry_run=true ;;
+        help) usage; exit 0 ;;
+        *) echo "Unknown option --$OPTARG" >&2; usage; exit 1 ;;
       esac
       ;;
-    \?)
-      echo "Unknown option -$OPTARG" >&2
-      usage
-      exit 1
-      ;;
-    :)
-      echo "Option -$OPTARG requires an argument" >&2
-      usage
-      exit 1
-      ;;
+    \?) echo "Unknown option -$OPTARG" >&2; usage; exit 1 ;;
+    :)  echo "Option -$OPTARG requires an argument" >&2; usage; exit 1 ;;
   esac
 done
 
 if ! command -v adb >/dev/null 2>&1; then
-  echo "Error: adb is not available in PATH. Please install or configure adb." >&2
+  echo "Error: adb not found in PATH." >&2
   exit 1
 fi
+
+# ADB wrapper: if ANDROID_SERIAL is set, force device selection (more deterministic)
+adb_cmd() {
+  if [[ -n "${ANDROID_SERIAL:-}" ]]; then
+    adb -s "$ANDROID_SERIAL" "$@"
+  else
+    adb "$@"
+  fi
+}
 
 png_dir="$outdir/png"
 xml_dir="$outdir/xml"
 index_file="$outdir/index.csv"
-
 mkdir -p "$png_dir" "$xml_dir"
 
 if [[ "$dry_run" == false && ! -f "$index_file" ]]; then
   echo "frame,timestamp,rc_png,rc_xml,notes" > "$index_file"
 fi
 
-remote_tmp_dir="/sdcard/cfl_watch_tmp"
-if [[ "$dry_run" == false ]]; then
-  adb shell mkdir -p "$remote_tmp_dir" >/dev/null 2>&1 || true
-fi
+# Remote tmp dir: prefer CFL_REMOTE_TMP_DIR if set, else /data/local/tmp (reliable)
+remote_base="${CFL_REMOTE_TMP_DIR:-/data/local/tmp/cfl_watch}"
+remote_tmp_dir="$remote_base/watch_ui_dump"
 
 epoch_ms() {
   local ms
@@ -93,35 +79,30 @@ epoch_ms() {
 }
 
 frame_id() {
-  local base
-  local ms
+  local base ms
   base=$(date +%Y-%m-%d_%H-%M-%S)
   ms=$(epoch_ms)
   printf "%s_%03d" "$base" "$((ms % 1000))"
 }
 
 log_line() {
-  local frame="$1"
-  local png_path="$2"
-  local xml_path="$3"
-  local rc_png="$4"
-  local rc_xml="$5"
-  local png_ms="$6"
-  local xml_ms="$7"
-  local total_ms="$8"
-  local notes="$9"
+  local frame="$1" png_path="$2" xml_path="$3" rc_png="$4" rc_xml="$5" png_ms="$6" xml_ms="$7" total_ms="$8" notes="$9"
   printf '[%s] png=%s (rc=%s,%sms) xml=%s (rc=%s,%sms) total=%sms %s\n' \
     "$frame" "$png_path" "$rc_png" "$png_ms" "$xml_path" "$rc_xml" "$xml_ms" "$total_ms" "$notes"
 }
 
 trap 'echo "Stopping..."; exit 0' INT TERM
 
+if [[ "$dry_run" == false ]]; then
+  adb_cmd shell "mkdir -p '$remote_tmp_dir'" >/dev/null 2>&1 || true
+fi
+
 while true; do
   frame=$(frame_id)
   timestamp=$(date +%Y-%m-%dT%H:%M:%S%z)
   png_path="$png_dir/$frame.png"
   xml_path="$xml_dir/$frame.xml"
-  notes=""
+  notes="ok"
 
   start_total=$(epoch_ms)
 
@@ -130,10 +111,8 @@ while true; do
     echo "DRY-RUN: adb shell uiautomator dump --compressed $remote_tmp_dir/$frame.xml"
     echo "DRY-RUN: adb pull $remote_tmp_dir/$frame.xml $xml_path"
     echo "DRY-RUN: adb shell rm -f $remote_tmp_dir/$frame.xml"
-    png_ms=0
-    xml_ms=0
     total_ms=$(( $(epoch_ms) - start_total ))
-    log_line "$frame" "$png_path" "$xml_path" 0 0 "$png_ms" "$xml_ms" "$total_ms" "dry-run"
+    log_line "$frame" "$png_path" "$xml_path" 0 0 0 0 "$total_ms" "dry-run"
     sleep "$interval"
     continue
   fi
@@ -142,25 +121,26 @@ while true; do
   start_png=$(epoch_ms)
   rc_png=0
   set +e
-  adb exec-out screencap -p > "$png_path"
+  adb_cmd exec-out screencap -p > "$png_path"
   rc_png=$?
   set -e
   if [[ $rc_png -ne 0 ]]; then
+    rm -f "$png_path" >/dev/null 2>&1 || true
     remote_png="$remote_tmp_dir/$frame.png"
     set +e
-    adb shell screencap -p "$remote_png"
+    adb_cmd shell "screencap -p '$remote_png'"
     rc_shell=$?
     if [[ $rc_shell -eq 0 ]]; then
-      adb pull "$remote_png" "$png_path"
+      adb_cmd pull "$remote_png" "$png_path" >/dev/null
       rc_pull=$?
     else
       rc_pull=1
     fi
-    adb shell rm -f "$remote_png" >/dev/null 2>&1
+    adb_cmd shell "rm -f '$remote_png'" >/dev/null 2>&1
     set -e
     if [[ $rc_shell -ne 0 || $rc_pull -ne 0 ]]; then
       rc_png=1
-      notes+="png_failed;"
+      notes="png_failed"
     else
       rc_png=0
     fi
@@ -171,22 +151,23 @@ while true; do
   start_xml=$(epoch_ms)
   rc_xml=0
   remote_xml="$remote_tmp_dir/$frame.xml"
+
   set +e
-  adb shell uiautomator dump --compressed "$remote_xml"
+  adb_cmd shell "uiautomator dump --compressed '$remote_xml'" >/dev/null
   rc_dump=$?
   if [[ $rc_dump -eq 0 ]]; then
-    adb pull "$remote_xml" "$xml_path"
+    adb_cmd pull "$remote_xml" "$xml_path" >/dev/null
     rc_pull_xml=$?
   else
     rc_pull_xml=1
   fi
-  adb shell rm -f "$remote_xml" >/dev/null 2>&1
+  adb_cmd shell "rm -f '$remote_xml'" >/dev/null 2>&1
   set -e
 
   if [[ $rc_dump -ne 0 || $rc_pull_xml -ne 0 ]]; then
     rc_xml=1
-    notes+="xml_failed;"
-    printf '<error message="uiautomator dump failed"/>' > "$xml_path"
+    notes="${notes/ok/}xml_failed"
+    printf '<error message="uiautomator dump failed" />\n' > "$xml_path"
   fi
   xml_ms=$(( $(epoch_ms) - start_xml ))
 
