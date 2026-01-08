@@ -1,7 +1,5 @@
-chmod +x "$HOME/termux-scripts/cfl_watch/tools/adb_session.sh"
-"$HOME/termux-scripts/cfl_watch/tools/adb_session.sh" --no-anim
-
-
---
-
-"$HOME/termux-scripts/cfl_watch/tools/watch_ui_dump.sh" -o /sdcard/cfl_watch/captures
+SERIAL=127.0.0.1:37099 \
+CFL_ARTIFACT_DIR=/sdcard/cfl_watch \
+POLL_SLEEP_S=2 \
+STABLE_SECS=10 \
+"$HOME/termux-scripts/cfl_watch/tools/watch_ui_dump.sh" ui_watch
