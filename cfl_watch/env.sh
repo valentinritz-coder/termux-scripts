@@ -6,8 +6,9 @@
 #   source "$CFL_CODE_DIR/env.sh" 2>/dev/null || true
 #   source "$CFL_CODE_DIR/env.local.sh" 2>/dev/null || true
 
-# Base dirs
-: "${CFL_CODE_DIR:=${CFL_BASE_DIR:-$HOME/cfl_watch}}"
+# Base dirs (robuste)
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+: "${CFL_CODE_DIR:=${CFL_BASE_DIR:-$SCRIPT_DIR}}"
 : "${CFL_BASE_DIR:=$CFL_CODE_DIR}"
 : "${CFL_ARTIFACT_DIR:=/sdcard/cfl_watch}"
 
