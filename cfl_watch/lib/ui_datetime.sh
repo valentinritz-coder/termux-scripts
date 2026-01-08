@@ -186,8 +186,14 @@ _ui_np_step_to() {
 }
 
 ui_datetime_wait_dialog() {
-  ui_wait_resid "time picker visible" "de.hafas.android.cfl:id/picker_time" "${1:-30}"
-  ui_wait_resid "OK button visible" "android:id/button1" "${1:-30}"
+  local t="${1:-30}"
+  ui_wait_any "time picker visible" "$t" \
+    "resid::id/picker_time" \
+    "resid:de.hafas.android.cfl:id/picker_time"
+
+  ui_wait_any "OK button visible" "$t" \
+    "resid:android:id/button1" \
+    "text:OK"
 }
 
 # Preset buttons: now|15m|1h
