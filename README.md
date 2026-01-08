@@ -33,11 +33,7 @@ bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
 
 Mise à jour (pull + perms + self-check):
 ```bash
-cd "$HOME/termux-scripts"
-
-git pull --rebase
-
-bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
+cd "$HOME/termux-scripts" && git fetch --all --prune && git reset --hard @{u} && git clean -fd && bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
 ```
 
 Reset:
@@ -104,7 +100,7 @@ NO_ANIM=1 \
 bash "$HOME/termux-scripts/cfl_watch/tools/stress_stations.sh"
 ```
 
-### 4) Trois trajets aléatoires (N=3)
+### 4) Un conteneur de trajets
 ```bash
 TRIPS_FILE="$HOME/termux-scripts/cfl_watch/trips.txt" \
 ADB_TCP_PORT=37099 \
@@ -116,7 +112,12 @@ NO_ANIM=1 \
 bash "$HOME/termux-scripts/cfl_watch/tools/batch_trips.sh"
 ```
 
-### 5) Viewer
+### 5) Un enregistreur d'UI
+```bash
+SERIAL=127.0.0.1:37099 STABLE_SECS=2 bash "$HOME/termux-scripts/cfl_watch/tools/cfl_snap_watch.sh" ui_watch
+```
+
+### 6) Viewer
 ```bash
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --serve
 ```
