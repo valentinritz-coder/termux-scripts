@@ -203,6 +203,17 @@ cd "$HOME/termux-scripts"
 git status
 git diff
 ```
+### Solution :
+```bash
+cd "$HOME/termux-scripts"
+git add cfl_watch/lib/path.sh cfl_watch/lib/ui_api.sh cfl_watch/lib/ui_core.sh cfl_watch/lib/ui_select.sh \
+        cfl_watch/scenarios/trip_api.sh \
+        cfl_watch/tools/batch_trips.sh cfl_watch/tools/cfl_snap_watch.sh cfl_watch/tools/llm_explore.sh cfl_watch/tools/stress_stations.sh
+
+git commit -m "chmod +x: make shell scripts executable"
+git pull --rebase
+bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
+```
 
 ---
 
