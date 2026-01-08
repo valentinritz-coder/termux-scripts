@@ -70,12 +70,7 @@ ADB_TCP_PORT=37099 bash "$HOME/termux-scripts/cfl_watch/lib/adb_local.sh" start
 adb devices -l
 ```
 
-### 2) Lancer un run
-```bash
-ADB_TCP_PORT=37099 bash "$HOME/termux-scripts/cfl_watch/runner.sh"
-```
-
-### 3) Un trajet précis
+### 2) Un trajet précis
 ```bash
 ADB_TCP_PORT=37099 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
@@ -85,7 +80,7 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
   --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
 ```
 
-### 4) Trois trajets aléatoires (N=3)
+### 3) Trois trajets aléatoires (N=3)
 ```bash
 N=3 \
 SLEEP_BETWEEN=1 \
