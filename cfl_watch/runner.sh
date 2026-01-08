@@ -4,17 +4,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/lib/path.sh"
 
-CFL_CODE_DIR="${CFL_CODE_DIR:-$SCRIPT_DIR}"
-CFL_CODE_DIR="$(expand_tilde_path "$CFL_CODE_DIR")"
+CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$SCRIPT_DIR}")"
 CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 
-if [ -f "$CFL_CODE_DIR/env.sh" ]; then
-  . "$CFL_CODE_DIR/env.sh"
-fi
-if [ -f "$CFL_CODE_DIR/env.local.sh" ]; then
-  . "$CFL_CODE_DIR/env.local.sh"
-fi
+[ -f "$CFL_CODE_DIR/env.sh" ] && . "$CFL_CODE_DIR/env.sh"
+[ -f "$CFL_CODE_DIR/env.local.sh" ] && . "$CFL_CODE_DIR/env.local.sh"
 
+# Re-déduire après env (seulement si tu autorises env à redéfinir CFL_CODE_DIR)
 CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$SCRIPT_DIR}")"
 CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 CFL_ARTIFACT_DIR="$(expand_tilde_path "${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}")"
