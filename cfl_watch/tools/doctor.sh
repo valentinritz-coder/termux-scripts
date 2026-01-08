@@ -39,8 +39,12 @@ if [ -z "${ANDROID_SERIAL:-}" ] && { [ -z "${ADB_HOST:-}" ] || [ -z "${ADB_TCP_P
   warn "ADB_HOST/ADB_TCP_PORT not set; default serial is ${CFL_DEFAULT_HOST}:${CFL_DEFAULT_PORT}."
 fi
 
-if [[ "$CFL_TMP_DIR" == /data/data/com.termux/* ]]; then
-  warn "CFL_TMP_DIR is under /data/data/com.termux (uiautomator cannot access)."
+if [[ "${CFL_REMOTE_TMP_DIR:-}" != /data/local/tmp/* ]]; then
+  warn "CFL_REMOTE_TMP_DIR should typically be under /data/local/tmp for speed/access."
+fi
+
+if [[ "${CFL_ARTIFACT_DIR:-}" != /data/local/tmp/* ]]; then
+  warn "CFL_REMOTE_TMP_DIR should typically be under /data/local/tmp for speed/access."
 fi
 
 if [ ! -d "/sdcard" ]; then
