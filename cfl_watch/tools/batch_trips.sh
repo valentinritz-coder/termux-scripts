@@ -8,14 +8,14 @@ set -u
 #   SCENARIO_SCRIPT|START|TARGET|SNAP_MODE
 # Comments: lines starting with #, blanks ignored.
 
-TRIPS_FILE="${TRIPS_FILE:-$HOME/cfl_watch/trips.txt}"
-RUNNER="${RUNNER:-$HOME/cfl_watch/runner.sh}"
+TRIPS_FILE="${TRIPS_FILE:-$HOME/termux-scripts/cfl_watch/trips.txt}"
+RUNNER="${RUNNER:-$HOME/termux-scripts/cfl_watch/runner.sh}"
 
 # Defaults (override via env)
 ADB_TCP_PORT="${ADB_TCP_PORT:-37099}"
 CFL_REMOTE_TMP_DIR="${CFL_REMOTE_TMP_DIR:-/data/local/tmp/cfl_watch}"
 CFL_TMP_DIR="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}"
-DEFAULT_SCENARIO="${DEFAULT_SCENARIO:-$HOME/cfl_watch/scenarios/trip_api.sh}"
+DEFAULT_SCENARIO="${DEFAULT_SCENARIO:-$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh}"
 DEFAULT_SNAP_MODE="${DEFAULT_SNAP_MODE:-3}"
 NO_ANIM="${NO_ANIM:-1}"
 
