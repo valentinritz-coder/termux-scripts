@@ -1,0 +1,9 @@
+# start|target
+LUXEMBOURG|ARLON
+MERSCH|LUXEMBOURG
+
+# scenario|start|target
+/home/val/cfl_watch/scenarios/trip_api.sh|LUXEMBOURG|TRIER
+
+# scenario|start|target|snap
+/home/val/cfl_watch/scenarios/trip_api.sh|LUXEMBOURG|REMICH|3
