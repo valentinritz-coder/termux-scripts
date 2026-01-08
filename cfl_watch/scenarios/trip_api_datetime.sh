@@ -35,6 +35,8 @@ CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 . "$CFL_CODE_DIR/lib/ui_core.sh"
 . "$CFL_CODE_DIR/lib/ui_select.sh"
 . "$CFL_CODE_DIR/lib/ui_api.sh"
+. "$CFL_CODE_DIR/lib/ui_datetime.sh"
+
 
 # Inputs
 START_TEXT="${START_TEXT:-LUXEMBOURG}"
@@ -48,11 +50,18 @@ if [ "$SNAP_MODE_SET" -eq 0 ]; then
   SNAP_MODE=2   # 2 = xml only (fast), 3 = xml+png (slower)
 fi
 
+# Date and time
+DATE_YMD="${DATE_YMD:-}"
+TIME_HM="${TIME_HM:-}"
+DATE_YMD_TRIM="$(printf '%s' "$DATE_YMD" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+TIME_HM_TRIM="$(printf '%s' "$TIME_HM" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
 # IDs (suffix) used by ui_wait_search_button
 ID_START=":id/input_start"
 ID_TARGET=":id/input_target"
 ID_SETTING=":id/button_options"
 ID_VIA=":id/input_via"
+ID_DATETIME=":id/datetime_text"
 ID_BTN_SEARCH=":id/button_search"
 ID_BTN_SEARCH_DEFAULT=":id/button_search_default"
 
@@ -178,6 +187,29 @@ if [[ -n "$VIA_TEXT_TRIM" ]]; then
     fi
   else
     warn "VIA enabled but options button not found -> skipping VIA"
+  fi
+fi
+
+# 7b) Règle la date
+if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
+ ui_refresh
+ ui_snap "08f_before_open_datetime" "$SNAP_MODE"
+
+  ui_tap_any "date time field" \
+    "resid:$ID_DATETIME" \
+    || true
+
+  if ui_datetime_wait_dialog "$WAIT_LONG"; then
+    if [[ -n "$DATE_YMD_TRIM" ]]; then
+      ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
+    fi
+    if [[ -n "$TIME_HM_TRIM" ]]; then
+      ui_datetime_set_time_24h "$TIME_HM_TRIM"
+    fi
+    ui_datetime_ok
+    ui_snap_here "08g_after_datetime_ok" "$SNAP_MODE"
+  else
+    warn "Datetime dialog not opened -> skipping datetime"
   fi
 fi
 
