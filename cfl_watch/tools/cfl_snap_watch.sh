@@ -98,6 +98,7 @@ capture_pair_from_live() {
 
   log "Captured: ${base}.{ui.xml,png,meta}"
   notify_capture "📸 Capture: ${tag}"
+  command -v termux-vibrate >/dev/null 2>&1 && termux-vibrate -d 80 >/dev/null 2>&1 || true
 }
 
 # Take one initial capture (stable not required)
