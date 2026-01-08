@@ -5,7 +5,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/../lib/path.sh"
 
 SRC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}")"
+CFL_CODE_DIR="${CFL_CODE_DIR:-$SRC_DIR}"
+CFL_CODE_DIR="$(expand_tilde_path "$CFL_CODE_DIR")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
+
+if [ -f "$CFL_CODE_DIR/env.sh" ]; then
+  . "$CFL_CODE_DIR/env.sh"
+fi
+if [ -f "$CFL_CODE_DIR/env.local.sh" ]; then
+  . "$CFL_CODE_DIR/env.local.sh"
+fi
+
+CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$SRC_DIR}")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
+
+CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$HOME/cfl_watch}")"
 ARTIFACT_DIR="$(expand_tilde_path "${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}")"
 
 MODE="install"

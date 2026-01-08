@@ -2,7 +2,33 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. "$SCRIPT_DIR/../lib/snap.sh"
+. "$SCRIPT_DIR/../lib/path.sh"
+
+SNAP_MODE_SET=0
+if [ "${SNAP_MODE+set}" = "set" ]; then
+  SNAP_MODE_SET=1
+fi
+
+CFL_CODE_DIR="${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+CFL_CODE_DIR="$(expand_tilde_path "$CFL_CODE_DIR")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
+
+if [ -f "$CFL_CODE_DIR/env.sh" ]; then
+  . "$CFL_CODE_DIR/env.sh"
+fi
+if [ -f "$CFL_CODE_DIR/env.local.sh" ]; then
+  . "$CFL_CODE_DIR/env.local.sh"
+fi
+
+CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
+
+. "$CFL_CODE_DIR/lib/common.sh"
+. "$CFL_CODE_DIR/lib/snap.sh"
+
+if [ "$SNAP_MODE_SET" -eq 0 ]; then
+  SNAP_MODE=3
+fi
 
 name="${1:-ui_watch}"
 snap_init "$name"
