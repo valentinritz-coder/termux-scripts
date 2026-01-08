@@ -73,10 +73,18 @@ WAIT_SHORT="${WAIT_SHORT:-20}"
 WAIT_LONG="${WAIT_LONG:-30}"
 
 # Snap run name
+# Snap run name
 run_name="trip_$(safe_name "$START_TEXT")_to_$(safe_name "$TARGET_TEXT")"
 if [[ -n "$VIA_TEXT_TRIM" ]]; then
   run_name="${run_name}_via_$(safe_name "$VIA_TEXT_TRIM")"
 fi
+if [[ -n "$DATE_YMD_TRIM" ]]; then
+  run_name="${run_name}_d_$(safe_name "$DATE_YMD_TRIM")"
+fi
+if [[ -n "$TIME_HM_TRIM" ]]; then
+  run_name="${run_name}_t_$(safe_name "$TIME_HM_TRIM")"
+fi
+
 snap_init "$run_name"
 
 finish() {
