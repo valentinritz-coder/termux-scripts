@@ -1,0 +1,48 @@
+~/termux-scripts $ cd "$HOME/termux-scripts"
+git status
+git diff
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   cfl_watch/lib/path.sh
+        modified:   cfl_watch/lib/ui_api.sh
+        modified:   cfl_watch/lib/ui_core.sh
+        modified:   cfl_watch/lib/ui_select.sh
+        modified:   cfl_watch/scenarios/trip_api.sh
+        modified:   cfl_watch/tools/batch_trips.sh
+        modified:   cfl_watch/tools/cfl_snap_watch.sh
+        modified:   cfl_watch/tools/llm_explore.sh
+        modified:   cfl_watch/tools/stress_stations.sh
+
+no changes added to commit (use "git add" and/or "git commit -a")
+diff --git a/cfl_watch/lib/path.sh b/cfl_watch/lib/path.sh
+old mode 100644
+new mode 100755
+diff --git a/cfl_watch/lib/ui_api.sh b/cfl_watch/lib/ui_api.sh
+old mode 100644
+new mode 100755
+diff --git a/cfl_watch/lib/ui_core.sh b/cfl_watch/lib/ui_core.sh
+old mode 100644
+new mode 100755
+diff --git a/cfl_watch/lib/ui_select.sh b/cfl_watch/lib/ui_select.sh
+old mode 100644
+new mode 100755
+diff --git a/cfl_watch/scenarios/trip_api.sh b/cfl_watch/scenarios/trip_api.sh
+old mode 100644
+new mode 100755
+diff --git a/cfl_watch/tools/batch_trips.sh b/cfl_watch/tools/batch_trips.sh
+old mode 100644
+new mode 100755
+diff --git a/cfl_watch/tools/cfl_snap_watch.sh b/cfl_watch/tools/cfl_snap_watch.sh
+old mode 100644
+new mode 100755
+diff --git a/cfl_watch/tools/llm_explore.sh b/cfl_watch/tools/llm_explore.sh
+old mode 100644
+new mode 100755
+diff --git a/cfl_watch/tools/stress_stations.sh b/cfl_watch/tools/stress_stations.sh
+old mode 100644
+new mode 100755
+(END)
