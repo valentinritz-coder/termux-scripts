@@ -7,7 +7,7 @@ Automatisation **CFL** (Android) qui s’exécute **directement sur le télépho
 
 ## Objectif
 
-- Lancer des scénarios d’automatisation (ex: `scenario_trip.sh`).
+- Lancer des scénarios d’automatisation (ex: `trip_api.sh`).
 - Capturer des artefacts (PNG/XML) et générer un viewer HTML.
 - Garder l’option LLM **minimale et non bloquante**.
 
@@ -43,6 +43,17 @@ bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
 ---
 
 ## Utilisation (sans LLM par défaut)
+
+### 0) Config via `env.sh` (optionnel)
+Les scripts chargent automatiquement `env.sh` (et `env.local.sh` si présent) depuis le dossier du projet.  
+Vous pouvez soit modifier `env.sh`, soit créer un `env.local.sh` non versionné pour vos overrides persistants.
+
+Exemple d’override ponctuel (prioritaire sur `env.sh`) :
+```bash
+CFL_SCENARIO_SCRIPT="$HOME/cfl_watch/scenarios/trip_api.sh" \
+ADB_TCP_PORT=37099 \
+bash "$HOME/cfl_watch/runner.sh" --list
+```
 
 ### 1) Démarrer ADB local (root)
 ```bash
@@ -83,6 +94,9 @@ bash "$HOME/cfl_watch/runner.sh" --serve
 
 `SNAP_MODE` : `0=off`, `1=png`, `2=xml`, `3=png+xml`
 
+Outils utiles:
+- `tools/doctor.sh` : diagnostics rapides (variables, chemins, env.sh).
+
 ---
 
 ## Structure du repo (Termux)
@@ -112,6 +126,8 @@ $HOME/cfl_watch
 
 ## Conventions & variables d’environnement
 
+- `env.sh` fournit des valeurs par défaut sans écraser les variables déjà exportées.
+- `env.local.sh` (optionnel, ignoré par git) permet d’ajouter vos overrides persistants.
 - `CFL_CODE_DIR` (par défaut `$HOME/cfl_watch`)
 - `CFL_ARTIFACT_DIR` (par défaut `/sdcard/cfl_watch`)
 - `CFL_TMP_DIR` (par défaut `$CFL_ARTIFACT_DIR/tmp`)

@@ -7,8 +7,8 @@
   - `snap.sh` – snapshot helpers with global/per-step `SNAP_MODE`.
   - `viewer.sh` – builds HTML viewers tolerant of missing PNG/XML.
 - **scenarios/**
-  - `scenario_trip.sh` – parameterized trip flow using shared helpers.
-  - `scenario_trip_lux_arlon.sh` – thin wrapper example.
+  - `trip_api.sh` – parameterized trip flow using shared helpers.
+  - `scenario_llm_tripplanner.sh` – LLM-driven runner (optional).
 - **tools/**
   - `install_termux.sh` – install deps, copy scripts to `$HOME/cfl_watch`, create `/sdcard/cfl_watch/{runs,logs}` shims, fix CRLF + permissions.
   - `self_check.sh` – light diagnostics (adb, python, device reachability).
@@ -20,7 +20,7 @@
 ### Paths and env defaults
 - `CFL_CODE_DIR` (default `$HOME/cfl_watch`) hosts the scripts and executes everything.
 - `CFL_ARTIFACT_DIR` (default `/sdcard/cfl_watch`) holds artifacts: `CFL_RUNS_DIR=$CFL_ARTIFACT_DIR/runs`, `CFL_LOG_DIR=$CFL_ARTIFACT_DIR/logs`.
-- `CFL_TMP_DIR` defaults to `$CFL_CODE_DIR/tmp` for fast local scratch files.
+- `CFL_TMP_DIR` defaults to `$CFL_ARTIFACT_DIR/tmp` for adb/uiautomator access.
 
 ### Data flow
 1. `runner.sh` starts local ADB TCP via `lib/adb_local.sh` and exports `ANDROID_SERIAL`.

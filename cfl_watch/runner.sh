@@ -4,8 +4,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/lib/path.sh"
 
-CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}")"
-CFL_BASE_DIR="$CFL_CODE_DIR"
+CFL_CODE_DIR="${CFL_CODE_DIR:-$SCRIPT_DIR}"
+CFL_CODE_DIR="$(expand_tilde_path "$CFL_CODE_DIR")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
+
+if [ -f "$CFL_CODE_DIR/env.sh" ]; then
+  . "$CFL_CODE_DIR/env.sh"
+fi
+if [ -f "$CFL_CODE_DIR/env.local.sh" ]; then
+  . "$CFL_CODE_DIR/env.local.sh"
+fi
+
+CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$SCRIPT_DIR}")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 CFL_ARTIFACT_DIR="$(expand_tilde_path "${CFL_ARTIFACT_DIR:-/sdcard/cfl_watch}")"
 CFL_DEFAULT_PORT="${ADB_TCP_PORT:-37099}"
 CFL_DEFAULT_HOST="${ADB_HOST:-127.0.0.1}"

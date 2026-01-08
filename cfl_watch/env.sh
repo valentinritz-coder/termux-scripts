@@ -4,10 +4,12 @@
 # env.sh - Defaults for cfl_watch
 # Usage:
 #   source "$CFL_CODE_DIR/env.sh" 2>/dev/null || true
+#   source "$CFL_CODE_DIR/env.local.sh" 2>/dev/null || true
 
 # Base dirs
 : "${CFL_CODE_DIR:=${CFL_BASE_DIR:-$HOME/cfl_watch}}"
 : "${CFL_BASE_DIR:=$CFL_CODE_DIR}"
+: "${CFL_ARTIFACT_DIR:=/sdcard/cfl_watch}"
 
 # Device / adb
 : "${ADB_TCP_PORT:=37099}"
@@ -15,7 +17,7 @@
 : "${ANDROID_SERIAL:=${ADB_HOST}:${ADB_TCP_PORT}}"
 
 # Temp dirs
-: "${CFL_TMP_DIR:=$HOME/.cache/cfl_watch}"
+: "${CFL_TMP_DIR:=$CFL_ARTIFACT_DIR/tmp}"
 : "${CFL_REMOTE_TMP_DIR:=/data/local/tmp/cfl_watch}"
 
 # Scenario selection (runner uses this)

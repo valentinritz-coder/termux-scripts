@@ -7,8 +7,24 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/../lib/path.sh"
 
-CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-${CFL_BASE_DIR:-$HOME/cfl_watch}}")"
-CFL_BASE_DIR="$CFL_CODE_DIR"
+SNAP_MODE_SET=0
+if [ "${SNAP_MODE+set}" = "set" ]; then
+  SNAP_MODE_SET=1
+fi
+
+CFL_CODE_DIR="${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+CFL_CODE_DIR="$(expand_tilde_path "$CFL_CODE_DIR")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
+
+if [ -f "$CFL_CODE_DIR/env.sh" ]; then
+  . "$CFL_CODE_DIR/env.sh"
+fi
+if [ -f "$CFL_CODE_DIR/env.local.sh" ]; then
+  . "$CFL_CODE_DIR/env.local.sh"
+fi
+
+CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 
 . "$CFL_CODE_DIR/lib/common.sh"
 . "$CFL_CODE_DIR/lib/snap.sh"
@@ -20,7 +36,9 @@ CFL_BASE_DIR="$CFL_CODE_DIR"
 
 START_TEXT="${START_TEXT:-LUXEMBOURG}"
 TARGET_TEXT="${TARGET_TEXT:-ARLON}"
-SNAP_MODE="${SNAP_MODE:-2}"   # 2 = xml only (fast), 3 = xml+png (slower)
+if [ "$SNAP_MODE_SET" -eq 0 ]; then
+  SNAP_MODE=2   # 2 = xml only (fast), 3 = xml+png (slower)
+fi
 
 # IDs (suffix) used by ui_wait_search_button
 ID_START=":id/input_start"
