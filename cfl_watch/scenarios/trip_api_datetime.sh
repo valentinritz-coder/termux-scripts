@@ -31,6 +31,8 @@ CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 . "$CFL_CODE_DIR/lib/common.sh"
 . "$CFL_CODE_DIR/lib/snap.sh"
 
+need python
+
 # UI libs
 . "$CFL_CODE_DIR/lib/ui_core.sh"
 . "$CFL_CODE_DIR/lib/ui_select.sh"
