@@ -3,14 +3,14 @@ set -u
 
 # Stress test: pick random start/target from stations.txt and run N times.
 
-STATIONS_FILE="${STATIONS_FILE:-$HOME/cfl_watch/stations.txt}"
-RUNNER="${RUNNER:-$HOME/cfl_watch/runner.sh}"
+STATIONS_FILE="${STATIONS_FILE:-$HOME/termux-scripts/cfl_watch/stations.txt}"
+RUNNER="${RUNNER:-$HOME/termux-scripts/cfl_watch/runner.sh}"
 
 # Defaults (override via env)
 ADB_TCP_PORT="${ADB_TCP_PORT:-37099}"
 CFL_REMOTE_TMP_DIR="${CFL_REMOTE_TMP_DIR:-/data/local/tmp/cfl_watch}"
 CFL_TMP_DIR="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}"
-SCENARIO="${SCENARIO:-$HOME/cfl_watch/scenarios/trip_api.sh}"
+SCENARIO="${SCENARIO:-$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh}"
 SNAP_MODE="${SNAP_MODE:-3}"
 NO_ANIM="${NO_ANIM:-1}"
 
