@@ -197,6 +197,13 @@ $HOME/cfl_watch
 ### ADB TCP non reachable
 - `adb_local.sh start` (root requis), puis `adb devices -l`.
 
+### GitHub Rebase : unstaged changes
+```bash
+cd "$HOME/termux-scripts"
+git status
+git diff
+```
+
 ---
 
 ## LLM (optionnel)
