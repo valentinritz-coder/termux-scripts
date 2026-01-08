@@ -1,5 +1,1 @@
-SERIAL=127.0.0.1:37099 \
-CFL_ARTIFACT_DIR=/sdcard/cfl_watch \
-POLL_SLEEP_S=2 \
-STABLE_SECS=10 \
-"$HOME/termux-scripts/cfl_watch/tools/watch_ui_dump.sh" ui_watch
+SERIAL=127.0.0.1:37099 STABLE_SECS=2 "$HOME/termux-scripts/cfl_watch/tools/cfl_snap_watch.sh" ui_watch
