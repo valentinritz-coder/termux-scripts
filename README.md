@@ -63,20 +63,20 @@ Vous pouvez soit modifier `env.sh`, soit créer un `env.local.sh` non versionné
 
 Exemple d’override ponctuel (prioritaire sur `env.sh`) :
 ```bash
-CFL_SCENARIO_SCRIPT="$HOME/cfl_watch/scenarios/trip_api.sh" \
+CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh" \
 ADB_TCP_PORT=37099 \
-bash "$HOME/cfl_watch/runner.sh" --list
+bash "$HOME/termux-scripts/cfl_watch/runner.sh" --list
 ```
 
 ### 1) Démarrer ADB local (root)
 ```bash
-ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/lib/adb_local.sh" start
+ADB_TCP_PORT=37099 bash "$HOME/termux-scripts/cfl_watch/lib/adb_local.sh" start
 adb devices -l
 ```
 
 ### 2) Lancer un run
 ```bash
-ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh"
+ADB_TCP_PORT=37099 bash "$HOME/termux-scripts/cfl_watch/runner.sh"
 ```
 
 ### 3) Un trajet précis
@@ -84,8 +84,8 @@ ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh"
 ADB_TCP_PORT=37099 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-CFL_SCENARIO_SCRIPT="$HOME/cfl_watch/scenarios/trip_api.sh" \
-bash "$HOME/cfl_watch/runner.sh" --no-anim \
+CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh" \
+bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
   --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
 ```
 
@@ -96,27 +96,27 @@ SLEEP_BETWEEN=1 \
 ADB_TCP_PORT=37099 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-SCENARIO="$HOME/cfl_watch/scenarios/trip_api.sh" \
+SCENARIO="$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh" \
 SNAP_MODE=3 \
 NO_ANIM=1 \
-bash "$HOME/cfl_watch/tools/stress_stations.sh"
+bash "$HOME/termux-scripts/cfl_watch/tools/stress_stations.sh"
 ```
 
 ### 4) Trois trajets aléatoires (N=3)
 ```bash
-TRIPS_FILE="$HOME/cfl_watch/trips.txt" \
+TRIPS_FILE="$HOME/termux-scripts/cfl_watch/trips.txt" \
 ADB_TCP_PORT=37099 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-DEFAULT_SCENARIO="$HOME/cfl_watch/scenarios/trip_api.sh" \
+DEFAULT_SCENARIO="$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh" \
 DEFAULT_SNAP_MODE=3 \
 NO_ANIM=1 \
-bash "$HOME/cfl_watch/tools/batch_trips.sh"
+bash "$HOME/termux-scripts/cfl_watch/tools/batch_trips.sh"
 ```
 
 ### 5) Viewer
 ```bash
-bash "$HOME/cfl_watch/runner.sh" --serve
+bash "$HOME/termux-scripts/cfl_watch/runner.sh" --serve
 ```
 
 ---
@@ -141,7 +141,7 @@ Outils utiles:
 
 ### Code (Termux home)
 ```
-$HOME/cfl_watch
+$HOME/termux-scripts/cfl_watch
 ├── runner.sh
 ├── lib/
 │   ├── common.sh
@@ -166,7 +166,7 @@ $HOME/cfl_watch
 
 - `env.sh` fournit des valeurs par défaut sans écraser les variables déjà exportées.
 - `env.local.sh` (optionnel, ignoré par git) permet d’ajouter vos overrides persistants.
-- `CFL_CODE_DIR` (par défaut `$HOME/cfl_watch`)
+- `CFL_CODE_DIR` (par défaut `$HOME/termux-scripts/cfl_watch`)
 - `CFL_ARTIFACT_DIR` (par défaut `/sdcard/cfl_watch`)
 - `CFL_TMP_DIR` (par défaut `$CFL_ARTIFACT_DIR/tmp`)
 - `CFL_PKG` (par défaut `de.hafas.android.cfl`)
@@ -185,11 +185,11 @@ $HOME/cfl_watch
 
 ### “$2 unbound variable”
 - Argument manquant (ex: `--start` ou `--target`).
-- Lance `bash "$HOME/cfl_watch/runner.sh" --help`.
+- Lance `bash "$HOME/termux-scripts/cfl_watch/runner.sh" --help`.
 
 ### “pas de ui.xml” / dump vide
 - `uiautomator` ne peut pas écrire dans `CFL_TMP_DIR`.
-- Lance `bash "$HOME/cfl_watch/tools/self_check.sh"`.
+- Lance `bash "$HOME/termux-scripts/cfl_watch/tools/self_check.sh"`.
 
 ### “adb not found”
 - Installe les deps: `pkg install -y android-tools`.
@@ -224,7 +224,7 @@ Le LLM est **secondaire** et **optionnel**. Il ne doit pas être le chemin par d
 Activation rapide:
 ```bash
 export LLM_INSTRUCTION="Ouvre CFL et fais un itinéraire Luxembourg -> Arlon"
-ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" --instruction "$LLM_INSTRUCTION"
+ADB_TCP_PORT=37099 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --instruction "$LLM_INSTRUCTION"
 ```
 
 ---
