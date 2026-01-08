@@ -76,7 +76,32 @@ bash "$HOME/cfl_watch/runner.sh" --no-anim \
   --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
 ```
 
-### 4) Viewer
+### 4) Trois trajets aléatoires (N=3)
+```bash
+N=3 \
+SLEEP_BETWEEN=1 \
+ADB_TCP_PORT=37099 \
+CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
+SCENARIO="$HOME/cfl_watch/scenarios/trip_api.sh" \
+SNAP_MODE=3 \
+NO_ANIM=1 \
+bash "$HOME/cfl_watch/tools/stress_stations.sh"
+```
+
+### 4) Trois trajets aléatoires (N=3)
+```bash
+TRIPS_FILE="$HOME/cfl_watch/trips.txt" \
+ADB_TCP_PORT=37099 \
+CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
+DEFAULT_SCENARIO="$HOME/cfl_watch/scenarios/trip_api.sh" \
+DEFAULT_SNAP_MODE=3 \
+NO_ANIM=1 \
+bash "$HOME/cfl_watch/tools/batch_trips.sh"
+```
+
+### 5) Viewer
 ```bash
 bash "$HOME/cfl_watch/runner.sh" --serve
 ```
