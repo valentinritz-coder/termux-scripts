@@ -13,12 +13,8 @@ CFL_CODE_DIR="${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 CFL_CODE_DIR="$(expand_tilde_path "$CFL_CODE_DIR")"
 CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 
-if [ -f "$CFL_CODE_DIR/env.sh" ]; then
-  . "$CFL_CODE_DIR/env.sh"
-fi
-if [ -f "$CFL_CODE_DIR/env.local.sh" ]; then
-  . "$CFL_CODE_DIR/env.local.sh"
-fi
+[ -f "$CFL_CODE_DIR/env.sh" ] && . "$CFL_CODE_DIR/env.sh"
+[ -f "$CFL_CODE_DIR/env.local.sh" ] && . "$CFL_CODE_DIR/env.local.sh"
 
 CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}")"
 CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
@@ -30,49 +26,130 @@ if [ "$SNAP_MODE_SET" -eq 0 ]; then
   SNAP_MODE=3
 fi
 
+command -v sha1sum >/dev/null 2>&1 || { echo "sha1sum introuvable (coreutils manquant?)"; exit 1; }
+command -v awk >/dev/null 2>&1 || { echo "awk introuvable"; exit 1; }
+
 name="${1:-ui_watch}"
 snap_init "$name"
 
-LIVE_XML="$SNAP_DIR/_live.xml"
-last=""
+# UI dump is slow (2-3s). We do stability based on elapsed time, not "N loops".
+STABLE_SECS="${STABLE_SECS:-3}"          # wait this long with same UI hash
+POLL_SLEEP_S="${POLL_SLEEP_S:-0.2}"      # extra sleep between dumps (dump itself already costs time)
+
+# Put the live dump in a temp dir (faster, fewer perms headaches)
+REMOTE_TMP_DIR="${CFL_REMOTE_TMP_DIR:-/data/local/tmp/cfl_watch}"
+REMOTE_LIVE_XML="${REMOTE_LIVE_XML:-$REMOTE_TMP_DIR/_live.xml}"
 
 log "SERIAL=$SERIAL"
 log "Watching UI changes -> $SNAP_DIR"
+log "Stability window: ${STABLE_SECS}s"
+log "Live XML (device): $REMOTE_LIVE_XML"
 log "Ctrl+C to stop"
 
-# Always take one snapshot so you instantly see files
-snap "00_initial" 3
+adb -s "$SERIAL" shell "mkdir -p '$REMOTE_TMP_DIR' >/dev/null 2>&1" || true
 
-hash_live_xml(){
-  # Hash locally in Termux, so we don't depend on sha1sum inside adb shell
-  adb -s "$SERIAL" exec-out cat "$LIVE_XML" 2>/dev/null | sha1sum | awk '{print $1}'
+notify_capture() {
+  local msg="$1"
+
+  if command -v termux-toast >/dev/null 2>&1; then
+    termux-toast -g middle -s "$msg" >/dev/null 2>&1 || true
+    return
+  fi
+
+  if command -v termux-notification >/dev/null 2>&1; then
+    termux-notification --id "cfl_watch_capture" --title "CFL Watch" --content "$msg" >/dev/null 2>&1 || true
+    return
+  fi
+
+  # fallback: au pire un log
+  log "$msg"
 }
 
-while true; do
-  # Dump a live xml on the device
-  adb -s "$SERIAL" shell "rm -f '$LIVE_XML' >/dev/null 2>&1 || true; uiautomator dump --compressed '$LIVE_XML' >/dev/null 2>&1 || exit 2" \
-    || { warn "uiautomator dump failed (adb rc=$?)"; sleep 0.5; continue; }
+hash_remote_xml() {
+  # Hash locally in Termux, reading remote file through adb (no sha1sum in adb shell needed)
+  adb -s "$SERIAL" exec-out cat "$REMOTE_LIVE_XML" 2>/dev/null | sha1sum | awk '{print $1}'
+}
 
-  # Check file exists + non-empty (on device)
-  if ! adb -s "$SERIAL" shell "test -s '$LIVE_XML'" >/dev/null 2>&1; then
-    warn "live xml missing/empty: $LIVE_XML"
-    sleep 0.4
+dump_live_xml() {
+  # Dump UI to remote temp file (compressed)
+  adb -s "$SERIAL" shell "rm -f '$REMOTE_LIVE_XML' >/dev/null 2>&1 || true; uiautomator dump --compressed '$REMOTE_LIVE_XML' >/dev/null 2>&1"
+}
+
+capture_pair_from_live() {
+  local tag="$1"
+  local ts base
+
+  ts="$(date +%Y-%m-%d_%H-%M-%S)"
+  base="$SNAP_DIR/${ts}_${tag}"
+
+  # Save EXACT XML that was used for stability/hash
+  adb -s "$SERIAL" exec-out cat "$REMOTE_LIVE_XML" > "${base}.ui.xml" 2>/dev/null || true
+
+  # Screenshot immediately after (best effort sync)
+  adb -s "$SERIAL" exec-out screencap -p > "${base}.png" 2>/dev/null || true
+
+  # Focus/meta
+  {
+    echo "ts=$ts"
+    echo "tag=$tag"
+    echo "stable_secs=$STABLE_SECS"
+    adb -s "$SERIAL" shell "dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | head -n 2" 2>/dev/null || true
+  } > "${base}.meta" 2>/dev/null || true
+
+  log "Captured: ${base}.{ui.xml,png,meta}"
+  notify_capture "📸 Capture: ${tag}"
+}
+
+# Take one initial capture (stable not required)
+if dump_live_xml; then
+  if adb -s "$SERIAL" shell "test -s '$REMOTE_LIVE_XML'" >/dev/null 2>&1; then
+    h0="$(hash_remote_xml | tr -d '\r')"
+    [ -n "$h0" ] && capture_pair_from_live "initial_${h0:0:6}" || capture_pair_from_live "initial"
+  else
+    warn "Initial live xml missing/empty: $REMOTE_LIVE_XML"
+  fi
+else
+  warn "Initial uiautomator dump failed"
+fi
+
+candidate=""
+candidate_since=0
+last_captured=""
+
+while true; do
+  if ! dump_live_xml; then
+    warn "uiautomator dump failed (adb rc=$?)"
+    sleep "$POLL_SLEEP_S"
     continue
   fi
 
-  h="$(hash_live_xml | tr -d '\r')"
+  if ! adb -s "$SERIAL" shell "test -s '$REMOTE_LIVE_XML'" >/dev/null 2>&1; then
+    warn "live xml missing/empty: $REMOTE_LIVE_XML"
+    sleep "$POLL_SLEEP_S"
+    continue
+  fi
+
+  h="$(hash_remote_xml | tr -d '\r')"
   if [ -z "$h" ]; then
     warn "hash empty (adb exec-out cat failed?)"
-    sleep 0.4
+    sleep "$POLL_SLEEP_S"
     continue
   fi
 
-  if [ "$h" != "$last" ]; then
-    last="$h"
-    snap "change_${h:0:6}" 3
-    adb -s "$SERIAL" shell "dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | head -n 2" \
-      > "$SNAP_DIR/$(date +%H-%M-%S)_focus.meta" 2>/dev/null || true
+  now="$(date +%s)"
+
+  if [ "$h" != "$candidate" ]; then
+    candidate="$h"
+    candidate_since="$now"
+  else
+    # same candidate hash, check stability time
+    elapsed=$(( now - candidate_since ))
+    if [ "$elapsed" -ge "$STABLE_SECS" ] && [ "$candidate" != "$last_captured" ]; then
+      last_captured="$candidate"
+      capture_pair_from_live "stable_${candidate:0:6}"
+      # keep candidate_since as-is; last_captured prevents re-capturing forever
+    fi
   fi
 
-  sleep 0.4
+  sleep "$POLL_SLEEP_S"
 done
