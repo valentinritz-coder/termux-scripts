@@ -44,11 +44,11 @@ Reset:
 ```bash
 cd "$HOME/termux-scripts"
 
-git reset --hard
+git fetch origin --prune
+
+git reset --hard origin/main
 
 git clean -fd
-
-git pull --rebase
 
 bash "$HOME/termux-scripts/cfl_watch/tools/install_termux.sh"
 ```
