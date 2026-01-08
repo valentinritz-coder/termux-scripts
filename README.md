@@ -77,7 +77,7 @@ CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
 CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
-  --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
+  --start "LUXEMBOURG" --via "BETTEMBOURG" --target "ARLON" --snap-mode 3
 ```
 
 ### 3) Trois trajets aléatoires (N=3)
@@ -117,6 +117,11 @@ SERIAL=127.0.0.1:37099 STABLE_SECS=2 bash "$HOME/termux-scripts/cfl_watch/tools/
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --serve
 ```
 
+### 7) Smoke test (VIA_TEXT via runner)
+```bash
+bash "$HOME/termux-scripts/cfl_watch/tools/smoke_runner_via.sh"
+```
+
 ---
 
 ## Options utiles
@@ -127,6 +132,7 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" --serve
 - `--latest-run` : imprime le dernier run
 - `--serve` : génère/sert le viewer (python -m http.server)
 - `--no-anim` : désactiver temporairement les animations Android
+- `--via` / `--stopover` : stop intermédiaire (optionnel)
 
 `SNAP_MODE` : `0=off`, `1=png`, `2=xml`, `3=png+xml`
 

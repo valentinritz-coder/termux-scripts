@@ -35,6 +35,7 @@ Usage: ADB_TCP_PORT=37099 bash "$HOME/cfl_watch/runner.sh" [options]
 --scenario PATH      Scenario script (default: scenarios/trip_api.sh)
 --start TEXT         Override start location (single-run mode)
 --target TEXT        Override destination (single-run mode)
+--via TEXT           Optional stopover (alias: --stopover)
 --snap-mode N        Override SNAP_MODE for single run (0-3)
 --instruction TEXT   Instruction LLM (déclenche scenario_llm_explore.sh)
 --latest-run         Print newest run directory and exit
@@ -59,6 +60,7 @@ SCENARIOS=(
 
 CUSTOM_START=""
 CUSTOM_TARGET=""
+CUSTOM_VIA=""
 CUSTOM_SNAP_MODE=""
 
 LLM_INSTRUCTION="${LLM_INSTRUCTION:-}"
@@ -101,6 +103,9 @@ while [ $# -gt 0 ]; do
     --target)
       [ $# -ge 2 ] || die "--target requires TEXT"
       CUSTOM_TARGET="$2"; shift 2 ;;
+    --via|--stopover)
+      [ $# -ge 2 ] || die "--via requires TEXT"
+      CUSTOM_VIA="$2"; shift 2 ;;
     --snap-mode)
       [ $# -ge 2 ] || die "--snap-mode requires N"
       CUSTOM_SNAP_MODE="$2"; shift 2 ;;
@@ -213,6 +218,7 @@ run_one(){
     CFL_ARTIFACT_DIR="$CFL_ARTIFACT_DIR" \
     START_TEXT="$start" \
     TARGET_TEXT="$target" \
+    VIA_TEXT="$CUSTOM_VIA" \
     SNAP_MODE="$snap_mode" \
     DELAY_LAUNCH="$d_launch" \
     DELAY_TAP="$d_tap" \
