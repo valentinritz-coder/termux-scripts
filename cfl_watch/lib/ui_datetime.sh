@@ -147,8 +147,8 @@ _ui_wait_ime_hidden() {
 
   local timeout_ms="${UI_IME_TIMEOUT_MS:-900}"
   local poll_ms="${UI_IME_POLL_MS:-80}"
-  local min_sleep="${UI_IME_MIN_SLEEP:-0.10}"         # <-- fallback minimal garanti
-  local post_sleep="${UI_POST_IME_SLEEP:-0.05}"       # <-- petit rab pour les reflows UI
+  local min_sleep="${UI_IME_MIN_SLEEP:-0.50}"         # <-- fallback minimal garanti
+  local post_sleep="${UI_POST_IME_SLEEP:-0.50}"       # <-- petit rab pour les reflows UI
 
   # Convert poll_ms -> "S.MMM" sans awk
   local sec ms poll_s
