@@ -127,6 +127,8 @@ if ui_element_has_text "resid::id/toolbar" "Home"; then
   "text:Trip Planner" \
   || true
   ui_snap_here "02_after_tap_Trip Planner" "$SNAP_MODE"
+else
+      warn "Ca plante??"
 fi
 
 if ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
