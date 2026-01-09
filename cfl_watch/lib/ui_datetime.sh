@@ -264,41 +264,36 @@ ui_datetime_set_time_24h() {
 ui_datetime_set_date_ymd() {
   local ymd="$1"  # YYYY-MM-DD
 
+  # Force baseline = today (best effort)
+  ui_tap_any "preset now" \
+    "resid::id/button_datetime_forward_1" \
+    "text:Now" \
+  || true
   ui_refresh
-  _ui_eval_vars
 
-  if [[ -z "${DATE_DDMMYYYY:-}" ]]; then
-    warn "Date text not parsed (DATE_DDMMYYYY missing)"
-    return 1
-  fi
-
-  # compute diff days using python
+  # Compute diff from device date (today) to target
   local diff
-  diff="$(python - <<'PY' "${DATE_DDMMYYYY}" "${ymd}"
+  diff="$(python - <<'PY' "$(date +%Y-%m-%d)" "$ymd"
 import sys, datetime
-ddmmyyyy = sys.argv[1]
-ymd = sys.argv[2]
-d = datetime.datetime.strptime(ddmmyyyy, "%d.%m.%Y").date()
-t = datetime.datetime.strptime(ymd, "%Y-%m-%d").date()
-print((t - d).days)
+a = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
+b = datetime.datetime.strptime(sys.argv[2], "%Y-%m-%d").date()
+print((b-a).days)
 PY
 )"
   diff="${diff:-0}"
 
-  if [[ -z "${EARLIER_X:-}" || -z "${LATER_X:-}" ]]; then
-    warn "Earlier/Later buttons not parsed"
-    return 1
-  fi
-
-  if (( diff == 0 )); then
-    return 0
-  elif (( diff > 0 )); then
+  # Tap earlier/later
+  if (( diff > 0 )); then
     local i
-    for ((i=0;i<diff;i++)); do _ui_tap_xy "$LATER_X" "$LATER_Y"; done
-  else
-    local i
+    for ((i=0;i<diff;i++)); do
+      ui_tap_any "one day later"  "resid::id/button_later"  "desc:One day later"  || true
+    done
+  elif (( diff < 0 )); then
     diff=$(( -diff ))
-    for ((i=0;i<diff;i++)); do _ui_tap_xy "$EARLIER_X" "$EARLIER_Y"; done
+    local i
+    for ((i=0;i<diff;i++)); do
+      ui_tap_any "one day earlier" "resid::id/button_earlier" "desc:One day earlier" || true
+    done
   fi
 
   ui_refresh
