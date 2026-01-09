@@ -296,9 +296,24 @@ m_xy, m_cur = input_xy(min_np)
 tp_mode = "24"
 ap_xy = None
 ap_cur = ""
+ap_am = None
+ap_pm = None
+
 if ap_np is not None:
   ap_xy, ap_cur = input_xy(ap_np)
-  if ap_cur.strip().upper() in ("AM","PM"):
+
+  # NEW: coords des textes AM/PM (bouton + edittext)
+  for c in ap_np.iter("node"):
+    t = (c.get("text","") or "").strip().upper()
+    b = parse_bounds(c.get("bounds",""))
+    if not b:
+      continue
+    if t == "AM":
+      ap_am = center(b)
+    elif t == "PM":
+      ap_pm = center(b)
+
+  if ap_cur.strip().upper() in ("AM","PM") or ap_am or ap_pm:
     tp_mode = "12"
 
 pairs=[]
@@ -314,6 +329,8 @@ add("AP_CUR", ap_cur.strip().upper())
 if h_xy: add("H_INP_X", h_xy[0]); add("H_INP_Y", h_xy[1])
 if m_xy: add("M_INP_X", m_xy[0]); add("M_INP_Y", m_xy[1])
 if ap_xy: add("AP_INP_X", ap_xy[0]); add("AP_INP_Y", ap_xy[1])
+if ap_am: add("AP_AM_X", ap_am[0]); add("AP_AM_Y", ap_am[1])
+if ap_pm: add("AP_PM_X", ap_pm[0]); add("AP_PM_Y", ap_pm[1])
 
 print(";".join(pairs))
 PY
@@ -362,6 +379,8 @@ ui_datetime_set_time_24h() {
   H_INP_X="0"; H_INP_Y="0"
   M_INP_X="0"; M_INP_Y="0"
   AP_INP_X="0"; AP_INP_Y="0"
+  AP_AM_X="0"; AP_AM_Y="0"
+  AP_PM_X="0"; AP_PM_Y="0"
 
   _ui_apply_kv_line "$line"
 
