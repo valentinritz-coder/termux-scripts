@@ -214,6 +214,8 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   ui_tap_any "date time field" "resid:$ID_DATETIME" || true
 
   if ui_datetime_wait_dialog "$WAIT_LONG"; then
+    ui_datetime_lock_dialog_xml || true
+  
     if [[ -n "$DATE_YMD_TRIM" ]]; then
       ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
     fi
