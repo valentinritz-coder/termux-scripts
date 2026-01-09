@@ -412,19 +412,14 @@ if [[ "$TP_MODE" == "12" ]]; then
   (( th >= 12 )) && target_ampm="PM"
   local th12=$(( th % 12 )); (( th12 == 0 )) && th12=12
 
-  # Focus heure (le clavier peut apparaître et bouger l’UI)
-  _ui_tap_xy "$H_INP_X" "$H_INP_Y"
-
-  # Re-dump + re-parse pour recalculer les coords après ouverture clavier
-  _ui_timepicker_reparse || warn "Reparse failed after hour focus (keyboard/layout shift?)"
-  
   # 1) heure
   _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th12")" || {
     warn "Hour typing failed (missing coords?)"
     return 1
   }
-  # commit heure -> focus minutes
-  _ui_tap_xy "$M_INP_X" "$M_INP_Y"
+
+  # Re-dump + re-parse pour recalculer les coords après ouverture clavier
+  _ui_timepicker_reparse || warn "Reparse failed after hour focus (keyboard/layout shift?)"
 
   # 2) minutes
   _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || {
@@ -440,16 +435,21 @@ if [[ "$TP_MODE" == "12" ]]; then
   fi
 
 else
-  # 24h mode
-    # Focus heure (le clavier peut apparaître et bouger l’UI)
-  _ui_tap_xy "$H_INP_X" "$H_INP_Y"
+  # 1) heure
+  _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th")" || {
+    warn "Hour typing failed (missing coords?)"
+    return 1
+  }
 
   # Re-dump + re-parse pour recalculer les coords après ouverture clavier
   _ui_timepicker_reparse || warn "Reparse failed after hour focus (keyboard/layout shift?)"
-  
-  _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th")" || return 1
-  _ui_tap_xy "$M_INP_X" "$M_INP_Y"
-  _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || return 1
+
+  # 2) minutes
+  _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || {
+    warn "Minute typing failed (missing coords?)"
+    return 1
+  }
+
 fi
 
 }
