@@ -1,0 +1,40 @@
+/termux-scripts $ ADB_TCP_PORT=37099 UI_DT_DEBUG=1 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch CFL_TMP_DIR="$HOME/.cache/cfl_watch" CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime.sh" DATE_YMD="2026-02-15" TIME_HM="19:40" bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim   --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
+[*] Log: /sdcard/cfl_watch/logs/2026-01-09_11-51-09_runner.log
+[*] Start ADB local on 127.0.0.1:37099                  [*] Activation ADB TCP sur 127.0.0.1:37099 (root)
+[*] Redémarrage adbd                                    [*] Attente adbd=running
+[*] adb connect (retry) -> 127.0.0.1:37099
+[*] connected to 127.0.0.1:37099
+[*] getprop:                                            37099
+running
+[*] adb devices -l:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1                                                                             [*] Tip: export ANDROID_SERIAL=127.0.0.1:37099
+[*] Device list:                                        List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1                                                                             [*] Disable Android animations (temporary)              [*] === RUN: LUXEMBOURG -> ARLON (SNAP_MODE=3) ===      [*] SNAP_DIR=/sdcard/cfl_watch/runs/2026-01-09_11-51-16_trip_LUXEMBOURG_to_ARLON_d_2026-02-15_t_1940 (SNAP_MODE=3)                                                      [*] Scenario: LUXEMBOURG -> ARLON (SNAP_MODE=3)
+[*] VIA skipped (VIA_TEXT empty)
+[*] ui_dump: dump=2946ms cat=142ms total=3088ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] wait ok: start field visible
+[*] snap: 11-51-19_01_home (mode=3)
+[*] Tap start field (id) at 518,407
+[*] ui_dump: dump=2373ms cat=173ms total=2546ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] snap: 11-51-23_02_after_tap_start (mode=3)
+[*] Type start: LUXEMBOURG                              [*] ui_dump: dump=3583ms cat=176ms total=3760ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] wait_results_ready: iter=1 list=1 loader=0
+[*] ui_dump: dump=2479ms cat=179ms total=2658ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] snap: 11-51-31_03_after_type_start (mode=3)
+[*] Tap start suggestion (desc) at 540,700
+[*] ui_dump: dump=2534ms cat=183ms total=2718ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [*] snap: 11-51-34_04_after_pick_start (mode=3)
+[*] ui_dump: dump=2543ms cat=197ms total=2740ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [*] wait ok: destination field visible                  [*] snap: 11-51-38_05_destination_visible (mode=3)
+[*] Tap date time field (id) at 471,605
+[*] ui_dump: dump=2367ms cat=170ms total=2538ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [*] wait ok: time picker visible                        [*] ui_dump: dump=2516ms cat=194ms total=2710ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] wait ok: OK button visible                          sed: -e expression #1, char 1: unknown command: `^'     [D] time_parse: using xml=/data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[!] TimePicker not found in picked XML. Trying one ui_refresh + re-parse...                                     [D] debug: UI_XML=<unset>
+[D] debug: ui.xml=/data/data/com.termux/files/home/.cache/cfl_watch/ui.xml exists=0 has_picker=0
+[D] debug: live_dump.xml=/data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml exists=1 has_picker=1  [D] debug: latest_xml=/sdcard/cfl_watch/runs/2026-01-09_11-51-16_trip_LUXEMBOURG_to_ARLON_d_2026-02-15_t_1940/11-51-38_05_destination_visible.xml exists=1 has_picker=0 [*] ui_dump: dump=2472ms cat=195ms total=2668ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+sed: -e expression #1, char 1: unknown command: `^'
+[D] time_parse: using xml=/data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                       [!] TimePicker still not found after ui_refresh         [!] Run FAILED (rc=1) -> viewer
+[*] Viewer: /sdcard/cfl_watch/runs/2026-01-09_11-51-16_trip_LUXEMBOURG_to_ARLON_d_2026-02-15_t_1940/viewers/index.html                                                  [*] RC=1                                                [*] Run artifacts: /sdcard/cfl_watch/runs/2026-01-09_11-51-16_trip_LUXEMBOURG_to_ARLON_d_2026-02-15_t_1940
+[*] Viewer: /sdcard/cfl_watch/runs/2026-01-09_11-51-16_trip_LUXEMBOURG_to_ARLON_d_2026-02-15_t_1940/viewers/index.html
+[*] Done. fail_count=1
+[*] Restore Android animations: W=0 T=0 A=0
+~/termux-scripts $
