@@ -43,11 +43,19 @@ _ui_pick_xml() {
   fi
 
   # 2) default path used by many ui_refresh implementations
+  # 2) live dump (preferred if present)
+  xml="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/live_dump.xml"
+  if [[ -f "$xml" ]]; then
+    echo "$xml"; return 0
+  fi
+
+  # 3) default ui.xml
   xml="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml"
   if [[ -f "$xml" ]]; then
     echo "$xml"; return 0
   fi
 
+  
   # 3) fallback: latest snapshot
   xml="$(_ui_latest_xml)"
   if [[ -n "${xml:-}" && -f "$xml" ]]; then
@@ -65,6 +73,8 @@ _ui_pick_xml_need() {
   local f=""
 
   [[ -n "${UI_XML:-}" && -f "$UI_XML" ]] && candidates+=("$UI_XML")
+  f="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/live_dump.xml"
+  [[ -f "$f" ]] && candidates+=("$f")
   f="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml"
   [[ -f "$f" ]] && candidates+=("$f")
   f="$(_ui_latest_xml)"
