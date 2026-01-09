@@ -141,6 +141,47 @@ _adb_text_escape() {
   printf '%s' "$s"
 }
 
+_ui_wait_ime_hidden() {
+  # Attend que le clavier (IME) disparaisse vraiment après un BACK.
+  # Robuste pour `set -euo pipefail`:
+  # - pas de pipeline (pipefail)
+  # - adb/dumpsys peut échouer -> on neutralise avec "|| true"
+  # - la fonction retourne TOUJOURS 0 (sinon -e te flingue le flow)
+
+  local timeout_ms="${UI_IME_TIMEOUT_MS:-1200}"
+  local poll_ms="${UI_IME_POLL_MS:-80}"
+
+  # Convert poll_ms -> "S.MMM" sans awk (awk en substitution peut aussi te casser).
+  local sec ms poll_s
+  sec=$(( poll_ms / 1000 ))
+  ms=$(( poll_ms % 1000 ))
+  poll_s="${sec}.$(printf "%03d" "$ms")"
+
+  local waited=0 s=""
+  while (( waited < timeout_ms )); do
+    # dumpsys peut renvoyer exit!=0 ou rien -> on s'en fout, on ne crashe pas
+    s="$(_maybe adb shell dumpsys input_method 2>/dev/null | tr -d '\r' || true)"
+
+    # Si on a un signal "clavier caché", on sort.
+    # Ici on utilise "here-string" (<<<) pour éviter les pipes.
+    if [[ -n "$s" ]]; then
+      if grep -Eq 'm(InputShown|IsInputShown)=false|InputShown=false' <<<"$s"; then
+        return 0
+      fi
+      if grep -Eq 'mImeWindowVis=0x0\b|mImeWindowVis=0\b' <<<"$s"; then
+        return 0
+      fi
+    fi
+
+    sleep "$poll_s"
+    waited=$(( waited + poll_ms ))
+  done
+
+  # Fallback "animation finie" (même si on n'a rien pu détecter)
+  sleep "${UI_IME_FALLBACK_SLEEP:-0.15}"
+  return 0
+}
+
 _ui_type_at() {
   # Tap sur un champ (coords du center de l'EditText), tape du texte,
   # puis COMMIT via KEYCODE_BACK (4).
@@ -164,12 +205,8 @@ _ui_type_at() {
   _maybe adb shell input text "$(_adb_text_escape "$txt")"
   (( step_sleep > 0 )) && sleep "$step_sleep"
 
-  # COMMIT / close IME (chez toi: c'est LE truc qui marche)
-  _ui_key 4 || true
-
-  # IMPORTANT: attendre que l'IME soit réellement caché, sinon le prochain tap part "dans le vide".
-  #_ui_wait_ime_hidden || true
-  sleep "0.3"
+  _ui_key 4 || true          # BACK: ferme l'IME + commit (chez toi)
+  _ui_wait_ime_hidden || true
   
   (( step_sleep > 0 )) && sleep "$step_sleep"
 }
