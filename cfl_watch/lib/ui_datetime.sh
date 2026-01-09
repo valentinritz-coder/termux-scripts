@@ -141,52 +141,32 @@ _adb_text_escape() {
   printf '%s' "$s"
 }
 
-_ui_clear_field_del() {
-  # Suppression brute au DEL, utile si l'EditText ne sélectionne pas tout.
-  # (NumberPicker: parfois le tap met le curseur à la fin, pas de sélection.)
-  local n="${1:-8}"
-  local i
-  for ((i=0;i<n;i++)); do _ui_key 67; done  # KEYCODE_DEL
-}
-
-_ui_hide_ime_no_back() {
-  # Cache le clavier SANS KEYCODE_BACK (4), parce que BACK peut fermer le dialog.
-  # ESC (111) fonctionne souvent pour fermer l'IME / sortir focus.
-  # On le fait 2 fois parce que... Android.
-  local step="${UI_STEP_SLEEP:-0}"
-  _maybe adb shell input keyevent 111 || true  # KEYCODE_ESCAPE
-  (( $(awk "BEGIN{print ($step>0)}") )) && sleep "$step" || sleep 0.12
-  _maybe adb shell input keyevent 111 || true
-  (( $(awk "BEGIN{print ($step>0)}") )) && sleep "$step" || sleep 0.12
-}
-
 _ui_type_at() {
-  # Tap sur un champ (coords du center de l'EditText), puis tape du texte.
-  # On évite KEYCODE_BACK ici.
+  # Tap sur un champ (coords du center de l'EditText), tape du texte,
+  # puis COMMIT via KEYCODE_BACK (4).
   #
-  # Pourquoi pas "enter" ?
-  # - Sur NumberPicker, le commit est souvent fait en changeant de focus
-  #   (donc quand on tap le champ suivant).
+  # Pourquoi BACK (4) ?
+  # - Sur ton device + CFL, BACK juste après input text ferme le clavier ET valide la valeur.
+  # - Le commentaire "NUMPAD_ENTER" était faux: 4 = BACK.
+  #
+  # Attention:
+  # - Si le clavier n'est pas ouvert, BACK peut fermer le dialog.
+  # - Donc on ne l'envoie qu'immédiatement après la saisie, et on vérifie que le dialog est toujours présent.
+
   local x="$1" y="$2" txt="$3"
   [[ "$x" != "0" && "$y" != "0" ]] || return 1
 
-  local step="${UI_STEP_SLEEP:-0}"
+  local step_sleep="${UI_STEP_SLEEP:-0}"
 
   _ui_tap_xy "$x" "$y"
-  (( $(awk "BEGIN{print ($step>0)}") )) && sleep "$step"
-
-  # Essai de sélection/clear soft:
-  # - beaucoup d'EditText NumberPicker sélectionnent tout au tap, donc écrire remplace.
-  # - si ce n'est pas le cas, un petit DEL brute aide (optionnel).
-  # Décommente si tu observes des concaténations de chiffres.
-  # _ui_clear_field_del 4
-  # (( $(awk "BEGIN{print ($step>0)}") )) && sleep "$step"
+  (( step_sleep > 0 )) && sleep "$step_sleep"
 
   _maybe adb shell input text "$(_adb_text_escape "$txt")"
-  (( $(awk "BEGIN{print ($step>0)}") )) && sleep "$step"
+  (( step_sleep > 0 )) && sleep "$step_sleep"
 
-  # On essaye de fermer l'IME gentiment (sans BACK)
-  _ui_hide_ime_no_back || true
+  # COMMIT / close IME (chez toi: c'est LE truc qui marche)
+  _ui_key 4 || true
+  (( step_sleep > 0 )) && sleep "$step_sleep"
 }
 
 # -----------------------------------------------------------------------------
