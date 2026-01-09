@@ -295,8 +295,21 @@ PY
 ui_datetime_set_time_24h() {
   local hm="$1"          # HH:MM
   local th="${hm%:*}" tm="${hm#*:}"
-  th=$((10#$th)); tm=$((10#$tm))
 
+  log "hm='$hm'"
+  log "th_raw='$th' tm_raw='$tm'"
+
+  # sanity: évite crash si hm vide ou format foireux
+  if [[ ! "$hm" =~ ^[0-9]{1,2}:[0-9]{2}$ ]]; then
+    warn "Bad time format: '$hm' (expected HH:MM)"
+    return 1
+  fi
+
+  th=$((10#$th))
+  tm=$((10#$tm))
+
+  log "th=$th tm=$tm"
+  
   local out
   out="$(ui_datetime_time_parse_vars)" || { warn "TimePicker not found"; return 1; }
   eval "$out"
