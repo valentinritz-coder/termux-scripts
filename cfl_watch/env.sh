@@ -35,3 +35,14 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 # Optional: dry-run mode
 : "${CFL_DRY_RUN:=0}"
+
+# --- IME timing (CFL datetime picker) ---
+: "${UI_IME_SHOW_TIMEOUT_MS:=2000}"
+: "${UI_IME_HIDE_TIMEOUT_MS:=2000}"
+: "${UI_IME_POLL_MS:=80}"
+: "${UI_AFTER_TEXT_SLEEP:=0.08}"
+: "${UI_IME_SHOW_MIN_SLEEP:=0.10}"
+: "${UI_IME_HIDE_MIN_SLEEP:=0.10}"
+
+export UI_IME_SHOW_TIMEOUT_MS UI_IME_HIDE_TIMEOUT_MS UI_IME_POLL_MS \
+       UI_AFTER_TEXT_SLEEP UI_IME_SHOW_MIN_SLEEP UI_IME_HIDE_MIN_SLEEP
