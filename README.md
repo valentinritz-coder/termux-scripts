@@ -66,7 +66,7 @@ UI_DT_DEBUG=1 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
 CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime.sh" \
-DATE_YMD="2026-02-15" \
+DATE_YMD="2026-01-13" \
 TIME_HM="19:40" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
   --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
