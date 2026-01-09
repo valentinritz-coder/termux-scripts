@@ -112,44 +112,36 @@ fi
 
 maybe cfl_launch
 
-ui_wait_text_any "toolbar title visible" 10 "Home" "Trip Planner"
+if ui_element_has_text "resid::id/toolbar" "Home"; then
+  log "Toolbar affiche Home"
 
-# Ensuite tu branches selon ce que tu vois réellement dans le dump cache:
-if grep -Fq 'text="Home"' "$UI_DUMP_CACHE"; then
-  log "On est sur Home"
-  # 1) Clic sur le burger
   ui_tap_any "burger icon tap" \
     "desc:Show navigation drawer" \
   || true
 
   ui_snap_here "02_after_tap_burger" "$SNAP_MODE"
 
-  
-  ui_tap_any "Trip Planner Menu" \
+  ui_tap_any "trip planner menu" \
   "text:Trip Planner" \
   || true
-  
-elif grep -Fq 'text="Trip Planner"' "$UI_DUMP_CACHE"; then
-  log "On est sur Trip Planner"
-  
-else
-  warn "Ni Home ni Trip Planner détecté (dump fallback?)"
-  
+  ui_snap_here "02_after_tap_Trip Planner" "$SNAP_MODE"
 fi
 
-# 7b) Règle date/heure
-if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
-  ui_wait_resourceid "start field visible" "$WAIT_LONG" "destination" "arrivée" "Select destination" "Select start"
-  ui_tap_any "date time field" "resid:$ID_DATETIME" || true
-
-  if ui_datetime_wait_dialog "$WAIT_LONG"; then
-    [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
-    [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
-    ui_datetime_ok
-    ui_snap_here "03_after_datetime_ok" "$SNAP_MODE"
-  else
-    warn "Datetime dialog not opened -> skipping datetime"
+if ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
+  # 7b) Règle date/heure
+  if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
+    ui_tap_any "date time field" "resid:$ID_DATETIME" || true
+  
+    if ui_datetime_wait_dialog "$WAIT_LONG"; then
+      [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
+      [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
+      ui_datetime_ok
+      ui_snap_here "03_after_datetime_ok" "$SNAP_MODE"
+    else
+      warn "Datetime dialog not opened -> skipping datetime"
+    fi
   fi
+
 fi
 
 # 4) DEST: attendre champ destination (souvent sans id)
