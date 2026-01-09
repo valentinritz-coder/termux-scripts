@@ -204,13 +204,14 @@ fi
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   ui_refresh
   ui_snap "08f_before_open_datetime" "$SNAP_MODE"
-  ui_tap_any "date time field" \
-    "resid::button_now" \
-    || true
-    
-  ui_tap_any "date time field" \
-    "resid:$ID_DATETIME" \
-    || true
+
+  # Optionnel: si Now existe sur l'écran principal et sert à activer/remplir le champ
+  if ui_tap_any "preset now (optional)" "resid::button_now" "text:Now" ; then
+    ui_refresh
+  fi
+
+  # Ouvre le dialog UNE fois
+  ui_tap_any "date time field" "resid:$ID_DATETIME" || true
 
   if ui_datetime_wait_dialog "$WAIT_LONG"; then
     if [[ -n "$DATE_YMD_TRIM" ]]; then
