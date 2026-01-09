@@ -260,8 +260,7 @@ def find_node(pred):
     if pred(n): return n
   return None
 
-tp = find_node(lambda n: n.get("resource-id","")=="de.hafas.android.cfl:id/picker_time"
-                        and n.get("class","")=="android.widget.TimePicker")
+tp = find_node(lambda n: n.get("resource-id","")=="de.hafas.android.cfl:id/picker_time")
 if tp is None:
   sys.exit(2)
 
@@ -371,12 +370,16 @@ ui_datetime_set_time_24h() {
 
   local out=""
   out="$(ui_datetime_time_parse_vars | tr -d '
-' | sed -n '^[A-Z_][A-Z0-9_]*=/p')" || {
+' | grep -E '^[A-Z_][A-Z0-9_]*=' || true)" || {
     warn "TimePicker not found in picked XML. Trying one ui_refresh + re-parse..."
     if [[ "${UI_DT_DEBUG:-0}" != "0" ]]; then
       local _ui="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml"
       local _live="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/live_dump.xml"
       local _lat="$(_ui_latest_xml)"
+  if [[ -z "$out" ]]; then
+    warn "TimePicker parse returned no VAR= lines (stdout polluted or parser mismatch)"
+    return 1
+  fi
       _dbg "debug: UI_XML=${UI_XML:-<unset>}"
       _dbg "debug: ui.xml=${_ui} exists=$( [[ -f "$_ui" ]] && echo 1 || echo 0 ) has_picker=$( [[ -f "$_ui" ]] && grep -Fq 'de.hafas.android.cfl:id/picker_time' "$_ui" && echo 1 || echo 0 )"
       _dbg "debug: live_dump.xml=${_live} exists=$( [[ -f "$_live" ]] && echo 1 || echo 0 ) has_picker=$( [[ -f "$_live" ]] && grep -Fq 'de.hafas.android.cfl:id/picker_time' "$_live" && echo 1 || echo 0 )"
@@ -384,7 +387,7 @@ ui_datetime_set_time_24h() {
     fi
     ui_refresh || true
     out="$(ui_datetime_time_parse_vars | tr -d '
-' | sed -n '^[A-Z_][A-Z0-9_]*=/p')" || { warn "TimePicker still not found after ui_refresh"; return 1; }
+' | grep -E '^[A-Z_][A-Z0-9_]*=' || true)" || { warn "TimePicker still not found after ui_refresh"; return 1; }
   }
 
   eval "$out"
@@ -398,6 +401,10 @@ ui_datetime_set_time_24h() {
   if [[ "${UI_DT_DEBUG:-0}" != "0" ]]; then
     _dbg "time_parse: TP_MODE=$TP_MODE H_CUR=$H_CUR M_CUR=$M_CUR AP_CUR=$AP_CUR"
     _dbg "time_parse: H_DEC=($H_DEC_X,$H_DEC_Y) H_INC=($H_INC_X,$H_INC_Y) M_DEC=($M_DEC_X,$M_DEC_Y) M_INC=($M_INC_X,$M_INC_Y)"
+  if [[ -z "$out" ]]; then
+    warn "TimePicker parse returned no VAR= lines (stdout polluted or parser mismatch)"
+    return 1
+  fi
     _dbg "time_parse: H_BOUNDS=$H_BOUNDS M_BOUNDS=$M_BOUNDS AP_AM=($AP_AM_X,$AP_AM_Y) AP_PM=($AP_PM_X,$AP_PM_Y)"
   fi
 
