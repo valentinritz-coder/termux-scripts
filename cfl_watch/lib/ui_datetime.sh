@@ -57,6 +57,37 @@ _ui_pick_xml() {
   return 1
 }
 
+_ui_pick_xml_need() {
+  # Pick the first candidate XML that contains the given needle string.
+  # Usage: _ui_pick_xml_need "de.hafas.android.cfl:id/picker_time"
+  local needle="${1:-}"
+  local candidates=()
+  local f=""
+
+  [[ -n "${UI_XML:-}" && -f "$UI_XML" ]] && candidates+=("$UI_XML")
+  f="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml"
+  [[ -f "$f" ]] && candidates+=("$f")
+  f="$(_ui_latest_xml)"
+  [[ -n "${f:-}" && -f "$f" ]] && candidates+=("$f")
+
+  # If we have a needle, pick a file that contains it
+  if [[ -n "$needle" ]]; then
+    for f in "${candidates[@]}"; do
+      if grep -q "$needle" "$f" 2>/dev/null; then
+        echo "$f"; return 0
+      fi
+    done
+  fi
+
+  # Fallback: first existing candidate
+  for f in "${candidates[@]}"; do
+    echo "$f"; return 0
+  done
+
+  return 1
+}
+
+
 # ---------------------------- input helpers ---------------------------------
 
 _ui_tap_xy() {
@@ -120,7 +151,7 @@ ui_datetime_preset() {
 
 ui_datetime_read_base_ymd() {
   local xml
-  xml="$(_ui_pick_xml)" || return 1
+  xml="$(_ui_pick_xml_need "Search date:")" || return 1
 
   python - <<'PY' "$xml"
 import re, sys
@@ -199,7 +230,12 @@ PY
 #   AP_AM_X/Y, AP_PM_X/Y (if 12h)
 ui_datetime_time_parse_vars() {
   local xml
-  xml="$(_ui_pick_xml)" || return 1
+  xml="$(_ui_pick_xml_need "Search date:")" || return 1
+
+  if [[ "${UI_DT_DEBUG:-0}" != "0" ]]; then
+    log "time_parse: using xml=$xml"
+  fi
+
 
   python - <<'PY' "$xml"
 import sys, re
@@ -344,7 +380,18 @@ ui_datetime_set_time_24h() {
   th=$((10#$th)); tm=$((10#$tm))
 
   local out
-  out="$(ui_datetime_time_parse_vars)" || { warn "TimePicker not found"; return 1; }
+  out="$(ui_datetime_time_parse_vars)" || {
+  warn "TimePicker not found in picked XML. Trying one ui_refresh + re-parse..."
+  if [[ "${UI_DT_DEBUG:-0}" != "0" ]]; then
+    local _cfl="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml"
+    local _lat="$(_ui_latest_xml)"
+    log "debug: UI_XML=${UI_XML:-<unset>}"
+    log "debug: CFL ui.xml=${_cfl} exists=$( [[ -f "$_cfl" ]] && echo 1 || echo 0 ) has_picker=$( [[ -f "$_cfl" ]] && grep -q "de.hafas.android.cfl:id/picker_time" "$_cfl" && echo 1 || echo 0 )"
+    log "debug: latest_xml=${_lat:-<none>} exists=$( [[ -n "${_lat:-}" && -f "$_lat" ]] && echo 1 || echo 0 ) has_picker=$( [[ -n "${_lat:-}" && -f "$_lat" ]] && grep -q "de.hafas.android.cfl:id/picker_time" "$_lat" && echo 1 || echo 0 )"
+  fi
+  ui_refresh || true
+  out="$(ui_datetime_time_parse_vars)" || { warn "TimePicker still not found after ui_refresh"; return 1; }
+}
   eval "$out"
 
   # Defaults anti set -u
