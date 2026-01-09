@@ -264,16 +264,16 @@ ui_datetime_set_time_24h() {
 ui_datetime_set_date_ymd() {
   local ymd="$1"  # YYYY-MM-DD
 
-  # Force baseline = today (best effort)
-  #ui_tap_any "preset now" \
-  #  "resid::id/button_datetime_forward_1" \
-  #  "text:Now" \
-  #|| true
-  #ui_refresh
+  # Assure-toi d'avoir un dump frais
+  ui_refresh
 
-  # Compute diff from device date (today) to target
+  # Base = date affichée dans l'UI (fallback: date système)
+  local base
+  base="$(ui_datetime_read_base_ymd || true)"
+  [[ -n "$base" ]] || base="$(date +%Y-%m-%d)"
+
   local diff
-  diff="$(python - <<'PY' "$(date +%Y-%m-%d)" "$ymd"
+  diff="$(python - <<'PY' "$base" "$ymd"
 import sys, datetime
 a = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
 b = datetime.datetime.strptime(sys.argv[2], "%Y-%m-%d").date()
@@ -282,7 +282,6 @@ PY
 )"
   diff="${diff:-0}"
 
-  # Tap earlier/later
   if (( diff > 0 )); then
     local i
     for ((i=0;i<diff;i++)); do
@@ -297,6 +296,49 @@ PY
   fi
 
   ui_refresh
+}
+
+ui_datetime_read_base_ymd() {
+  local xml="${UI_XML:-${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml}"
+  [[ -f "$xml" ]] || return 1
+
+  python - <<'PY' "$xml"
+import re, sys
+from datetime import datetime
+
+xml_path = sys.argv[1]
+s = open(xml_path, "r", encoding="utf-8", errors="ignore").read()
+
+# Normalise les espaces non standards
+s = s.replace("\u00A0", " ").replace("\u202F", " ")
+
+# 1) Cible prioritaire: content-desc contenant "Search date:"
+m = re.search(r'content-desc="[^"]*Search date:[^"]*"', s)
+candidates = []
+if m:
+  candidates.append(m.group(0))
+
+# 2) Fallback: n'importe quelle zone (ça sauve des vies)
+candidates.append(s)
+
+date_pat = re.compile(r'\b(\d{2})[./-](\d{2})[./-](\d{4})\b')
+
+for blob in candidates:
+  m2 = date_pat.search(blob)
+  if not m2:
+    continue
+  dd, mm, yyyy = m2.group(1), m2.group(2), m2.group(3)
+
+  # Luxembourg: day-first. (Si ton app se met en US un jour, on pleure après.)
+  try:
+    d = datetime.strptime(f"{dd}.{mm}.{yyyy}", "%d.%m.%Y").date()
+    print(d.isoformat())  # YYYY-MM-DD
+    sys.exit(0)
+  except Exception:
+    pass
+
+sys.exit(1)
+PY
 }
 
 ui_datetime_ok() {
