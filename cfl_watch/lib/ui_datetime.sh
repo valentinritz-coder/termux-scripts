@@ -108,8 +108,8 @@ _ui_type_at() {
   [[ "$x" != "0" && "$y" != "0" ]] || return 1
 
   _ui_tap_xy "$x" "$y"
-  _ui_key 123 || true         # move end
-  _ui_clear_field             # DEL x 8
+  #_ui_key 123 || true         # move end
+  #_ui_clear_field             # DEL x 8
   _maybe adb shell input text "$txt"
 
   # IMPORTANT:
