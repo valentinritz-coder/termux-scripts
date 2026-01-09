@@ -103,92 +103,83 @@ fi
 
 maybe cfl_launch
 
-ui_wait_resid "wait toolbar visible" ":id/toolbar" "$WAIT_LONG"
-ui_snap "00_opening" "$SNAP_MODE"
+ui_wait_resid "toolbar visible" ":id/toolbar" "$WAIT_LONG"
+
+ui_snap "000_opening" "$SNAP_MODE"
 
 if ui_element_has_text "resid::id/toolbar" "Home"; then
   log "Toolbar affiche Home"
-
-  ui_tap_any "burger icon tap" \
-    "desc:Show navigation drawer" \
-  || true
-
-  ui_wait_resid "wait left_drawer visible" ":id/left_drawer" "$WAIT_LONG"
-  ui_snap "01_after_tap_burger" "$SNAP_MODE"
-
-  ui_tap_any "trip planner menu" \
-  "text:Trip Planner" \
-  || true
-
-  ui_wait_resid "wait toolbar visible" ":id/toolbar" "$WAIT_LONG"
-  ui_snap "02_after_tap_trip_planner" "$SNAP_MODE"
-
-else
-  warn "Toolbar n'affiche pas Home"
+  ui_tap_any "burger icon tap" "desc:Show navigation drawer" || true
+  ui_wait_resid "drawer visible" ":id/left_drawer" "$WAIT_LONG"
+  ui_snap "001_after_tap_burger" "$SNAP_MODE"
+  ui_tap_any "trip planner menu" "text:Trip Planner" || true
 fi
 
+ui_wait_element_has_text "wait trip planner page" "resid::id/toolbar" "Trip Planner" 10
+
 if ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
-  # 7b) Règle date/heure
+  log "Toolbar affiche Trip Planner"
   if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
-    ui_tap_any "date time field" "resid:$ID_DATETIME" || true
-  
-    if ui_datetime_wait_dialog "$WAIT_LONG"; then
-      [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
-      [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
-      ui_datetime_ok
-      ui_snap_here "03_after_datetime_ok" "$SNAP_MODE"
+    log "Réglage de la date et de l'heure"
+    if ui_has_element "resid::id/datetime_text"; then
+      ui_tap_any "date time field" "resid::id/datetime_text"
+      if ui_wait_resid "time picker visible" ":id/picker_time" "$WAIT_LONG"; then
+        [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
+        [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
+        if ui_has_element "resid::id/button1"; then
+          ui_snap "020_after_set_datetime" "$SNAP_MODE"
+          ui_tap_any "OK button" "resid:android:id/button1"
+        else
+          _ui_key 4 || true
+          warn "Datetime dialog not validated -> try back key"
+        fi
+      else
+        warn "Datetime dialog not opened -> skipping datetime"
+      fi
     else
-      warn "Datetime dialog not opened -> skipping datetime"
+      warn "Date/Time field absent → skip datetime"
     fi
   fi
   
-  # 4) DEST: attendre champ destination (souvent sans id)
-  ui_wait_desc_any "start field visible" "$WAIT_LONG" "destination" "arrivée" "Select destination" "Select start"
-  ui_snap "05_start_visible" "$SNAP_MODE"
-  
-  ui_refresh
-  # 5) DEST: tap champ
-  ui_tap_any "destination field" \
-  "desc:destination" \
-  "desc:arrivée" \
-  "desc:Select destination" \
-  "resid:$ID_TARGET" \
-  || true
-  ui_refresh
-  ui_snap "06_after_tap_destination" "$SNAP_MODE"
-  
-  # 2) START: taper + suggestions
-  ui_type_and_wait_results "start" "$START_TEXT"
-  ui_snap "03_after_type_start" "$SNAP_MODE"
-  
-  # 3) START: choisir suggestion
-  ui_pick_suggestion "start suggestion" "$START_TEXT"
-  ui_refresh
-  ui_snap "04_after_pick_start" "$SNAP_MODE"
-  
-  # 4) DEST: attendre champ destination (souvent sans id)
-  ui_wait_desc_any "destination field visible" "$WAIT_LONG" "destination" "arrivée" "Select destination"
-  ui_snap "05_destination_visible" "$SNAP_MODE"
-  
-  ui_refresh
-  # 5) DEST: tap champ
-  ui_tap_any "destination field" \
-  "desc:destination" \
-  "desc:arrivée" \
-  "desc:Select destination" \
-  "resid:$ID_TARGET" \
-  || true
-  ui_refresh
-  ui_snap "06_after_tap_destination" "$SNAP_MODE"
-  
-  # 6) DEST: taper + suggestions
-  ui_type_and_wait_results "destination" "$TARGET_TEXT"
-  ui_snap "07_after_type_destination" "$SNAP_MODE"
-  
-  # 7) DEST: choisir suggestion
-  ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"
-  ui_refresh
-  ui_snap "08_after_pick_destination" "$SNAP_MODE"
+  log "Réglage de la station de départ"
+  ui_wait_desc_any "start field visible" "$WAIT_LONG" "Select start"
+  ui_snap "030_before_set_start" "$SNAP_MODE"
+
+  if ui_has_element "desc:Select start"; then 
+    ui_tap_any "start field" "desc:Select start"
+    ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
+    if ui_has_element "resid::id/input_location_name"; then 
+      ui_type_and_wait_results "start" "$START_TEXT"
+      ui_snap "03_after_type_start" "$SNAP_MODE"
+      # 3) START: choisir suggestion
+      ui_pick_suggestion "start suggestion" "$START_TEXT"
+
+      ui_snap "04_after_pick_start" "$SNAP_MODE"
+    else
+      warn "Issue with selection start"
+    fi
+  else
+    warn "Issue with selection start field"
+  fi
+    
+  ui_wait_desc_any "destination field visible" "$WAIT_LONG" "Select destination"
+  ui_snap "030_before_set_destination" "$SNAP_MODE"
+  if ui_has_element "desc:Select destination"; then 
+    ui_tap_any "start field" "desc:Select destination"
+    ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
+    if ui_has_element "resid::id/input_location_name"; then 
+      ui_type_and_wait_results "destination" "$TARGET_TEXT"
+      ui_snap "03_after_type_destination" "$SNAP_MODE"
+      # 3) START: choisir suggestion
+      ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"
+
+      ui_snap "04_after_pick_destination" "$SNAP_MODE"
+    else
+      warn "Issue with selection destination"
+    fi
+  else
+    warn "Issue with selection destination field"
+  fi
   
   # VIA (optional)
   if [[ -n "$VIA_TEXT_TRIM" ]]; then
@@ -256,7 +247,9 @@ if ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
   log "Scenario success (keyword detected)"
   exit 0
   fi
-
+else
+  warn "Toolbar dans un état inattendu"
+  ui_snap_here "toolbar_unexpected_state" "$SNAP_MODE"
 fi
 
 warn "Scenario ended without strong marker (not necessarily a failure)"
