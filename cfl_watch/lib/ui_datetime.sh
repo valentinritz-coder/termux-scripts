@@ -265,11 +265,11 @@ ui_datetime_set_date_ymd() {
   local ymd="$1"  # YYYY-MM-DD
 
   # Force baseline = today (best effort)
-  ui_tap_any "preset now" \
-    "resid::id/button_datetime_forward_1" \
-    "text:Now" \
-  || true
-  ui_refresh
+  #ui_tap_any "preset now" \
+  #  "resid::id/button_datetime_forward_1" \
+  #  "text:Now" \
+  #|| true
+  #ui_refresh
 
   # Compute diff from device date (today) to target
   local diff
