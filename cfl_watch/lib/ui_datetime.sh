@@ -325,14 +325,15 @@ if ap_np is not None:
 
   # NEW: coords des textes AM/PM (bouton + edittext)
   for c in ap_np.iter("node"):
-    t = (c.get("text","") or "").strip().upper()
+    t = ((c.get("text","") or "")).strip().upper()
+    cls = (c.get("class","") or "")
     b = parse_bounds(c.get("bounds",""))
-    if not b:
+    if not b: 
       continue
-    if t == "AM":
-      ap_am = center(b)
-    elif t == "PM":
-      ap_pm = center(b)
+    # IMPORTANT: ne jamais utiliser l'EditText numberpicker_input pour AM/PM
+    if cls == "android.widget.Button":
+      if t == "AM": ap_am = center(b)
+      if t == "PM": ap_pm = center(b)
 
   if ap_cur.strip().upper() in ("AM","PM") or ap_am or ap_pm:
     tp_mode = "12"
@@ -383,6 +384,33 @@ _ui_timepicker_reparse() {
   return 0
 }
 
+_ui_ampm_set() {
+  local target="$1" delay="${2:-0.06}"
+  [[ "$TP_MODE" == "12" ]] || return 0
+  target="${target^^}"
+  local cur="${AP_CUR^^}"
+
+  [[ "$target" == "AM" || "$target" == "PM" ]] || return 2
+  [[ "$cur" == "AM" || "$cur" == "PM" ]] || cur=""
+
+  # déjà bon
+  [[ -n "$cur" && "$cur" == "$target" ]] && return 0
+
+  # sinon: on clique le bouton de la valeur voulue (jamais l'EditText)
+  if [[ "$target" == "AM" && "${AP_AM_X:-0}" != "0" ]]; then
+    _ui_tap_xy "$AP_AM_X" "$AP_AM_Y"
+    sleep "$delay"
+    return 0
+  fi
+  if [[ "$target" == "PM" && "${AP_PM_X:-0}" != "0" ]]; then
+    _ui_tap_xy "$AP_PM_X" "$AP_PM_Y"
+    sleep "$delay"
+    return 0
+  fi
+
+  warn "AM/PM: bouton $target introuvable (probablement UI différente)"
+  return 1
+}
 
 ui_datetime_set_time_24h() {
   local hm="${1:-}"          # HH:MM
@@ -440,11 +468,7 @@ if [[ "$TP_MODE" == "12" ]]; then
   }
 
   # 3) enforce AM/PM again (sans clavier)
-  if [[ "$target_ampm" == "AM" && "${AP_AM_X:-0}" != "0" ]]; then
-    _ui_tap_xy "$AP_AM_X" "$AP_AM_Y"
-  elif [[ "$target_ampm" == "PM" && "${AP_PM_X:-0}" != "0" ]]; then
-    _ui_tap_xy "$AP_PM_X" "$AP_PM_Y"
-  fi
+  _ui_ampm_set "$target_ampm" "$TAP_DELAY" || true
 
 else
   # 1) heure
@@ -452,9 +476,6 @@ else
     warn "Hour typing failed (missing coords?)"
     return 1
   }
-
-  # Re-dump + re-parse pour recalculer les coords après ouverture clavier
-  _ui_timepicker_reparse || warn "Reparse failed after hour focus (keyboard/layout shift?)"
 
   # 2) minutes
   _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || {
