@@ -8,6 +8,216 @@ _ui_latest_xml() {
   ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true
 }
 
+
+ui_tp_read_vars() {
+  local xml="${UI_XML:-${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml}"
+  [[ -f "$xml" ]] || return 1
+
+  python - <<'PY' "$xml"
+import sys, xml.etree.ElementTree as ET
+
+xml_path = sys.argv[1]
+root = ET.parse(xml_path).getroot()
+
+def find(node, rid):
+  for el in node.iter("node"):
+    if el.attrib.get("resource-id","") == rid:
+      return el
+  return None
+
+tp = find(root, "de.hafas.android.cfl:id/picker_time")
+if tp is None:
+  sys.exit(1)
+
+# Collect NumberPickers inside TimePicker (hour, minute, ampm)
+nps = [ch for ch in tp.findall("node") if ch.attrib.get("class") == "android.widget.NumberPicker"]
+
+bounds = []
+vals = []
+for np in nps:
+  bounds.append(np.attrib.get("bounds",""))
+  v = None
+  for el in np.iter("node"):
+    if el.attrib.get("class") == "android.widget.EditText" and el.attrib.get("resource-id") == "android:id/numberpicker_input":
+      v = (el.attrib.get("text") or "").strip()
+      break
+  vals.append(v or "")
+
+# Heuristics: hour/min are numeric, ampm is AM/PM if present
+hour = ""
+minute = ""
+ampm = ""
+for v in vals:
+  if v.upper() in ("AM","PM"):
+    ampm = v.upper()
+  elif v.isdigit():
+    if hour == "":
+      hour = v
+    elif minute == "":
+      minute = v
+
+mode = "12" if ampm else "24"
+
+print(f"TP_MODE={mode}")
+print(f"TP_HOUR={hour or 0}")
+print(f"TP_MIN={minute or 0}")
+print(f"TP_AMPM='{ampm}'")
+
+# Bounds mapping by index: 0=hour,1=minute,2=ampm (if exists)
+for i,b in enumerate(bounds):
+  print(f"TP_BOUNDS_{i}='{b}'")
+PY
+}
+
+_ui_center_from_bounds() {
+  # bounds like: [232,671][408,1166]  -> echo "320 918"
+  python - <<'PY' "$1"
+import re, sys
+m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', sys.argv[1].strip())
+x1,y1,x2,y2 = map(int, m.groups())
+print((x1+x2)//2, (y1+y2)//2)
+PY
+}
+
+_ui_swipe_in_bounds() {
+  # $1=bounds, $2=up|down, $3=duration(ms)
+  local bounds="$1" dir="$2" dur="${3:-180}"
+
+  python - <<'PY' "$bounds" "$dir" "$dur"
+import re, sys
+b, dir, dur = sys.argv[1], sys.argv[2], int(sys.argv[3])
+m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', b.strip())
+x1,y1,x2,y2 = map(int, m.groups())
+cx = (x1+x2)//2
+top = y1 + 30
+bot = y2 - 30
+
+if dir == "up":
+  # swipe up: start near bottom -> end near top
+  print(f"{cx} {bot} {cx} {top} {dur}")
+else:
+  print(f"{cx} {top} {cx} {bot} {dur}")
+PY
+}
+
+_ui_tp_swipe() {
+  # $1=index (0 hour,1 min,2 ampm), $2=up|down
+  local idx="$1" dir="$2"
+  local b_var="TP_BOUNDS_${idx}"
+  local b="${!b_var:-}"
+  [[ -n "$b" ]] || return 1
+
+  local args
+  args="$(_ui_swipe_in_bounds "$b" "$dir" 180)" || return 1
+  adb shell input swipe $args
+}
+
+_ui_tp_calibrate_inc_dir() {
+  # Determine whether "swipe up" increases or decreases hour.
+  # Sets global TP_INC_DIR=up|down
+  TP_INC_DIR="${TP_INC_DIR:-}"
+
+  [[ -n "$TP_INC_DIR" ]] && return 0
+
+  ui_refresh
+  eval "$(ui_tp_read_vars)" || return 1
+
+  local h0="$TP_HOUR"
+  # try swipe up once
+  _ui_tp_swipe 0 up || return 1
+  ui_refresh
+  eval "$(ui_tp_read_vars)" || return 1
+  local h1="$TP_HOUR"
+
+  # If no change, try a bigger swipe (some devices are picky)
+  if [[ "$h1" == "$h0" ]]; then
+    _ui_tp_swipe 0 up || true
+    ui_refresh
+    eval "$(ui_tp_read_vars)" || return 1
+    h1="$TP_HOUR"
+  fi
+
+  # Decide with wrap rules
+  if [[ "$TP_MODE" == "12" ]]; then
+    local expected=$(( (h0 % 12) + 1 ))   # 12->1
+    if [[ "$h1" == "$expected" ]]; then
+      TP_INC_DIR="up"
+    else
+      TP_INC_DIR="down"
+    fi
+  else
+    local expected=$(( (h0 + 1) % 24 ))
+    if [[ "$h1" == "$expected" ]]; then
+      TP_INC_DIR="up"
+    else
+      TP_INC_DIR="down"
+    fi
+  fi
+
+  # Undo the test step so we don't drift (one step opposite)
+  if [[ "$TP_INC_DIR" == "up" ]]; then
+    _ui_tp_swipe 0 down || true
+  else
+    _ui_tp_swipe 0 up || true
+  fi
+  ui_refresh
+}
+
+_ui_tp_step_inc() { # idx
+  [[ "${TP_INC_DIR:-up}" == "up" ]] && _ui_tp_swipe "$1" up || _ui_tp_swipe "$1" down
+}
+_ui_tp_step_dec() { # idx
+  [[ "${TP_INC_DIR:-up}" == "up" ]] && _ui_tp_swipe "$1" down || _ui_tp_swipe "$1" up
+}
+
+_ui_tp_set_numeric_wrap() {
+  # $1=idx (0 hour, 1 min), $2=current, $3=target, $4=mod (12/24/60)
+  local idx="$1" cur="$2" tgt="$3" mod="$4"
+
+  # normalize ints
+  cur=$((10#$cur))
+  tgt=$((10#$tgt))
+
+  local up_steps=$(( (tgt - cur + mod) % mod ))
+  local down_steps=$(( (cur - tgt + mod) % mod ))
+
+  # pick minimal
+  if (( up_steps <= down_steps )); then
+    local i
+    for ((i=0;i<up_steps;i++)); do _ui_tp_step_inc "$idx" || true; done
+  else
+    local i
+    for ((i=0;i<down_steps;i++)); do _ui_tp_step_dec "$idx" || true; done
+  fi
+}
+
+_ui_tp_set_ampm() {
+  # $1=target AM/PM, returns 0 if ok
+  local target="$1"
+  [[ -z "$target" ]] && return 0
+
+  ui_refresh
+  eval "$(ui_tp_read_vars)" || return 1
+  [[ "$TP_MODE" == "12" ]] || return 0
+
+  if [[ "$TP_AMPM" == "$target" ]]; then
+    return 0
+  fi
+
+  # One swipe toggles, but direction can vary. Try inc then recheck, else dec.
+  _ui_tp_step_inc 2 || true
+  ui_refresh
+  eval "$(ui_tp_read_vars)" || return 1
+  [[ "$TP_AMPM" == "$target" ]] && return 0
+
+  _ui_tp_step_dec 2 || true
+  ui_refresh
+  eval "$(ui_tp_read_vars)" || return 1
+  [[ "$TP_AMPM" == "$target" ]]
+}
+
+
+
 # Parse the datetime dialog from latest xml and print bash vars:
 # H_CUR, M_CUR, AP_CUR (optional)
 # H_UP_XY, H_DOWN_XY, M_UP_XY, M_DOWN_XY, AP_TAP_XY (optional)
@@ -209,53 +419,50 @@ ui_datetime_preset() {
 }
 
 ui_datetime_set_time_24h() {
-  local hm="$1"
-  local hh="${hm%:*}"
-  local mm="${hm#*:}"
-  hh="${hh#0}"; mm="${mm#0}"
-
+  local hm="$1"   # "HH:MM"
   ui_refresh
-  _ui_eval_vars
 
-  # Convert to 12h + AM/PM
-  read -r h12 ap <<< "$(_ui_to_12h "$hh")"
-  local m2
-  m2="$(printf "%02d" "$mm")"
+  # Read mode + bounds
+  eval "$(ui_tp_read_vars)" || { warn "TimePicker not found"; return 1; }
 
-  # Hours (1..12)
-  if [[ -n "${H_CUR:-}" ]]; then
-    _ui_np_step_to "hour" "$H_CUR" "$h12" 1 12 "${H_UP_X:-0}" "${H_UP_Y:-0}" "${H_DOWN_X:-0}" "${H_DOWN_Y:-0}"
+  # Calibrate inc direction once
+  _ui_tp_calibrate_inc_dir || true
+
+  # Parse target
+  local th="${hm%:*}" tm="${hm#*:}"
+  th=$((10#$th)); tm=$((10#$tm))
+
+  if [[ "$TP_MODE" == "12" ]]; then
+    local target_ampm="AM"
+    (( th >= 12 )) && target_ampm="PM"
+    local th12=$(( th % 12 ))
+    (( th12 == 0 )) && th12=12
+
+    # Set AM/PM first (and again at the end, because why would UI be consistent)
+    _ui_tp_set_ampm "$target_ampm" || true
+
+    ui_refresh
+    eval "$(ui_tp_read_vars)" || return 1
+
+    # Hours (wrap 12)
+    _ui_tp_set_numeric_wrap 0 "$TP_HOUR" "$th12" 12
+    ui_refresh
+    eval "$(ui_tp_read_vars)" || return 1
+
+    # Minutes (wrap 60)
+    _ui_tp_set_numeric_wrap 1 "$TP_MIN" "$tm" 60
+
+    # Final AM/PM enforce
+    _ui_tp_set_ampm "$target_ampm" || true
+
   else
-    warn "Hour picker not parsed"
-  fi
-
-  ui_refresh
-  _ui_eval_vars
-
-  # Minutes (0..59) – xml gives "48" but we accept 00..59
-  if [[ -n "${M_CUR:-}" ]]; then
-    # current may be "08" or "8"
-    local curm="${M_CUR#0}"
-    local tgtm="${m2#0}"
-    _ui_np_step_to "minute" "${curm:-0}" "${tgtm:-0}" 0 59 "${M_UP_X:-0}" "${M_UP_Y:-0}" "${M_DOWN_X:-0}" "${M_DOWN_Y:-0}"
-  else
-    warn "Minute picker not parsed"
-  fi
-
-  ui_refresh
-  _ui_eval_vars
-
-  # AM/PM
-  if [[ -n "${AP_CUR:-}" ]]; then
-    if [[ "${AP_CUR^^}" != "${ap^^}" ]]; then
-      # If the "other" value is on the up button, tap it
-      if [[ -n "${AP_OTHER:-}" && "${AP_OTHER^^}" == "${ap^^}" && -n "${AP_UP_X:-}" ]]; then
-        _ui_tap_xy "$AP_UP_X" "$AP_UP_Y"
-      else
-        # fallback: tap inside the AM/PM input
-        _ui_tap_xy "${AP_INP_X:-${AP_UP_X:-0}}" "${AP_INP_Y:-${AP_UP_Y:-0}}"
-      fi
-    fi
+    # 24h mode (no AM/PM picker)
+    ui_refresh
+    eval "$(ui_tp_read_vars)" || return 1
+    _ui_tp_set_numeric_wrap 0 "$TP_HOUR" "$th" 24
+    ui_refresh
+    eval "$(ui_tp_read_vars)" || return 1
+    _ui_tp_set_numeric_wrap 1 "$TP_MIN" "$tm" 60
   fi
 
   ui_refresh
