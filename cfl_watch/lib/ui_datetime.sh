@@ -107,10 +107,19 @@ _ui_type_at() {
   local x="$1" y="$2" txt="$3"
   [[ "$x" != "0" && "$y" != "0" ]] || return 1
 
+  local step_sleep="${UI_STEP_SLEEP:-0}"
+
   _ui_tap_xy "$x" "$y"
+  (( step_sleep > 0 )) && sleep "$step_sleep"
+
   #_ui_key 123 || true         # move end
+  #(( step_sleep > 0 )) && sleep "$step_sleep"
+
   #_ui_clear_field             # DEL x 8
+  #(( step_sleep > 0 )) && sleep "$step_sleep"
+
   _maybe adb shell input text "$txt"
+  (( step_sleep > 0 )) && sleep "$step_sleep"
 
   # IMPORTANT:
   # - PAS de KEYCODE_BACK (4) -> ça ferme le dialog
@@ -352,6 +361,17 @@ _ui_apply_kv_line() {
   done
 }
 
+_ui_timepicker_reparse() {
+  local line=""
+  ui_refresh || true
+  line="$(ui_datetime_time_parse_line 2>/dev/null || true)"
+  [[ -n "$line" ]] || return 1
+  _ui_apply_kv_line "$line"
+  _dbg "time_reparse: $line"
+  return 0
+}
+
+
 ui_datetime_set_time_24h() {
   local hm="${1:-}"          # HH:MM
   if [[ ! "$hm" =~ ^[0-9]{1,2}:[0-9]{2}$ ]]; then
@@ -392,6 +412,12 @@ if [[ "$TP_MODE" == "12" ]]; then
   (( th >= 12 )) && target_ampm="PM"
   local th12=$(( th % 12 )); (( th12 == 0 )) && th12=12
 
+  # Focus heure (le clavier peut apparaître et bouger l’UI)
+  _ui_tap_xy "$H_INP_X" "$H_INP_Y"
+
+  # Re-dump + re-parse pour recalculer les coords après ouverture clavier
+  _ui_timepicker_reparse || warn "Reparse failed after hour focus (keyboard/layout shift?)"
+  
   # 1) heure
   _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th12")" || {
     warn "Hour typing failed (missing coords?)"
@@ -415,6 +441,12 @@ if [[ "$TP_MODE" == "12" ]]; then
 
 else
   # 24h mode
+    # Focus heure (le clavier peut apparaître et bouger l’UI)
+  _ui_tap_xy "$H_INP_X" "$H_INP_Y"
+
+  # Re-dump + re-parse pour recalculer les coords après ouverture clavier
+  _ui_timepicker_reparse || warn "Reparse failed after hour focus (keyboard/layout shift?)"
+  
   _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th")" || return 1
   _ui_tap_xy "$M_INP_X" "$M_INP_Y"
   _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || return 1
