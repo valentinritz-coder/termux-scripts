@@ -338,7 +338,7 @@ PY
 }
 
 
-ui_datetime_set_time_24h()ui_datetime_set_time_24h() {
+ui_datetime_set_time_24h() {
   local hm="$1"          # HH:MM
   local th="${hm%:*}" tm="${hm#*:}"
   th=$((10#$th)); tm=$((10#$tm))
