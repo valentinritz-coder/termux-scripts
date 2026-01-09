@@ -258,3 +258,48 @@ ui_snap_here(){
   ui_refresh
   ui_snap "$tag" "$mode"
 }
+
+ui_element_has_text() {
+  # Vérifie qu’un élément (resid ou desc) contient un texte donné.
+  # Usage:
+  #   ui_element_has_text "resid::id/toolbar" "Trip Planner"
+  #   ui_element_has_text "desc:Show navigation drawer" "drawer"
+  #
+  # Retour:
+  #   0 -> texte présent
+  #   1 -> texte absent
+  #
+  # Note :
+  #   - resid peut être complet ou partiel (ex: ":id/foo")
+  #   - met à jour UI_DUMP_CACHE si vide
+  #
+  local sel="$1"
+  local text="$2"
+
+  [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
+
+  local re_sel re_txt re
+  re_txt="$(regex_escape_ere "$text")"
+
+  case "$sel" in
+    resid:*)
+      # Utilise ton helper resid_regex pour matcher même ":id/xxx"
+      re_sel="$(resid_regex "${sel#resid:}")"
+      re="${re_sel}[^>]*text=\"[^\"]*${re_txt}[^\"]*\""
+      ;;
+    desc:*)
+      local esc_sel
+      esc_sel="$(regex_escape_ere "${sel#desc:}")"
+      re="content-desc=\"[^\"]*${esc_sel}[^\"]*\"[^>]*text=\"[^\"]*${re_txt}[^\"]*\""
+      ;;
+    *)
+      warn "ui_element_has_text: sélecteur inconnu ($sel)"
+      return 2
+      ;;
+  esac
+
+  if grep -Eq "$re" "$UI_DUMP_CACHE"; then
+    return 0
+  fi
+  return 1
+}
