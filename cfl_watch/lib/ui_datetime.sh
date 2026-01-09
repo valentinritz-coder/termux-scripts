@@ -23,6 +23,11 @@ if ! declare -F warn >/dev/null 2>&1; then
   warn() { printf '[!] %s\n' "$*" >&2; }
 fi
 
+_dbg() {
+  [[ "${UI_DT_DEBUG:-0}" != "0" ]] || return 0
+  printf '[D] %s\n' "$*" >&2
+}
+
 _maybe() {
   if declare -F maybe >/dev/null 2>&1; then
     maybe "$@"
@@ -160,7 +165,7 @@ ui_datetime_preset() {
 
 ui_datetime_read_base_ymd() {
   local xml
-  xml="$(_ui_pick_xml_need 'Search date:')" || return 1
+  xml="$(_ui_pick_xml_need 'de.hafas.android.cfl:id/picker_time')" || return 1
 
   python - <<'PY' "$xml"
 import re, sys
@@ -232,9 +237,7 @@ ui_datetime_time_parse_vars() {
   local xml
   xml="$(_ui_pick_xml_need 'de.hafas.android.cfl:id/picker_time')" || return 1
 
-  if [[ "${UI_DT_DEBUG:-0}" != "0" ]]; then
-    log "time_parse: using xml=$xml"
-  fi
+  _dbg "time_parse: using xml=$xml"
 
   python - <<'PY' "$xml"
 import sys, re
@@ -367,19 +370,21 @@ ui_datetime_set_time_24h() {
   th=$((10#$th)); tm=$((10#$tm))
 
   local out=""
-  out="$(ui_datetime_time_parse_vars)" || {
+  out="$(ui_datetime_time_parse_vars | tr -d '
+' | sed -n '^[A-Z_][A-Z0-9_]*=/p')" || {
     warn "TimePicker not found in picked XML. Trying one ui_refresh + re-parse..."
     if [[ "${UI_DT_DEBUG:-0}" != "0" ]]; then
       local _ui="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml"
       local _live="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/live_dump.xml"
       local _lat="$(_ui_latest_xml)"
-      log "debug: UI_XML=${UI_XML:-<unset>}"
-      log "debug: ui.xml=${_ui} exists=$( [[ -f "$_ui" ]] && echo 1 || echo 0 ) has_picker=$( [[ -f "$_ui" ]] && grep -Fq 'de.hafas.android.cfl:id/picker_time' "$_ui" && echo 1 || echo 0 )"
-      log "debug: live_dump.xml=${_live} exists=$( [[ -f "$_live" ]] && echo 1 || echo 0 ) has_picker=$( [[ -f "$_live" ]] && grep -Fq 'de.hafas.android.cfl:id/picker_time' "$_live" && echo 1 || echo 0 )"
-      log "debug: latest_xml=${_lat:-<none>} exists=$( [[ -n "${_lat:-}" && -f "$_lat" ]] && echo 1 || echo 0 ) has_picker=$( [[ -n "${_lat:-}" && -f "$_lat" ]] && grep -Fq 'de.hafas.android.cfl:id/picker_time' "$_lat" && echo 1 || echo 0 )"
+      _dbg "debug: UI_XML=${UI_XML:-<unset>}"
+      _dbg "debug: ui.xml=${_ui} exists=$( [[ -f "$_ui" ]] && echo 1 || echo 0 ) has_picker=$( [[ -f "$_ui" ]] && grep -Fq 'de.hafas.android.cfl:id/picker_time' "$_ui" && echo 1 || echo 0 )"
+      _dbg "debug: live_dump.xml=${_live} exists=$( [[ -f "$_live" ]] && echo 1 || echo 0 ) has_picker=$( [[ -f "$_live" ]] && grep -Fq 'de.hafas.android.cfl:id/picker_time' "$_live" && echo 1 || echo 0 )"
+      _dbg "debug: latest_xml=${_lat:-<none>} exists=$( [[ -n "${_lat:-}" && -f "$_lat" ]] && echo 1 || echo 0 ) has_picker=$( [[ -n "${_lat:-}" && -f "$_lat" ]] && grep -Fq 'de.hafas.android.cfl:id/picker_time' "$_lat" && echo 1 || echo 0 )"
     fi
     ui_refresh || true
-    out="$(ui_datetime_time_parse_vars)" || { warn "TimePicker still not found after ui_refresh"; return 1; }
+    out="$(ui_datetime_time_parse_vars | tr -d '
+' | sed -n '^[A-Z_][A-Z0-9_]*=/p')" || { warn "TimePicker still not found after ui_refresh"; return 1; }
   }
 
   eval "$out"
@@ -391,9 +396,9 @@ ui_datetime_set_time_24h() {
   : "${AP_AM_X:=0}" "${AP_AM_Y:=0}" "${AP_PM_X:=0}" "${AP_PM_Y:=0}"
 
   if [[ "${UI_DT_DEBUG:-0}" != "0" ]]; then
-    log "time_parse: TP_MODE=$TP_MODE H_CUR=$H_CUR M_CUR=$M_CUR AP_CUR=$AP_CUR"
-    log "time_parse: H_DEC=($H_DEC_X,$H_DEC_Y) H_INC=($H_INC_X,$H_INC_Y) M_DEC=($M_DEC_X,$M_DEC_Y) M_INC=($M_INC_X,$M_INC_Y)"
-    log "time_parse: H_BOUNDS=$H_BOUNDS M_BOUNDS=$M_BOUNDS AP_AM=($AP_AM_X,$AP_AM_Y) AP_PM=($AP_PM_X,$AP_PM_Y)"
+    _dbg "time_parse: TP_MODE=$TP_MODE H_CUR=$H_CUR M_CUR=$M_CUR AP_CUR=$AP_CUR"
+    _dbg "time_parse: H_DEC=($H_DEC_X,$H_DEC_Y) H_INC=($H_INC_X,$H_INC_Y) M_DEC=($M_DEC_X,$M_DEC_Y) M_INC=($M_INC_X,$M_INC_Y)"
+    _dbg "time_parse: H_BOUNDS=$H_BOUNDS M_BOUNDS=$M_BOUNDS AP_AM=($AP_AM_X,$AP_AM_Y) AP_PM=($AP_PM_X,$AP_PM_Y)"
   fi
 
   local TAP_DELAY="${TAP_DELAY:-0.06}"
