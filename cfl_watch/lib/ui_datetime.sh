@@ -207,7 +207,7 @@ _ui_type_at() {
   (( step_sleep > 0 )) && sleep "$step_sleep"
 
   _ui_key 4 || true          # BACK: ferme l'IME + commit (chez toi)
-  _ui_wait_ime_hidden || true
+  # _ui_wait_ime_hidden || true
   
   (( step_sleep > 0 )) && sleep "$step_sleep"
 }
