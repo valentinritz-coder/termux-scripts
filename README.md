@@ -67,7 +67,7 @@ CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime.
 DATE_YMD="2026-02-15" \
 TIME_HM="19:40" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
-  --start "LUXEMBOURG" --target "ARLON" --via "BETTEMBOURG" --snap-mode 3
+  --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
 ```
 
 ### 3) Trois trajets aléatoires (N=3)
