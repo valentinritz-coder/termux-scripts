@@ -139,48 +139,20 @@ ui_snap "04_after_pick_start" "$SNAP_MODE"
 ui_wait_desc_any "destination field visible" "$WAIT_LONG" "destination" "arrivée" "Select destination"
 ui_snap "05_destination_visible" "$SNAP_MODE"
 
-
-
 # 7b) Règle la date
+# 7b) Règle date/heure
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
-  #ui_refresh
-  #ui_snap "08f_before_open_datetime" "$SNAP_MODE"
-
-  # Optionnel: si Now existe sur l'écran principal et sert à activer/remplir le champ
-  #if ui_tap_any "preset now (optional)" "resid::button_now" "text:Now" ; then
-  #  #ui_refresh
-  #fi
-
-  # Ouvre le dialog UNE fois
   ui_tap_any "date time field" "resid:$ID_DATETIME" || true
 
   if ui_datetime_wait_dialog "$WAIT_LONG"; then
-    #ui_datetime_lock_dialog_xml || true
-  
-    if [[ -n "$DATE_YMD_TRIM" ]]; then
-      ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
-    fi
-    if [[ -n "$TIME_HM_TRIM" ]]; then
-      #ui_datetime_set_time_24h "$TIME_HM_TRIM"
-      ui_datetime_set_time_by_typing "$TIME_HM_TRIM"
-    fi
+    [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
+    [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
     ui_datetime_ok
     ui_snap_here "08g_after_datetime_ok" "$SNAP_MODE"
   else
     warn "Datetime dialog not opened -> skipping datetime"
   fi
 fi
-
-
-
-
-
-
-
-
-
-
-
 
 # 5) DEST: tap champ
 ui_tap_any "destination field" \
