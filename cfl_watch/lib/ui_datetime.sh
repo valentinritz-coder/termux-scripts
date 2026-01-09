@@ -10,8 +10,12 @@ _ui_latest_xml() {
 
 
 ui_tp_read_vars() {
-  local xml="${UI_XML:-${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml}"
-  [[ -f "$xml" ]] || return 1
+  local xml="${UI_XML:-}"
+
+  # Fallback: dernier xml du SNAP_DIR si UI_XML pas dispo
+  [[ -n "${xml:-}" && -f "$xml" ]] || xml="$(_ui_latest_xml)"
+
+  [[ -n "${xml:-}" && -f "$xml" ]] || return 1
 
   python - <<'PY' "$xml"
 import sys, xml.etree.ElementTree as ET
@@ -69,6 +73,20 @@ for i,b in enumerate(bounds):
 PY
 }
 
+ui_tp_eval_vars() {
+  local out
+  out="$(ui_tp_read_vars)" || return 1
+
+  # Nettoie d'éventuels \r (Windows/adb)
+  out="$(printf "%s\n" "$out" | sed 's/\r$//')"
+
+  eval "$out"
+
+  # Défauts pour éviter set -u qui t’explose à la figure
+  : "${TP_MODE:=}" "${TP_HOUR:=0}" "${TP_MIN:=0}" "${TP_AMPM:=}" \
+    "${TP_BOUNDS_0:=}" "${TP_BOUNDS_1:=}" "${TP_BOUNDS_2:=}"
+}
+
 _ui_center_from_bounds() {
   # bounds like: [232,671][408,1166]  -> echo "320 918"
   python - <<'PY' "$1"
@@ -120,20 +138,19 @@ _ui_tp_calibrate_inc_dir() {
   [[ -n "$TP_INC_DIR" ]] && return 0
 
   ui_refresh
-  eval "$(ui_tp_read_vars)" || return 1
-
+  ui_tp_eval_vars || return 1
   local h0="$TP_HOUR"
   # try swipe up once
   _ui_tp_swipe 0 up || return 1
   ui_refresh
-  eval "$(ui_tp_read_vars)" || return 1
+  ui_tp_eval_vars || return 1
   local h1="$TP_HOUR"
 
   # If no change, try a bigger swipe (some devices are picky)
   if [[ "$h1" == "$h0" ]]; then
     _ui_tp_swipe 0 up || true
     ui_refresh
-    eval "$(ui_tp_read_vars)" || return 1
+    ui_tp_eval_vars || return 1
     h1="$TP_HOUR"
   fi
 
@@ -174,6 +191,9 @@ _ui_tp_set_numeric_wrap() {
   # $1=idx (0 hour, 1 min), $2=current, $3=target, $4=mod (12/24/60)
   local idx="$1" cur="$2" tgt="$3" mod="$4"
 
+  cur="${cur:-0}"
+  tgt="${tgt:-0}"
+  
   # normalize ints
   cur=$((10#$cur))
   tgt=$((10#$tgt))
@@ -197,7 +217,7 @@ _ui_tp_set_ampm() {
   [[ -z "$target" ]] && return 0
 
   ui_refresh
-  eval "$(ui_tp_read_vars)" || return 1
+  ui_tp_eval_vars || return 1
   [[ "$TP_MODE" == "12" ]] || return 0
 
   if [[ "$TP_AMPM" == "$target" ]]; then
@@ -207,12 +227,12 @@ _ui_tp_set_ampm() {
   # One swipe toggles, but direction can vary. Try inc then recheck, else dec.
   _ui_tp_step_inc 2 || true
   ui_refresh
-  eval "$(ui_tp_read_vars)" || return 1
+  ui_tp_eval_vars || return 1
   [[ "$TP_AMPM" == "$target" ]] && return 0
 
   _ui_tp_step_dec 2 || true
   ui_refresh
-  eval "$(ui_tp_read_vars)" || return 1
+  ui_tp_eval_vars || return 1
   [[ "$TP_AMPM" == "$target" ]]
 }
 
@@ -423,7 +443,7 @@ ui_datetime_set_time_24h() {
   ui_refresh
 
   # Read mode + bounds
-  eval "$(ui_tp_read_vars)" || { warn "TimePicker not found"; return 1; }
+  ui_tp_eval_vars || { warn "TimePicker not found"; return 1; }
 
   # Calibrate inc direction once
   _ui_tp_calibrate_inc_dir || true
