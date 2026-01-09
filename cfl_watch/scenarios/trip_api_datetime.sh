@@ -158,6 +158,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
     #ui_datetime_lock_dialog_xml || true
   
     if [[ -n "$DATE_YMD_TRIM" ]]; then
+      ui_datetime_set_time_24h "$TIME_HM_TRIM"
       ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
     fi
     if [[ -n "$TIME_HM_TRIM" ]]; then
