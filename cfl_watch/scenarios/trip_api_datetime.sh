@@ -58,15 +58,6 @@ TIME_HM="${TIME_HM:-}"
 DATE_YMD_TRIM="$(printf '%s' "$DATE_YMD" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 TIME_HM_TRIM="$(printf '%s' "$TIME_HM" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
-# IDs (suffix) used by ui_wait_search_button
-ID_START=":id/input_start"
-ID_TARGET=":id/input_target"
-ID_SETTING=":id/button_options"
-ID_VIA=":id/input_via"
-ID_DATETIME=":id/datetime_text"
-ID_BTN_SEARCH=":id/button_search"
-ID_BTN_SEARCH_DEFAULT=":id/button_search_default"
-
 # waits
 WAIT_POLL="${WAIT_POLL:-0.0}"
 WAIT_SHORT="${WAIT_SHORT:-20}"
@@ -112,7 +103,8 @@ fi
 
 maybe cfl_launch
 
-ui_snap_here "00_opening" "$SNAP_MODE"
+ui_wait_resid "wait toolbar visible" ":id/toolbar" "$WAIT_LONG"
+ui_snap "00_opening" "$SNAP_MODE"
 
 if ui_element_has_text "resid::id/toolbar" "Home"; then
   log "Toolbar affiche Home"
@@ -121,14 +113,18 @@ if ui_element_has_text "resid::id/toolbar" "Home"; then
     "desc:Show navigation drawer" \
   || true
 
-  ui_snap_here "02_after_tap_burger" "$SNAP_MODE"
+  ui_wait_resid "wait left_drawer visible" ":id/left_drawer" "$WAIT_LONG"
+  ui_snap "01_after_tap_burger" "$SNAP_MODE"
 
   ui_tap_any "trip planner menu" \
   "text:Trip Planner" \
   || true
-  ui_snap_here "02_after_tap_Trip Planner" "$SNAP_MODE"
+
+  ui_wait_resid "wait toolbar visible" ":id/toolbar" "$WAIT_LONG"
+  ui_snap "02_after_tap_trip_planner" "$SNAP_MODE"
+
 else
-      warn "Ca plante??"
+  warn "Toolbar n'affiche pas Home"
 fi
 
 if ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
@@ -145,59 +141,57 @@ if ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
       warn "Datetime dialog not opened -> skipping datetime"
     fi
   fi
-
-fi
-
-# 4) DEST: attendre champ destination (souvent sans id)
-ui_wait_desc_any "start field visible" "$WAIT_LONG" "destination" "arrivée" "Select destination" "Select start"
-ui_snap "05_start_visible" "$SNAP_MODE"
-
-ui_refresh
-# 5) DEST: tap champ
-ui_tap_any "destination field" \
+  
+  # 4) DEST: attendre champ destination (souvent sans id)
+  ui_wait_desc_any "start field visible" "$WAIT_LONG" "destination" "arrivée" "Select destination" "Select start"
+  ui_snap "05_start_visible" "$SNAP_MODE"
+  
+  ui_refresh
+  # 5) DEST: tap champ
+  ui_tap_any "destination field" \
   "desc:destination" \
   "desc:arrivée" \
   "desc:Select destination" \
   "resid:$ID_TARGET" \
-|| true
-ui_refresh
-ui_snap "06_after_tap_destination" "$SNAP_MODE"
-
-# 2) START: taper + suggestions
-ui_type_and_wait_results "start" "$START_TEXT"
-ui_snap "03_after_type_start" "$SNAP_MODE"
-
-# 3) START: choisir suggestion
-ui_pick_suggestion "start suggestion" "$START_TEXT"
-ui_refresh
-ui_snap "04_after_pick_start" "$SNAP_MODE"
-
-# 4) DEST: attendre champ destination (souvent sans id)
-ui_wait_desc_any "destination field visible" "$WAIT_LONG" "destination" "arrivée" "Select destination"
-ui_snap "05_destination_visible" "$SNAP_MODE"
-
-ui_refresh
-# 5) DEST: tap champ
-ui_tap_any "destination field" \
+  || true
+  ui_refresh
+  ui_snap "06_after_tap_destination" "$SNAP_MODE"
+  
+  # 2) START: taper + suggestions
+  ui_type_and_wait_results "start" "$START_TEXT"
+  ui_snap "03_after_type_start" "$SNAP_MODE"
+  
+  # 3) START: choisir suggestion
+  ui_pick_suggestion "start suggestion" "$START_TEXT"
+  ui_refresh
+  ui_snap "04_after_pick_start" "$SNAP_MODE"
+  
+  # 4) DEST: attendre champ destination (souvent sans id)
+  ui_wait_desc_any "destination field visible" "$WAIT_LONG" "destination" "arrivée" "Select destination"
+  ui_snap "05_destination_visible" "$SNAP_MODE"
+  
+  ui_refresh
+  # 5) DEST: tap champ
+  ui_tap_any "destination field" \
   "desc:destination" \
   "desc:arrivée" \
   "desc:Select destination" \
   "resid:$ID_TARGET" \
-|| true
-ui_refresh
-ui_snap "06_after_tap_destination" "$SNAP_MODE"
-
-# 6) DEST: taper + suggestions
-ui_type_and_wait_results "destination" "$TARGET_TEXT"
-ui_snap "07_after_type_destination" "$SNAP_MODE"
-
-# 7) DEST: choisir suggestion
-ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"
-ui_refresh
-ui_snap "08_after_pick_destination" "$SNAP_MODE"
-
-# VIA (optional)
-if [[ -n "$VIA_TEXT_TRIM" ]]; then
+  || true
+  ui_refresh
+  ui_snap "06_after_tap_destination" "$SNAP_MODE"
+  
+  # 6) DEST: taper + suggestions
+  ui_type_and_wait_results "destination" "$TARGET_TEXT"
+  ui_snap "07_after_type_destination" "$SNAP_MODE"
+  
+  # 7) DEST: choisir suggestion
+  ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"
+  ui_refresh
+  ui_snap "08_after_pick_destination" "$SNAP_MODE"
+  
+  # VIA (optional)
+  if [[ -n "$VIA_TEXT_TRIM" ]]; then
   # attendre bouton options
   if ui_wait_resid "options button visible" "$ID_SETTING" "$WAIT_LONG"; then
     # tap options
@@ -206,7 +200,7 @@ if [[ -n "$VIA_TEXT_TRIM" ]]; then
       "resid:$ID_SETTING" \
     || true
     ui_snap_here "08a_after_open_options" "$SNAP_MODE"
-
+  
     # attendre champ via
     if ui_wait_resid "via field visible" "$ID_VIA" "$WAIT_LONG"; then
       # tap champ via
@@ -215,16 +209,16 @@ if [[ -n "$VIA_TEXT_TRIM" ]]; then
         "resid:$ID_VIA" \
       || true
       ui_snap_here "08b_after_tap_via" "$SNAP_MODE"
-
+  
       # taper + suggestions
       ui_type_and_wait_results "via" "$VIA_TEXT_TRIM"
       ui_snap "08c_after_type_via" "$SNAP_MODE"
-
+  
       # choisir suggestion
       ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM"
       ui_refresh
       ui_snap "08d_after_pick_via" "$SNAP_MODE"
-
+  
       # revenir (navigate up)
       ui_tap_any "tap back button" \
         "desc:Navigate up" \
@@ -236,31 +230,33 @@ if [[ -n "$VIA_TEXT_TRIM" ]]; then
   else
     warn "VIA enabled but options button not found -> skipping VIA"
   fi
-fi
-
-# 8) SEARCH: attendre bouton
-ui_wait_search_button "$WAIT_LONG"
-ui_snap "09_search_ready" "$SNAP_MODE"
-
-# 9) SEARCH: tap bouton (ou ENTER)
-if ! ui_tap_any "search button" \
+  fi
+  
+  # 8) SEARCH: attendre bouton
+  ui_wait_search_button "$WAIT_LONG"
+  ui_snap "09_search_ready" "$SNAP_MODE"
+  
+  # 9) SEARCH: tap bouton (ou ENTER)
+  if ! ui_tap_any "search button" \
   "resid:$ID_BTN_SEARCH_DEFAULT" \
   "resid:$ID_BTN_SEARCH" \
   "text:Rechercher" \
   "text:Itinéraires"
-then
+  then
   warn "Search button not found -> ENTER fallback"
   maybe key 66 || true
-fi
-
-# Force xml+png after search for debugging even if SNAP_MODE=2
-ui_snap_here "10_after_search" 3
-
-# Heuristique de succès (optionnel)
-latest_xml="$(ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true)"
-if [[ -n "${latest_xml:-}" ]] && grep -qiE 'Results|Résultats|Itinéraire|Itinéraires|Trajet' "$latest_xml"; then
+  fi
+  
+  # Force xml+png after search for debugging even if SNAP_MODE=2
+  ui_snap_here "10_after_search" 3
+  
+  # Heuristique de succès (optionnel)
+  latest_xml="$(ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true)"
+  if [[ -n "${latest_xml:-}" ]] && grep -qiE 'Results|Résultats|Itinéraire|Itinéraires|Trajet' "$latest_xml"; then
   log "Scenario success (keyword detected)"
   exit 0
+  fi
+
 fi
 
 warn "Scenario ended without strong marker (not necessarily a failure)"
