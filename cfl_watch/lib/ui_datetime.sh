@@ -141,6 +141,45 @@ _adb_text_escape() {
   printf '%s' "$s"
 }
 
+_ui_wait_ime_hidden() {
+  # Attend que le clavier (IME) disparaisse vraiment.
+  # On s'appuie sur `dumpsys input_method` qui expose souvent mInputShown/mImeWindowVis.
+  #
+  # Variables:
+  #   UI_IME_TIMEOUT_MS (default 1200)
+  #   UI_IME_POLL_MS    (default 80)
+  local timeout_ms="${UI_IME_TIMEOUT_MS:-1200}"
+  local poll_ms="${UI_IME_POLL_MS:-80}"
+
+  local waited=0
+  while (( waited < timeout_ms )); do
+    # dumpsys peut être lent, mais ici on le fait max ~15 fois.
+    local s
+    s="$(_maybe adb shell dumpsys input_method 2>/dev/null | tr -d '\r')"
+
+    # Cas "faciles"
+    if echo "$s" | grep -Eq 'mInputShown=false|mIsInputShown=false|InputShown=false'; then
+      return 0
+    fi
+    if echo "$s" | grep -Eq 'mImeWindowVis=0x0\b|mImeWindowVis=0\b'; then
+      return 0
+    fi
+
+    # Si on voit explicitement "true", c'est encore affiché
+    if echo "$s" | grep -Eq 'mInputShown=true|mIsInputShown=true|InputShown=true'; then
+      :
+    fi
+
+    sleep "$(awk "BEGIN{print $poll_ms/1000}")"
+    waited=$(( waited + poll_ms ))
+  done
+
+  # Fallback: si dumpsys ne donne rien d'exploitable sur ton build,
+  # on ne fail pas, mais on ralentit un poil pour éviter le click trop tôt.
+  sleep "${UI_IME_FALLBACK_SLEEP:-0.15}"
+  return 0
+}
+
 _ui_type_at() {
   # Tap sur un champ (coords du center de l'EditText), tape du texte,
   # puis COMMIT via KEYCODE_BACK (4).
@@ -166,6 +205,10 @@ _ui_type_at() {
 
   # COMMIT / close IME (chez toi: c'est LE truc qui marche)
   _ui_key 4 || true
+
+  # IMPORTANT: attendre que l'IME soit réellement caché, sinon le prochain tap part "dans le vide".
+  _ui_wait_ime_hidden || true
+  
   (( step_sleep > 0 )) && sleep "$step_sleep"
 }
 
