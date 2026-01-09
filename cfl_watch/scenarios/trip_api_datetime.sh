@@ -202,9 +202,12 @@ fi
 
 # 7b) Règle la date
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
- ui_refresh
- ui_snap "08f_before_open_datetime" "$SNAP_MODE"
-
+  ui_refresh
+  ui_snap "08f_before_open_datetime" "$SNAP_MODE"
+  ui_tap_any "date time field" \
+    "resid::button_now" \
+    || true
+    
   ui_tap_any "date time field" \
     "resid:$ID_DATETIME" \
     || true
