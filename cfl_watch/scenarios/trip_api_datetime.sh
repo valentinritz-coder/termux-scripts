@@ -154,6 +154,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   fi
 fi
 
+ui_refresh
 # 5) DEST: tap champ
 ui_tap_any "destination field" \
   "desc:destination" \
