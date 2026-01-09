@@ -141,75 +141,93 @@ _adb_text_escape() {
   printf '%s' "$s"
 }
 
-_ui_wait_ime_hidden() {
-  # Attend que le clavier disparaisse.
-  # Fallback garanti: on dort au moins UI_IME_MIN_SLEEP (sinon ton tap suivant peut partir trop tôt).
+_ui_ime_dump() {
+  # dumpsys peut échouer / être vide -> jamais de crash
+  _maybe adb shell dumpsys input_method 2>/dev/null | tr -d '\r' || true
+}
 
-  local timeout_ms="${UI_IME_TIMEOUT_MS:-900}"
+_ui_ime_is_shown() {
+  local s="$(_ui_ime_dump)"
+  grep -Eq 'm(InputShown|IsInputShown)=true|InputShown=true' <<<"$s"
+}
+
+_ui_ime_is_hidden() {
+  local s="$(_ui_ime_dump)"
+  grep -Eq 'm(InputShown|IsInputShown)=false|InputShown=false|mImeWindowVis=0x0\b|mImeWindowVis=0\b' <<<"$s"
+}
+
+_ui_wait_ime_shown() {
+  # Attend que le clavier apparaisse (ou soit déjà là)
+  local timeout_ms="${UI_IME_SHOW_TIMEOUT_MS:-2000}"   # <-- ton "2 secondes" par défaut
   local poll_ms="${UI_IME_POLL_MS:-80}"
-  local min_sleep="${UI_IME_MIN_SLEEP:-0.50}"         # <-- fallback minimal garanti
-  local post_sleep="${UI_POST_IME_SLEEP:-0.50}"       # <-- petit rab pour les reflows UI
+  local min_sleep="${UI_IME_SHOW_MIN_SLEEP:-0.10}"     # laisse finir l'animation
 
-  # Convert poll_ms -> "S.MMM" sans awk
-  local sec ms poll_s
-  sec=$(( poll_ms / 1000 ))
-  ms=$(( poll_ms % 1000 ))
-  poll_s="${sec}.$(printf "%03d" "$ms")"
+  local sec=$((poll_ms/1000)) ms=$((poll_ms%1000))
+  local poll_s="${sec}.$(printf "%03d" "$ms")"
 
-  local waited=0 s="" hidden=0
-
+  local waited=0
   while (( waited < timeout_ms )); do
-    s="$(_maybe adb shell dumpsys input_method 2>/dev/null | tr -d '\r' || true)"
-
-    if [[ -n "$s" ]]; then
-      if grep -Eq 'm(InputShown|IsInputShown)=false|InputShown=false' <<<"$s"; then
-        hidden=1
-        break
-      fi
-      if grep -Eq 'mImeWindowVis=0x0\b|mImeWindowVis=0\b' <<<"$s"; then
-        hidden=1
-        break
-      fi
+    if _ui_ime_is_shown; then
+      sleep "$min_sleep"
+      return 0
     fi
-
     sleep "$poll_s"
     waited=$(( waited + poll_ms ))
   done
 
-  # Fallback garanti: même si on a "hidden=1", on laisse le temps à l'animation de se finir.
-  sleep "$min_sleep"
-  sleep "$post_sleep"
+  # Fallback: même si on n'a pas détecté, on laisse un mini délai
+  sleep "${UI_IME_SHOW_FALLBACK_SLEEP:-0.15}"
+  return 0
+}
 
+_ui_wait_ime_hidden() {
+  # Attend que le clavier disparaisse
+  local timeout_ms="${UI_IME_HIDE_TIMEOUT_MS:-2000}"
+  local poll_ms="${UI_IME_POLL_MS:-80}"
+  local min_sleep="${UI_IME_HIDE_MIN_SLEEP:-0.10}"
+
+  local sec=$((poll_ms/1000)) ms=$((poll_ms%1000))
+  local poll_s="${sec}.$(printf "%03d" "$ms")"
+
+  local waited=0
+  while (( waited < timeout_ms )); do
+    if _ui_ime_is_hidden; then
+      sleep "$min_sleep"
+      return 0
+    fi
+    sleep "$poll_s"
+    waited=$(( waited + poll_ms ))
+  done
+
+  sleep "${UI_IME_HIDE_FALLBACK_SLEEP:-0.15}"
   return 0
 }
 
 _ui_type_at() {
-  # Tap sur un champ (coords du center de l'EditText), tape du texte,
-  # puis COMMIT via KEYCODE_BACK (4).
-  #
-  # Pourquoi BACK (4) ?
-  # - Sur ton device + CFL, BACK juste après input text ferme le clavier ET valide la valeur.
-  # - Le commentaire "NUMPAD_ENTER" était faux: 4 = BACK.
-  #
-  # Attention:
-  # - Si le clavier n'est pas ouvert, BACK peut fermer le dialog.
-  # - Donc on ne l'envoie qu'immédiatement après la saisie, et on vérifie que le dialog est toujours présent.
-
+  # Cycle sûr:
+  # 1) tap -> attendre IME visible
+  # 2) input text -> micro pause commit
+  # 3) BACK -> attendre IME caché
   local x="$1" y="$2" txt="$3"
   [[ "$x" != "0" && "$y" != "0" ]] || return 1
 
-  local step_sleep="${UI_STEP_SLEEP:-0}"
+  local step="${UI_STEP_SLEEP:-0}"
 
   _ui_tap_xy "$x" "$y"
-  (( step_sleep > 0 )) && sleep "$step_sleep"
+  (( step > 0 )) && sleep "$step"
 
+  # 1) attendre que le clavier soit là (ton point clé)
+  _ui_wait_ime_shown || true
+
+  # 2) taper
   _maybe adb shell input text "$(_adb_text_escape "$txt")"
-  (( step_sleep > 0 )) && sleep "$step_sleep"
+  sleep "${UI_AFTER_TEXT_SLEEP:-0.08}"   # laisse l'IME "committer"
 
-  _ui_key 4 || true          # BACK: ferme l'IME + commit (chez toi)
-  # _ui_wait_ime_hidden || true
-  
-  (( step_sleep > 0 )) && sleep "$step_sleep"
+  # 3) BACK (chez toi: valide + ferme clavier)
+  _ui_key 4 || true
+
+  # 4) attendre que le clavier soit vraiment parti avant de re-cliquer ailleurs
+  _ui_wait_ime_hidden || true
 }
 
 # -----------------------------------------------------------------------------
