@@ -119,9 +119,10 @@ _ui_type_at() {
   #(( step_sleep > 0 )) && sleep "$step_sleep"
 
   _maybe adb shell input text "$txt"
+  
   (( step_sleep > 0 )) && sleep "$step_sleep"
 
-  adb shell input keyevent 160  # KEYCODE_NUMPAD_ENTER
+  adb shell input keyevent 111  # KEYCODE_NUMPAD_ENTER
 
   # IMPORTANT:
   # - PAS de KEYCODE_BACK (4) -> ça ferme le dialog
