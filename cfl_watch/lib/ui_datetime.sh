@@ -159,9 +159,11 @@ _ui_wait_ime_hidden() {
 
     # Cas "faciles"
     if echo "$s" | grep -Eq 'mInputShown=false|mIsInputShown=false|InputShown=false'; then
+      sleep "${UI_POST_IME_SLEEP:-0.15}"
       return 0
     fi
     if echo "$s" | grep -Eq 'mImeWindowVis=0x0\b|mImeWindowVis=0\b'; then
+      sleep "${UI_POST_IME_SLEEP:-0.15}"
       return 0
     fi
 
