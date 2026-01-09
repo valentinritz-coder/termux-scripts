@@ -430,7 +430,7 @@ if [[ "$TP_MODE" == "12" ]]; then
   }
 
   # Re-dump + re-parse pour recalculer les coords après ouverture clavier
-  _ui_timepicker_reparse || warn "Reparse failed after hour focus (keyboard/layout shift?)"
+  #_ui_timepicker_reparse || warn "Reparse failed after hour focus (keyboard/layout shift?)"
 
   # 2) minutes
   _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || {
