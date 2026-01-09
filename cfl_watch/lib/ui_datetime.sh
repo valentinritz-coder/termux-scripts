@@ -636,6 +636,97 @@ ui_datetime_preset() {
   ui_refresh
 }
 
+
+ui_datetime_time_parse_vars() {
+  local xml="${UI_XML:-${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml}"
+  [[ -f "$xml" ]] || return 1
+
+  python - <<'PY' "$xml"
+import sys, re
+import xml.etree.ElementTree as ET
+
+xml_path = sys.argv[1]
+root = ET.parse(xml_path).getroot()
+
+def parse_bounds(b):
+  m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", b or "")
+  if not m: return None
+  x1,y1,x2,y2 = map(int, m.groups())
+  return x1,y1,x2,y2
+
+def center(b):
+  x1,y1,x2,y2 = b
+  return (x1+x2)//2, (y1+y2)//2
+
+def find_node(pred):
+  for n in root.iter("node"):
+    if pred(n): return n
+  return None
+
+tp = find_node(lambda n: n.get("resource-id","")=="de.hafas.android.cfl:id/picker_time"
+                        and n.get("class","")=="android.widget.TimePicker")
+if tp is None:
+  sys.exit(2)
+
+nps = [c for c in list(tp) if c.tag=="node" and c.get("class","")=="android.widget.NumberPicker"]
+if len(nps) < 2:
+  sys.exit(3)
+
+def np_value(np):
+  for c in np.iter("node"):
+    if c.get("class","")=="android.widget.EditText" and c.get("resource-id","")=="android:id/numberpicker_input":
+      return (c.get("text","") or "").strip(), c
+  return "", None
+
+def np_btn_xy(np, idx):
+  kids = [c for c in list(np) if c.tag=="node"]
+  if len(kids) <= idx: return None
+  b = parse_bounds(kids[idx].get("bounds",""))
+  return center(b) if b else None
+
+# Hour NP (0): idx0=decrement (prev), idx2=increment (next)
+h_cur, _ = np_value(nps[0])
+h_dec = np_btn_xy(nps[0], 0)
+h_inc = np_btn_xy(nps[0], 2)
+
+# Minute NP (1)
+m_cur, _ = np_value(nps[1])
+m_dec = np_btn_xy(nps[1], 0)
+m_inc = np_btn_xy(nps[1], 2)
+
+# AM/PM NP (2) optional
+tp_mode = "24"
+ap_cur = ""
+ap_am = ap_pm = None
+if len(nps) >= 3:
+  ap_cur, _ = np_value(nps[2])
+  ap_cur = (ap_cur or "").strip().upper()
+  # find tap centers for AM and PM by text
+  for c in nps[2].iter("node"):
+    t = ((c.get("text","") or "")).strip().upper()
+    b = parse_bounds(c.get("bounds",""))
+    if not b: continue
+    if t == "AM": ap_am = center(b)
+    if t == "PM": ap_pm = center(b)
+  if ap_cur in ("AM","PM") or ap_am or ap_pm:
+    tp_mode = "12"
+
+print(f"TP_MODE={tp_mode}")
+print(f"H_CUR={h_cur or 0}")
+print(f"M_CUR={m_cur or 0}")
+print(f"AP_CUR='{ap_cur}'")
+
+if h_dec: print(f"H_DEC_X={h_dec[0]}\nH_DEC_Y={h_dec[1]}")
+if h_inc: print(f"H_INC_X={h_inc[0]}\nH_INC_Y={h_inc[1]}")
+if m_dec: print(f"M_DEC_X={m_dec[0]}\nM_DEC_Y={m_dec[1]}")
+if m_inc: print(f"M_INC_X={m_inc[0]}\nM_INC_Y={m_inc[1]}")
+
+if ap_am: print(f"AP_AM_X={ap_am[0]}\nAP_AM_Y={ap_am[1]}")
+if ap_pm: print(f"AP_PM_X={ap_pm[0]}\nAP_PM_Y={ap_pm[1]}")
+PY
+}
+
+
 ui_datetime_set_time_24h() {
   local hm="$1"          # HH:MM
   local th="${hm%:*}" tm="${hm#*:}"
@@ -728,7 +819,7 @@ ui_datetime_set_date_ymd() {
   local ymd="$1"  # YYYY-MM-DD
 
   # Assure-toi d'avoir un dump frais
-  ui_refresh
+  #ui_refresh
 
   # Base = date affichée dans l'UI (fallback: date système)
   local base
@@ -758,7 +849,7 @@ PY
     done
   fi
 
-  ui_refresh
+  #ui_refresh
 }
 
 ui_datetime_read_base_ymd() {
