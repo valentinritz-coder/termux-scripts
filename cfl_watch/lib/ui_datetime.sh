@@ -468,7 +468,7 @@ if [[ "$TP_MODE" == "12" ]]; then
   }
 
   # 3) enforce AM/PM again (sans clavier)
-  _ui_ampm_set "$target_ampm" "$TAP_DELAY" || true
+  _ui_ampm_set "$target_ampm" || true
 
 else
   # 1) heure
