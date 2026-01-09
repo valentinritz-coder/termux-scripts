@@ -211,6 +211,63 @@ PY
 }
 
 # ------------------------------ TIME ----------------------------------------
+# Tap + type helper (safe-ish)
+_ui_type_at() {
+  local x="$1" y="$2" txt="$3"
+  adb shell input tap "$x" "$y"
+
+  # Effacer large (le spinner peut avoir 1-2 chars)
+  adb shell input keyevent 67
+  adb shell input keyevent 67
+  adb shell input keyevent 67
+  adb shell input keyevent 67
+
+  # Tape (digits safe)
+  adb shell input text "$txt"
+
+  # Valide (souvent suffit à “commit”)
+  adb shell input keyevent 66
+}
+
+# Variante ultra simple: set HH:MM en tap+type
+# Requiert que tu aies déjà H_INP_X/Y et M_INP_X/Y (parse XML)
+ui_datetime_set_time_by_typing() {
+  local hm="$1"          # "HH:MM"
+  local th="${hm%:*}" tm="${hm#*:}"
+  th=$((10#$th)); tm=$((10#$tm))
+
+  # Tu lis le mode avec ton parse actuel (12/24) pour convertir
+  # TP_MODE=12 ou 24 ; coords H_INP_X/Y M_INP_X/Y etc.
+  # (à toi de les fournir via ton parser)
+  : "${TP_MODE:=24}"
+
+  if [[ "$TP_MODE" == "12" ]]; then
+    local ap="AM"
+    (( th >= 12 )) && ap="PM"
+    local h12=$(( th % 12 )); (( h12 == 0 )) && h12=12
+
+    _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$h12")"
+    _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")"
+
+    # AM/PM: mieux de TAP un bouton que de taper dans l’EditText
+    if [[ "$ap" == "AM" && "${AP_AM_X:-0}" -ne 0 ]]; then
+      adb shell input tap "$AP_AM_X" "$AP_AM_Y"
+    elif [[ "$ap" == "PM" && "${AP_PM_X:-0}" -ne 0 ]]; then
+      adb shell input tap "$AP_PM_X" "$AP_PM_Y"
+    else
+      # fallback swipe dans bounds AP_BOUNDS si tu l'as
+      # adb shell input swipe ... (ton helper swipe bounds)
+      :
+    fi
+
+  else
+    _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th")"
+    _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")"
+  fi
+
+  # Option: fermer le clavier si ça gêne
+  adb shell input keyevent 4 || true
+}
 
 # Returns ONE line like:
 #   TP_MODE=12;H_CUR=11;M_CUR=55;AP_CUR=AM;H_DEC_X=...;...;H_BOUNDS=[...];M_BOUNDS=[...]
