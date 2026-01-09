@@ -8,7 +8,6 @@ _ui_latest_xml() {
   ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true
 }
 
-
 ui_tp_read_vars() {
   local xml="${UI_XML:-}"
 
@@ -536,6 +535,94 @@ ui_datetime_wait_dialog() {
   ui_wait_resid "OK button visible" "android:id/button1" "$t"
 }
 
+ui_datetime_time_parse_vars() {
+  local xml="${UI_XML:-${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}/ui.xml}"
+  [[ -f "$xml" ]] || return 1
+
+  python - <<'PY' "$xml"
+import sys, re
+import xml.etree.ElementTree as ET
+
+xml_path = sys.argv[1]
+root = ET.parse(xml_path).getroot()
+
+def parse_bounds(b):
+  m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", b or "")
+  if not m: return None
+  x1,y1,x2,y2 = map(int, m.groups())
+  return x1,y1,x2,y2
+
+def center(b):
+  x1,y1,x2,y2 = b
+  return (x1+x2)//2, (y1+y2)//2
+
+def find_node(pred):
+  for n in root.iter("node"):
+    if pred(n): return n
+  return None
+
+tp = find_node(lambda n: n.get("resource-id","")=="de.hafas.android.cfl:id/picker_time"
+                        and n.get("class","")=="android.widget.TimePicker")
+if tp is None:
+  sys.exit(2)
+
+nps = [c for c in list(tp) if c.tag=="node" and c.get("class","")=="android.widget.NumberPicker"]
+if len(nps) < 2:
+  sys.exit(3)
+
+def np_value(np):
+  for c in np.iter("node"):
+    if c.get("class","")=="android.widget.EditText" and c.get("resource-id","")=="android:id/numberpicker_input":
+      return (c.get("text","") or "").strip(), c
+  return "", None
+
+def np_btn_xy(np, idx):
+  kids = [c for c in list(np) if c.tag=="node"]
+  if len(kids) <= idx: return None
+  b = parse_bounds(kids[idx].get("bounds",""))
+  return center(b) if b else None
+
+# Hour NP (0): idx0=decrement (prev), idx2=increment (next)
+h_cur, _ = np_value(nps[0])
+h_dec = np_btn_xy(nps[0], 0)
+h_inc = np_btn_xy(nps[0], 2)
+
+# Minute NP (1)
+m_cur, _ = np_value(nps[1])
+m_dec = np_btn_xy(nps[1], 0)
+m_inc = np_btn_xy(nps[1], 2)
+
+# AM/PM NP (2) optional
+tp_mode = "24"
+ap_cur = ""
+ap_am = ap_pm = None
+if len(nps) >= 3:
+  ap_cur, _ = np_value(nps[2])
+  ap_cur = (ap_cur or "").strip().upper()
+  # find tap centers for AM and PM by text
+  for c in nps[2].iter("node"):
+    t = ((c.get("text","") or "")).strip().upper()
+    b = parse_bounds(c.get("bounds",""))
+    if not b: continue
+    if t == "AM": ap_am = center(b)
+    if t == "PM": ap_pm = center(b)
+  if ap_cur in ("AM","PM") or ap_am or ap_pm:
+    tp_mode = "12"
+
+print(f"TP_MODE={tp_mode}")
+print(f"H_CUR={h_cur or 0}")
+print(f"M_CUR={m_cur or 0}")
+print(f"AP_CUR='{ap_cur}'")
+
+if h_dec: print(f"H_DEC_X={h_dec[0]}\nH_DEC_Y={h_dec[1]}")
+if h_inc: print(f"H_INC_X={h_inc[0]}\nH_INC_Y={h_inc[1]}")
+if m_dec: print(f"M_DEC_X={m_dec[0]}\nM_DEC_Y={m_dec[1]}")
+if m_inc: print(f"M_INC_X={m_inc[0]}\nM_INC_Y={m_inc[1]}")
+
+if ap_am: print(f"AP_AM_X={ap_am[0]}\nAP_AM_Y={ap_am[1]}")
+if ap_pm: print(f"AP_PM_X={ap_pm[0]}\nAP_PM_Y={ap_pm[1]}")
+PY
+}
 
 # Preset buttons: now|15m|1h
 ui_datetime_preset() {
@@ -555,80 +642,87 @@ ui_datetime_set_time_24h() {
   th=$((10#$th)); tm=$((10#$tm))
 
   local out
-  out="$(ui_tp_parse_once)" || { warn "TimePicker not found (parse_once)"; return 1; }
+  out="$(ui_datetime_time_parse_vars)" || { warn "TimePicker not found"; return 1; }
   eval "$out"
 
-  # Défauts anti set -u
-  : "${TP_MODE:=24}" "${H_CUR:=0}" "${M_CUR:=0}"
+  # defaults anti set -u
+  : "${TP_MODE:=24}" "${H_CUR:=0}" "${M_CUR:=0}" "${AP_CUR:=}"
   : "${H_INC_X:=0}" "${H_INC_Y:=0}" "${H_DEC_X:=0}" "${H_DEC_Y:=0}"
   : "${M_INC_X:=0}" "${M_INC_Y:=0}" "${M_DEC_X:=0}" "${M_DEC_Y:=0}"
-  : "${AP_CUR:=}" "${AP_AM_X:=0}" "${AP_AM_Y:=0}" "${AP_PM_X:=0}" "${AP_PM_Y:=0}"
+  : "${AP_AM_X:=0}" "${AP_AM_Y:=0}" "${AP_PM_X:=0}" "${AP_PM_Y:=0}"
 
-  # helpers tap
-  _tap() { _ui_tap_xy "$1" "$2"; }
+  # sanity: coords must exist
+  [[ "$H_INC_X" -ne 0 && "$H_DEC_X" -ne 0 && "$M_INC_X" -ne 0 && "$M_DEC_X" -ne 0 ]] \
+    || { warn "TimePicker controls missing (coords=0)"; return 1; }
 
-  # --- AM/PM + conversion 12h si nécessaire
+  local i
+
   if [[ "$TP_MODE" == "12" ]]; then
+    # 24h -> (h12, ampm)
     local target_ampm="AM"
     (( th >= 12 )) && target_ampm="PM"
     local th12=$(( th % 12 )); (( th12 == 0 )) && th12=12
 
-    # Set AM/PM (tap direct sur le texte AM/PM si possible)
-    if [[ "$target_ampm" == "AM" && "$AP_AM_X" -ne 0 ]]; then _tap "$AP_AM_X" "$AP_AM_Y"; fi
-    if [[ "$target_ampm" == "PM" && "$AP_PM_X" -ne 0 ]]; then _tap "$AP_PM_X" "$AP_PM_Y"; fi
+    # Hours wrap 12
+    local curH=$((10#$H_CUR))
+    local tgtH=$((10#$th12))
+    local cur0=$((curH % 12))
+    local tgt0=$((tgtH % 12))
+    local fwd=$(((tgt0 - cur0 + 12) % 12))
+    local bwd=$(((cur0 - tgt0 + 12) % 12))
 
-    # Hours wrap 12 (valeurs 1..12)
-    local cur=$((10#$H_CUR))
-    local tgt=$((10#$th12))
-    local cur0=$((cur % 12))
-    local tgt0=$((tgt % 12))
-    local up=$(((tgt0 - cur0 + 12) % 12))
-    local down=$(((cur0 - tgt0 + 12) % 12))
-
-    if (( up <= down )); then
-      for ((i=0;i<up;i++)); do _tap "$H_INC_X" "$H_INC_Y"; done
+    if (( fwd <= bwd )); then
+      for ((i=0;i<fwd;i++)); do _ui_tap_xy "$H_INC_X" "$H_INC_Y"; done
     else
-      for ((i=0;i<down;i++)); do _tap "$H_DEC_X" "$H_DEC_Y"; done
+      for ((i=0;i<bwd;i++)); do _ui_tap_xy "$H_DEC_X" "$H_DEC_Y"; done
     fi
 
-    # Minutes wrap 60 (0..59)
-    cur=$((10#$M_CUR)); tgt=$((10#$tm))
-    up=$(((tgt - cur + 60) % 60))
-    down=$(((cur - tgt + 60) % 60))
+    # Minutes wrap 60
+    local curM=$((10#$M_CUR))
+    local tgtM=$tm
+    fwd=$(((tgtM - curM + 60) % 60))
+    bwd=$(((curM - tgtM + 60) % 60))
 
-    if (( up <= down )); then
-      for ((i=0;i<up;i++)); do _tap "$M_INC_X" "$M_INC_Y"; done
+    if (( fwd <= bwd )); then
+      for ((i=0;i<fwd;i++)); do _ui_tap_xy "$M_INC_X" "$M_INC_Y"; done
     else
-      for ((i=0;i<down;i++)); do _tap "$M_DEC_X" "$M_DEC_Y"; done
+      for ((i=0;i<bwd;i++)); do _ui_tap_xy "$M_DEC_X" "$M_DEC_Y"; done
     fi
 
-    # Re-force AM/PM (au cas où l’UI ferait sa diva)
-    if [[ "$target_ampm" == "AM" && "$AP_AM_X" -ne 0 ]]; then _tap "$AP_AM_X" "$AP_AM_Y"; fi
-    if [[ "$target_ampm" == "PM" && "$AP_PM_X" -ne 0 ]]; then _tap "$AP_PM_X" "$AP_PM_Y"; fi
+    # AM/PM enforce (tap direct)
+    local ap="${AP_CUR//\'/}"
+    ap="${ap^^}"
+    if [[ -n "$target_ampm" && "$ap" != "$target_ampm" ]]; then
+      if [[ "$target_ampm" == "AM" && "$AP_AM_X" -ne 0 ]]; then _ui_tap_xy "$AP_AM_X" "$AP_AM_Y"; fi
+      if [[ "$target_ampm" == "PM" && "$AP_PM_X" -ne 0 ]]; then _ui_tap_xy "$AP_PM_X" "$AP_PM_Y"; fi
+    fi
 
   else
-    # Mode 24h: heures wrap 24, minutes wrap 60
-    local cur=$((10#$H_CUR)) tgt=$((10#$th))
-    local up=$(((tgt - cur + 24) % 24))
-    local down=$(((cur - tgt + 24) % 24))
+    # 24h mode
+    local curH=$((10#$H_CUR))
+    local tgtH=$th
+    local fwd=$(((tgtH - curH + 24) % 24))
+    local bwd=$(((curH - tgtH + 24) % 24))
 
-    if (( up <= down )); then
-      for ((i=0;i<up;i++)); do _tap "$H_INC_X" "$H_INC_Y"; done
+    if (( fwd <= bwd )); then
+      for ((i=0;i<fwd;i++)); do _ui_tap_xy "$H_INC_X" "$H_INC_Y"; done
     else
-      for ((i=0;i<down;i++)); do _tap "$H_DEC_X" "$H_DEC_Y"; done
+      for ((i=0;i<bwd;i++)); do _ui_tap_xy "$H_DEC_X" "$H_DEC_Y"; done
     fi
 
-    cur=$((10#$M_CUR)); tgt=$((10#$tm))
-    up=$(((tgt - cur + 60) % 60))
-    down=$(((cur - tgt + 60) % 60))
+    local curM=$((10#$M_CUR))
+    local tgtM=$tm
+    fwd=$(((tgtM - curM + 60) % 60))
+    bwd=$(((curM - tgtM + 60) % 60))
 
-    if (( up <= down )); then
-      for ((i=0;i<up;i++)); do _tap "$M_INC_X" "$M_INC_Y"; done
+    if (( fwd <= bwd )); then
+      for ((i=0;i<fwd;i++)); do _ui_tap_xy "$M_INC_X" "$M_INC_Y"; done
     else
-      for ((i=0;i<down;i++)); do _tap "$M_DEC_X" "$M_DEC_Y"; done
+      for ((i=0;i<bwd;i++)); do _ui_tap_xy "$M_DEC_X" "$M_DEC_Y"; done
     fi
   fi
 }
+
 
 ui_datetime_set_date_ymd() {
   local ymd="$1"  # YYYY-MM-DD
