@@ -112,6 +112,8 @@ fi
 
 maybe cfl_launch
 
+ui_snap_here "00_opening" "$SNAP_MODE"
+
 if ui_element_has_text "resid::id/toolbar" "Home"; then
   log "Toolbar affiche Home"
 
