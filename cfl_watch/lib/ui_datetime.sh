@@ -121,6 +121,8 @@ _ui_type_at() {
   _maybe adb shell input text "$txt"
   (( step_sleep > 0 )) && sleep "$step_sleep"
 
+  adb shell input keyevent 160  # KEYCODE_NUMPAD_ENTER
+
   # IMPORTANT:
   # - PAS de KEYCODE_BACK (4) -> ça ferme le dialog
   # - PAS de KEYCODE_ENTER (66) -> pas nécessaire, on commit en tapant le champ suivant
@@ -149,6 +151,15 @@ ui_datetime_preset() {
 }
 
 # ------------------------------ DATE ----------------------------------------
+
+# Cache le clavier SANS KEYCODE_BACK (qui peut fermer le dialog)
+_ui_hide_ime() {
+  local step_sleep="${UI_STEP_SLEEP:-0}"
+  _maybe adb shell input keyevent 111 || true   # ESC
+  (( step_sleep > 0 )) && sleep "$step_sleep" || sleep 0.15
+  _maybe adb shell input keyevent 111 || true   # parfois 2x parce que… Android
+  (( step_sleep > 0 )) && sleep "$step_sleep" || sleep 0.15
+}
 
 ui_datetime_read_base_ymd() {
   # IMPORTANT: on lit le texte visible dans le pager (dd.mm.yyyy),
