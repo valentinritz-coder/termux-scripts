@@ -298,3 +298,50 @@ ui_element_has_text() {
   sed -n "$block,$((block+40))p" "$UI_DUMP_CACHE" | grep -Eq "text=\"[^\"]*${esc_txt}[^\"]*\""
 }
 
+ui_wait_element_has_text() {
+  # Attend qu’un élément (resid ou desc) ait un ENFANT
+  # dont le text contient la valeur donnée.
+  #
+  # Usage:
+  #   ui_wait_element_has_text "label" "resid::id/toolbar" "Home" 10
+  #   ui_wait_element_has_text "label" "desc:Show navigation drawer" "drawer" 5
+  #
+  local label="$1"
+  local sel="$2"
+  local text="$3"
+  local timeout="${4:-$WAIT_LONG}"
+
+  local esc_txt esc_sel re
+
+  esc_txt="$(regex_escape_ere "$text")"
+
+  case "$sel" in
+    resid:*)
+      esc_sel="$(resid_regex "${sel#resid:}")"
+      ;;
+    desc:*)
+      esc_sel="content-desc=\"[^\"]*$(regex_escape_ere "${sel#desc:}")"
+      ;;
+    *)
+      warn "ui_wait_element_has_text: sélecteur invalide ($sel)"
+      return 2
+      ;;
+  esac
+
+  # Regex multi-lignes:
+  # - match le node parent
+  # - puis dans une fenêtre raisonnable, un text="..."
+  #
+  # On ne peut PAS faire un regex XML parfait, mais ça suffit
+  re="${esc_sel}(.|\n){0,800}?text=\"[^\"]*${esc_txt}[^\"]*\""
+
+  if UI_DUMP_CACHE="$(wait_dump_grep "$re" "$timeout" "$WAIT_POLL")"; then
+    log "wait ok: $label"
+    return 0
+  fi
+
+  UI_DUMP_CACHE="$(dump_ui)"
+  warn "wait timeout: $label"
+  return 1
+}
+
