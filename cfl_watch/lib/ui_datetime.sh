@@ -200,7 +200,7 @@ PY
 ui_datetime_time_parse_vars() {
   local xml
   xml="$(_ui_pick_xml)" || return 1
-  log "xml='$xml'"
+
   python - <<'PY' "$xml"
 import sys, re
 import xml.etree.ElementTree as ET
@@ -211,8 +211,7 @@ root = ET.parse(xml_path).getroot()
 def parse_bounds(b):
   m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", b or "")
   if not m: return None
-  x1,y1,x2,y2 = map(int, m.groups())
-  return x1,y1,x2,y2
+  return tuple(map(int, m.groups()))  # x1,y1,x2,y2
 
 def center(b):
   x1,y1,x2,y2 = b
@@ -228,48 +227,94 @@ tp = find_node(lambda n: n.get("resource-id","")=="de.hafas.android.cfl:id/picke
 if tp is None:
   sys.exit(2)
 
+# Collect NumberPickers (direct children is typical, but be tolerant)
 nps = [c for c in list(tp) if c.tag=="node" and c.get("class","")=="android.widget.NumberPicker"]
+if not nps:
+  # fallback: any descendants (rare)
+  nps = [c for c in tp.iter("node") if c.get("class","")=="android.widget.NumberPicker"]
+
 if len(nps) < 2:
   sys.exit(3)
 
-def np_value(np):
+def np_input_text(np):
   for c in np.iter("node"):
     if c.get("class","")=="android.widget.EditText" and c.get("resource-id","")=="android:id/numberpicker_input":
       return (c.get("text","") or "").strip()
   return ""
 
-def child_xy(np, idx):
+def np_buttons(np):
+  # Return list of (center_xy, text, bounds) for Button children (direct)
+  out = []
   kids = [c for c in list(np) if c.tag=="node"]
-  if len(kids) <= idx: return None
-  b = parse_bounds(kids[idx].get("bounds",""))
-  return center(b) if b else None
+  for c in kids:
+    if c.get("class","") != "android.widget.Button":
+      continue
+    b = parse_bounds(c.get("bounds",""))
+    if not b:
+      continue
+    out.append((center(b), (c.get("text","") or "").strip(), b))
+  return out
 
-def np_bounds(np):
+def np_bounds_str(np):
   b = parse_bounds(np.get("bounds",""))
   return np.get("bounds","") if b else ""
 
-# Hour
-h_cur = np_value(nps[0]) or "0"
-h_dec = child_xy(nps[0], 0)   # previous
-h_inc = child_xy(nps[0], 2)   # next
-h_bounds = np_bounds(nps[0])
+# Sort pickers left->right by x1 bound (more stable than XML order)
+def np_x1(np):
+  b = parse_bounds(np.get("bounds",""))
+  return b[0] if b else 1_000_000
 
-# Minute
-m_cur = np_value(nps[1]) or "0"
-m_dec = child_xy(nps[1], 0)
-m_inc = child_xy(nps[1], 2)
-m_bounds = np_bounds(nps[1])
+nps_sorted = sorted(nps, key=np_x1)
 
-# AM/PM (optional)
+# Identify AM/PM picker by its input text
+ap_np = None
+numeric = []
+for np in nps_sorted:
+  t = np_input_text(np).upper()
+  if t in ("AM","PM"):
+    ap_np = np
+  else:
+    numeric.append(np)
+
+# Choose hour/minute from numeric pickers (left->right)
+if len(numeric) < 2:
+  # If AM/PM was misdetected or missing, just take first two left->right
+  numeric = [np for np in nps_sorted if np is not ap_np][:2]
+hour_np, min_np = numeric[0], numeric[1]
+
+# Parse current values
+h_cur = np_input_text(hour_np) or "0"
+m_cur = np_input_text(min_np) or "0"
+
+# Parse inc/dec coords using button Y position:
+# Top button = previous (decrement), bottom button = next (increment)
+def inc_dec_xy(np):
+  btns = np_buttons(np)
+  if len(btns) >= 2:
+    btns_sorted = sorted(btns, key=lambda it: it[0][1])  # by center_y
+    dec_xy = btns_sorted[0][0]
+    inc_xy = btns_sorted[-1][0]
+    return dec_xy, inc_xy
+  elif len(btns) == 1:
+    # Some weird layouts: only one button. Use it as "inc" and leave dec None.
+    return None, btns[0][0]
+  return None, None
+
+h_dec, h_inc = inc_dec_xy(hour_np)
+m_dec, m_inc = inc_dec_xy(min_np)
+
+# AM/PM tap coords
 tp_mode = "24"
 ap_cur = ""
 ap_am = ap_pm = None
-if len(nps) >= 3:
-  ap_cur = (np_value(nps[2]) or "").strip().upper()
-  for c in nps[2].iter("node"):
+if ap_np is not None:
+  ap_cur = (np_input_text(ap_np) or "").strip().upper()
+  # Find any nodes with text AM / PM (button or input) inside that picker
+  for c in ap_np.iter("node"):
     t = ((c.get("text","") or "")).strip().upper()
     b = parse_bounds(c.get("bounds",""))
-    if not b: continue
+    if not b:
+      continue
     if t == "AM": ap_am = center(b)
     if t == "PM": ap_pm = center(b)
   if ap_cur in ("AM","PM") or ap_am or ap_pm:
@@ -279,8 +324,8 @@ print(f"TP_MODE={tp_mode}")
 print(f"H_CUR={h_cur}")
 print(f"M_CUR={m_cur}")
 print(f"AP_CUR='{ap_cur}'")
-print(f"H_BOUNDS='{h_bounds}'")
-print(f"M_BOUNDS='{m_bounds}'")
+print(f"H_BOUNDS='{np_bounds_str(hour_np)}'")
+print(f"M_BOUNDS='{np_bounds_str(min_np)}'")
 
 if h_dec: print(f"H_DEC_X={h_dec[0]}\nH_DEC_Y={h_dec[1]}")
 if h_inc: print(f"H_INC_X={h_inc[0]}\nH_INC_Y={h_inc[1]}")
@@ -292,24 +337,12 @@ if ap_pm: print(f"AP_PM_X={ap_pm[0]}\nAP_PM_Y={ap_pm[1]}")
 PY
 }
 
-ui_datetime_set_time_24h() {
+
+ui_datetime_set_time_24h()ui_datetime_set_time_24h() {
   local hm="$1"          # HH:MM
   local th="${hm%:*}" tm="${hm#*:}"
+  th=$((10#$th)); tm=$((10#$tm))
 
-  log "hm='$hm'"
-  log "th_raw='$th' tm_raw='$tm'"
-
-  # sanity: évite crash si hm vide ou format foireux
-  if [[ ! "$hm" =~ ^[0-9]{1,2}:[0-9]{2}$ ]]; then
-    warn "Bad time format: '$hm' (expected HH:MM)"
-    return 1
-  fi
-
-  th=$((10#$th))
-  tm=$((10#$tm))
-
-  log "th=$th tm=$tm"
-  
   local out
   out="$(ui_datetime_time_parse_vars)" || { warn "TimePicker not found"; return 1; }
   eval "$out"
@@ -321,7 +354,14 @@ ui_datetime_set_time_24h() {
   : "${H_BOUNDS:=}" "${M_BOUNDS:=}"
   : "${AP_AM_X:=0}" "${AP_AM_Y:=0}" "${AP_PM_X:=0}" "${AP_PM_Y:=0}"
 
-  local TAP_DELAY="${TAP_DELAY:-0.02}"
+  if [[ "${UI_DT_DEBUG:-0}" != "0" ]]; then
+    log "time_parse: TP_MODE=$TP_MODE H_CUR=$H_CUR M_CUR=$M_CUR AP_CUR=$AP_CUR"
+    log "time_parse: H_DEC=($H_DEC_X,$H_DEC_Y) H_INC=($H_INC_X,$H_INC_Y) M_DEC=($M_DEC_X,$M_DEC_Y) M_INC=($M_INC_X,$M_INC_Y)"
+    log "time_parse: H_BOUNDS=$H_BOUNDS M_BOUNDS=$M_BOUNDS AP_AM=($AP_AM_X,$AP_AM_Y) AP_PM=($AP_PM_X,$AP_PM_Y)"
+  fi
+
+
+  local TAP_DELAY="${TAP_DELAY:-0.06}"
 
   _inc_hour() {
     if [[ "$H_INC_X" -ne 0 ]]; then _ui_tap_xy "$H_INC_X" "$H_INC_Y"
