@@ -306,10 +306,14 @@ m_dec, m_inc = inc_dec_xy(min_np)
 tp_mode = "24"
 ap_cur = ""
 ap_am = ap_pm = None
+ap_bounds = ""
 if ap_np is not None:
   ap_cur = (np_input_text(ap_np) or "").strip().upper()
-  # find tap coords for AM/PM labels or inputs
+  ap_bounds = np_bounds_str(ap_np)
+  # IMPORTANT: only accept tap targets from android.widget.Button (avoid EditText -> keyboard)
   for c in ap_np.iter("node"):
+    if c.get("class","") != "android.widget.Button":
+      continue
     t = ((c.get("text","") or "")).strip().upper()
     b = parse_bounds(c.get("bounds",""))
     if not b: continue
@@ -333,6 +337,7 @@ add("AP_CUR", ap_cur)
 
 add("H_BOUNDS", np_bounds_str(hour_np))
 add("M_BOUNDS", np_bounds_str(min_np))
+add("AP_BOUNDS", ap_bounds)
 
 if h_dec: add("H_DEC_X", h_dec[0]); add("H_DEC_Y", h_dec[1])
 if h_inc: add("H_INC_X", h_inc[0]); add("H_INC_Y", h_inc[1])
@@ -397,13 +402,13 @@ ui_datetime_set_time_24h() {
   M_INC_X="${M_INC_X:-0}"; M_INC_Y="${M_INC_Y:-0}"
   AP_AM_X="${AP_AM_X:-0}"; AP_AM_Y="${AP_AM_Y:-0}"
   AP_PM_X="${AP_PM_X:-0}"; AP_PM_Y="${AP_PM_Y:-0}"
-  H_BOUNDS="${H_BOUNDS:-}"; M_BOUNDS="${M_BOUNDS:-}"
+  H_BOUNDS="${H_BOUNDS:-}"; M_BOUNDS="${M_BOUNDS:-}"; AP_BOUNDS="${AP_BOUNDS:-}"
 
   _ui_apply_kv_line "$line"
 
   _dbg "time_parse: TP_MODE=$TP_MODE H_CUR=$H_CUR M_CUR=$M_CUR AP_CUR=$AP_CUR"
   _dbg "time_parse: H_DEC=($H_DEC_X,$H_DEC_Y) H_INC=($H_INC_X,$H_INC_Y) M_DEC=($M_DEC_X,$M_DEC_Y) M_INC=($M_INC_X,$M_INC_Y)"
-  _dbg "time_parse: H_BOUNDS=$H_BOUNDS M_BOUNDS=$M_BOUNDS AP_AM=($AP_AM_X,$AP_AM_Y) AP_PM=($AP_PM_X,$AP_PM_Y)"
+  _dbg "time_parse: H_BOUNDS=$H_BOUNDS M_BOUNDS=$M_BOUNDS AP_BOUNDS=$AP_BOUNDS AP_AM=($AP_AM_X,$AP_AM_Y) AP_PM=($AP_PM_X,$AP_PM_Y)"
 
   local TAP_DELAY="${TAP_DELAY:-0.06}"
 
@@ -442,19 +447,36 @@ ui_datetime_set_time_24h() {
 
   local i
 
+  _set_ampm() {
+    local target="$1"  # AM or PM
+    [[ "$TP_MODE" == "12" ]] || return 0
+    if [[ "$target" == "AM" && "${AP_AM_X:-0}" != "0" ]]; then
+      _ui_tap_xy "$AP_AM_X" "$AP_AM_Y"
+      sleep "$TAP_DELAY"
+      return 0
+    fi
+    if [[ "$target" == "PM" && "${AP_PM_X:-0}" != "0" ]]; then
+      _ui_tap_xy "$AP_PM_X" "$AP_PM_Y"
+      sleep "$TAP_DELAY"
+      return 0
+    fi
+    # Fallback: swipe inside AM/PM picker bounds (does not focus EditText)
+    if [[ -n "${AP_BOUNDS:-}" ]]; then
+      # One swipe usually toggles; do 2 max just in case
+      _maybe adb shell input swipe $(_ui_swipe_bounds "$AP_BOUNDS" inc 180) || true
+      sleep "$TAP_DELAY"
+      return 0
+    fi
+    return 0
+  }
+
   if [[ "$TP_MODE" == "12" ]]; then
     local target_ampm="AM"
     (( th >= 12 )) && target_ampm="PM"
     local th12=$(( th % 12 )); (( th12 == 0 )) && th12=12
 
-    # enforce AM/PM first if we can
-    if [[ "$target_ampm" == "AM" && "$AP_AM_X" != "0" ]]; then
-      _ui_tap_xy "$AP_AM_X" "$AP_AM_Y"
-      sleep "$TAP_DELAY"
-    elif [[ "$target_ampm" == "PM" && "$AP_PM_X" != "0" ]]; then
-      _ui_tap_xy "$AP_PM_X" "$AP_PM_Y"
-      sleep "$TAP_DELAY"
-    fi
+    # enforce AM/PM first (safe)
+    _set_ampm "$target_ampm"
 
     # Hour wrap 12 (ring where 12->0)
     local curH=$((10#${H_CUR:-0}))
@@ -483,11 +505,7 @@ ui_datetime_set_time_24h() {
     fi
 
     # enforce AM/PM again
-    if [[ "$target_ampm" == "AM" && "$AP_AM_X" != "0" ]]; then
-      _ui_tap_xy "$AP_AM_X" "$AP_AM_Y"
-    elif [[ "$target_ampm" == "PM" && "$AP_PM_X" != "0" ]]; then
-      _ui_tap_xy "$AP_PM_X" "$AP_PM_Y"
-    fi
+    _set_ampm "$target_ampm"
 
   else
     # 24h mode
