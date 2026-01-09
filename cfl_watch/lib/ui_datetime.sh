@@ -142,34 +142,33 @@ _adb_text_escape() {
 }
 
 _ui_wait_ime_hidden() {
-  # Attend que le clavier (IME) disparaisse vraiment après un BACK.
-  # Robuste pour `set -euo pipefail`:
-  # - pas de pipeline (pipefail)
-  # - adb/dumpsys peut échouer -> on neutralise avec "|| true"
-  # - la fonction retourne TOUJOURS 0 (sinon -e te flingue le flow)
+  # Attend que le clavier disparaisse.
+  # Fallback garanti: on dort au moins UI_IME_MIN_SLEEP (sinon ton tap suivant peut partir trop tôt).
 
-  local timeout_ms="${UI_IME_TIMEOUT_MS:-1200}"
+  local timeout_ms="${UI_IME_TIMEOUT_MS:-900}"
   local poll_ms="${UI_IME_POLL_MS:-80}"
+  local min_sleep="${UI_IME_MIN_SLEEP:-0.10}"         # <-- fallback minimal garanti
+  local post_sleep="${UI_POST_IME_SLEEP:-0.05}"       # <-- petit rab pour les reflows UI
 
-  # Convert poll_ms -> "S.MMM" sans awk (awk en substitution peut aussi te casser).
+  # Convert poll_ms -> "S.MMM" sans awk
   local sec ms poll_s
   sec=$(( poll_ms / 1000 ))
   ms=$(( poll_ms % 1000 ))
   poll_s="${sec}.$(printf "%03d" "$ms")"
 
-  local waited=0 s=""
+  local waited=0 s="" hidden=0
+
   while (( waited < timeout_ms )); do
-    # dumpsys peut renvoyer exit!=0 ou rien -> on s'en fout, on ne crashe pas
     s="$(_maybe adb shell dumpsys input_method 2>/dev/null | tr -d '\r' || true)"
 
-    # Si on a un signal "clavier caché", on sort.
-    # Ici on utilise "here-string" (<<<) pour éviter les pipes.
     if [[ -n "$s" ]]; then
       if grep -Eq 'm(InputShown|IsInputShown)=false|InputShown=false' <<<"$s"; then
-        return 0
+        hidden=1
+        break
       fi
       if grep -Eq 'mImeWindowVis=0x0\b|mImeWindowVis=0\b' <<<"$s"; then
-        return 0
+        hidden=1
+        break
       fi
     fi
 
@@ -177,8 +176,10 @@ _ui_wait_ime_hidden() {
     waited=$(( waited + poll_ms ))
   done
 
-  # Fallback "animation finie" (même si on n'a rien pu détecter)
-  sleep "${UI_IME_FALLBACK_SLEEP:-0.15}"
+  # Fallback garanti: même si on a "hidden=1", on laisse le temps à l'animation de se finir.
+  sleep "$min_sleep"
+  sleep "$post_sleep"
+
   return 0
 }
 
