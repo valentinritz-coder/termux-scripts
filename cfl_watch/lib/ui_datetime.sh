@@ -104,21 +104,17 @@ _ui_clear_field() {
 }
 
 _ui_type_at() {
-  # $1 x, $2 y, $3 text
   local x="$1" y="$2" txt="$3"
-
   [[ "$x" != "0" && "$y" != "0" ]] || return 1
 
   _ui_tap_xy "$x" "$y"
-  # move end then clear
-  _ui_key 123 || true
-  _ui_clear_field
-  # type
+  _ui_key 123 || true         # move end
+  _ui_clear_field             # DEL x 8
   _maybe adb shell input text "$txt"
-  # commit
-  _ui_key 66 || true
-  # hide keyboard (best effort)
-  _ui_key 4 || true
+
+  # IMPORTANT:
+  # - PAS de KEYCODE_BACK (4) -> ça ferme le dialog
+  # - PAS de KEYCODE_ENTER (66) -> pas nécessaire, on commit en tapant le champ suivant
 }
 
 # --------------------------- dialog presence --------------------------------
@@ -372,33 +368,37 @@ ui_datetime_set_time_24h() {
   _dbg "time_kv=$line"
   _dbg "time_parse: TP_MODE=$TP_MODE H_INP=($H_INP_X,$H_INP_Y) M_INP=($M_INP_X,$M_INP_Y) AP_INP=($AP_INP_X,$AP_INP_Y)"
 
-  if [[ "$TP_MODE" == "12" ]]; then
-    local target_ampm="AM"
-    (( th >= 12 )) && target_ampm="PM"
-    local th12=$(( th % 12 )); (( th12 == 0 )) && th12=12
+if [[ "$TP_MODE" == "12" ]]; then
+  local target_ampm="AM"
+  (( th >= 12 )) && target_ampm="PM"
+  local th12=$(( th % 12 )); (( th12 == 0 )) && th12=12
 
-    # 1) set hour
-    _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th12")" || {
-      warn "Hour typing failed (missing coords?)"
-      return 1
-    }
+  # 1) heure
+  _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th12")" || {
+    warn "Hour typing failed (missing coords?)"
+    return 1
+  }
+  # commit heure -> focus minutes
+  _ui_tap_xy "$M_INP_X" "$M_INP_Y"
 
-    # 2) set minute (2 digits)
-    _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || {
-      warn "Minute typing failed (missing coords?)"
-      return 1
-    }
+  # 2) minutes
+  _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || {
+    warn "Minute typing failed (missing coords?)"
+    return 1
+  }
 
-    # 3) set AM/PM by typing into the active AM/PM field
-    if [[ "$AP_INP_X" != "0" && "$AP_INP_Y" != "0" ]]; then
-      _ui_type_at "$AP_INP_X" "$AP_INP_Y" "$target_ampm" || true
-    else
-      warn "AM/PM input coords missing; cannot type AM/PM"
-    fi
-
-  else
-    # 24h mode
-    _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th")" || return 1
-    _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || return 1
+  # 3) enforce AM/PM again (sans clavier)
+  if [[ "$target_ampm" == "AM" && "${AP_AM_X:-0}" != "0" ]]; then
+    _ui_tap_xy "$AP_AM_X" "$AP_AM_Y"
+  elif [[ "$target_ampm" == "PM" && "${AP_PM_X:-0}" != "0" ]]; then
+    _ui_tap_xy "$AP_PM_X" "$AP_PM_Y"
   fi
+
+else
+  # 24h mode
+  _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th")" || return 1
+  _ui_tap_xy "$M_INP_X" "$M_INP_Y"
+  _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || return 1
+fi
+
 }
