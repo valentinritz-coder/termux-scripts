@@ -345,3 +345,33 @@ ui_wait_element_has_text() {
   return 1
 }
 
+ui_has_element() {
+  # Vérifie si un élément existe DANS LE CACHE ACTUEL
+  #
+  # Usage:
+  #   ui_has_element "resid:$ID_DATETIME"
+  #   ui_has_element "desc:Show navigation drawer"
+  #   ui_has_element "text:Trip Planner"
+  #
+  [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
+
+  local sel="$1"
+
+  case "$sel" in
+    resid:*)
+      grep -Eq "$(resid_regex "${sel#resid:}")" "$UI_DUMP_CACHE"
+      ;;
+    desc:*)
+      grep -Fq "content-desc=\"${sel#desc:}\"" "$UI_DUMP_CACHE"
+      ;;
+    text:*)
+      grep -Fq "text=\"${sel#text:}\"" "$UI_DUMP_CACHE"
+      ;;
+    *)
+      warn "ui_has_element: sélecteur inconnu ($sel)"
+      return 2
+      ;;
+  esac
+}
+
+
