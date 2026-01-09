@@ -1,19 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-# ui_datetime.sh (CFL WATCH) - cleaned + robust
+# ui_datetime.sh (CFL WATCH)
 #
-# Key changes (because humans love pain):
-# - NO eval of multi-line output anymore (was getting mangled).
-# - Time parser returns ONE semicolon-separated KV line, then we parse it safely.
-# - Date base reads the VISIBLE pager text (dd.mm.yyyy), not the content-desc (often mm.dd.yyyy).
+# Objectif:
+# - Régler date + heure dans le dialog CFL, de façon "humain": TAP sur le champ + SAISIE.
+# - Mode 12h (AM/PM) géré: on clique sur le champ AM/PM actif et on tape AM ou PM.
 #
-# Depends on your repo libs:
-#   ui_wait_resid, ui_tap_any, ui_refresh (only used as fallback), adb
-# Optional:
-#   log, warn, maybe
+# Dépendances (déjà dans ton repo):
+#   - ui_wait_resid
+#   - ui_tap_any
+#   - ui_refresh (utilisé uniquement en fallback)
+#   - adb (dans le PATH)
+#
+# Variables utiles:
+#   UI_DT_DEBUG=1     -> logs debug (stderr)
+#   CFL_TMP_DIR       -> ex: $HOME/.cache/cfl_watch
+#   UI_XML            -> si tu veux forcer un fichier xml
+#   SNAP_DIR          -> fallback vers dernier snapshot
+#
+# Notes:
+# - On évite de spam ui_dump à l’intérieur des setters.
+# - La validation/commit des NumberPickers via saisie varie selon Android. Ici on fait:
+#   tap -> effacer -> input text -> ENTER -> BACK (pour fermer le clavier si besoin)
 
-# ------------------------- tiny fallbacks (safe) -----------------------------
+# ------------------------- fallbacks safe -----------------------------------
 
 if ! declare -F log >/dev/null 2>&1; then
   log() { printf '[*] %s\n' "$*" >&2; }
@@ -68,7 +79,6 @@ _ui_pick_xml_need() {
     done
   fi
 
-  # fallback: first existing
   for f in "${candidates[@]}"; do
     echo "$f"; return 0
   done
@@ -83,27 +93,32 @@ _ui_tap_xy() {
   _maybe adb shell input tap "$x" "$y"
 }
 
-_ui_swipe_bounds() {
-  # bounds "[x1,y1][x2,y2]" + dir inc|dec -> prints "x1 y1 x2 y2 dur"
-  local bounds="$1" dir="$2"
-  local dur="${3:-180}"
+_ui_key() {
+  _maybe adb shell input keyevent "$1"
+}
 
-  python - <<'PY' "$bounds" "$dir" "$dur"
-import re, sys
-b, dir, dur = sys.argv[1], sys.argv[2], int(sys.argv[3])
-m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', (b or '').strip())
-if not m:
-  sys.exit(1)
-x1,y1,x2,y2 = map(int, m.groups())
-cx = (x1+x2)//2
-top = y1 + 30
-bot = y2 - 30
-# inc -> swipe up (bottom->top), dec -> swipe down (top->bottom)
-if dir == "inc":
-  print(f"{cx} {bot} {cx} {top} {dur}")
-else:
-  print(f"{cx} {top} {cx} {bot} {dur}")
-PY
+_ui_clear_field() {
+  # bruteforce: DEL x 8
+  local i
+  for ((i=0;i<8;i++)); do _ui_key 67; done
+}
+
+_ui_type_at() {
+  # $1 x, $2 y, $3 text
+  local x="$1" y="$2" txt="$3"
+
+  [[ "$x" != "0" && "$y" != "0" ]] || return 1
+
+  _ui_tap_xy "$x" "$y"
+  # move end then clear
+  _ui_key 123 || true
+  _ui_clear_field
+  # type
+  _maybe adb shell input text "$txt"
+  # commit
+  _ui_key 66 || true
+  # hide keyboard (best effort)
+  _ui_key 4 || true
 }
 
 # --------------------------- dialog presence --------------------------------
@@ -131,7 +146,8 @@ ui_datetime_preset() {
 # ------------------------------ DATE ----------------------------------------
 
 ui_datetime_read_base_ymd() {
-  # IMPORTANT: prefer pager visible text (dd.mm.yyyy), because content-desc is often mm.dd.yyyy in this dialog.
+  # IMPORTANT: on lit le texte visible dans le pager (dd.mm.yyyy),
+  # pas le content-desc (souvent mm.dd.yyyy dans ce dialog).
   local xml
   xml="$(_ui_pick_xml_need 'de.hafas.android.cfl:id/pager_date')" || return 1
 
@@ -150,7 +166,7 @@ def find_node(pred):
 pager = find_node(lambda n: n.get("resource-id","") == "de.hafas.android.cfl:id/pager_date")
 pat = re.compile(r"\b(\d{2})\.(\d{2})\.(\d{4})\b")
 
-# 1) pager subtree text first
+# pager subtree d'abord
 if pager is not None:
   for n in pager.iter("node"):
     t = (n.get("text","") or "")
@@ -160,7 +176,7 @@ if pager is not None:
       d = datetime.strptime(f"{dd}.{mm}.{yyyy}", "%d.%m.%Y").date()
       print(d.isoformat()); sys.exit(0)
 
-# 2) fallback: any dd.mm.yyyy in whole XML text attributes
+# fallback global (rare)
 for n in root.iter("node"):
   t = (n.get("text","") or "")
   m = pat.search(t)
@@ -179,7 +195,6 @@ ui_datetime_set_date_ymd() {
   local base
   base="$(ui_datetime_read_base_ymd || true)"
   [[ -n "$base" ]] || base="$(date +%Y-%m-%d)"
-
   _dbg "date_base=$base target=$ymd"
 
   local diff
@@ -211,66 +226,9 @@ PY
 }
 
 # ------------------------------ TIME ----------------------------------------
-# Tap + type helper (safe-ish)
-_ui_type_at() {
-  local x="$1" y="$2" txt="$3"
-  adb shell input tap "$x" "$y"
 
-  # Effacer large (le spinner peut avoir 1-2 chars)
-  adb shell input keyevent 67
-  adb shell input keyevent 67
-  adb shell input keyevent 67
-  adb shell input keyevent 67
-
-  # Tape (digits safe)
-  adb shell input text "$txt"
-
-  # Valide (souvent suffit à “commit”)
-  adb shell input keyevent 66
-}
-
-# Variante ultra simple: set HH:MM en tap+type
-# Requiert que tu aies déjà H_INP_X/Y et M_INP_X/Y (parse XML)
-ui_datetime_set_time_by_typing() {
-  local hm="$1"          # "HH:MM"
-  local th="${hm%:*}" tm="${hm#*:}"
-  th=$((10#$th)); tm=$((10#$tm))
-
-  # Tu lis le mode avec ton parse actuel (12/24) pour convertir
-  # TP_MODE=12 ou 24 ; coords H_INP_X/Y M_INP_X/Y etc.
-  # (à toi de les fournir via ton parser)
-  : "${TP_MODE:=24}"
-
-  if [[ "$TP_MODE" == "12" ]]; then
-    local ap="AM"
-    (( th >= 12 )) && ap="PM"
-    local h12=$(( th % 12 )); (( h12 == 0 )) && h12=12
-
-    _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$h12")"
-    _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")"
-
-    # AM/PM: mieux de TAP un bouton que de taper dans l’EditText
-    if [[ "$ap" == "AM" && "${AP_AM_X:-0}" -ne 0 ]]; then
-      adb shell input tap "$AP_AM_X" "$AP_AM_Y"
-    elif [[ "$ap" == "PM" && "${AP_PM_X:-0}" -ne 0 ]]; then
-      adb shell input tap "$AP_PM_X" "$AP_PM_Y"
-    else
-      # fallback swipe dans bounds AP_BOUNDS si tu l'as
-      # adb shell input swipe ... (ton helper swipe bounds)
-      :
-    fi
-
-  else
-    _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th")"
-    _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")"
-  fi
-
-  # Option: fermer le clavier si ça gêne
-  adb shell input keyevent 4 || true
-}
-
-# Returns ONE line like:
-#   TP_MODE=12;H_CUR=11;M_CUR=55;AP_CUR=AM;H_DEC_X=...;...;H_BOUNDS=[...];M_BOUNDS=[...]
+# Retourne UNE ligne KV:
+#   TP_MODE=12;H_CUR=11;M_CUR=55;AP_CUR=AM;H_INP_X=...;...;M_INP_X=...;AP_INP_X=...
 ui_datetime_time_parse_line() {
   local xml
   xml="$(_ui_pick_xml_need 'de.hafas.android.cfl:id/picker_time')" || return 1
@@ -280,18 +238,15 @@ ui_datetime_time_parse_line() {
 import sys, re
 import xml.etree.ElementTree as ET
 
-xml_path = sys.argv[1]
-root = ET.parse(xml_path).getroot()
+root = ET.parse(sys.argv[1]).getroot()
 
 def parse_bounds(b):
   m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", b or "")
   if not m: return None
   return tuple(map(int, m.groups()))
-
 def center(b):
   x1,y1,x2,y2 = b
   return (x1+x2)//2, (y1+y2)//2
-
 def find_node(pred):
   for n in root.iter("node"):
     if pred(n): return n
@@ -301,43 +256,35 @@ tp = find_node(lambda n: n.get("resource-id","")=="de.hafas.android.cfl:id/picke
 if tp is None:
   sys.exit(2)
 
-# NumberPickers (usually direct children)
 nps = [c for c in list(tp) if c.tag=="node" and c.get("class","")=="android.widget.NumberPicker"]
 if not nps:
   nps = [c for c in tp.iter("node") if c.get("class","")=="android.widget.NumberPicker"]
 if len(nps) < 2:
   sys.exit(3)
 
-def np_input_text(np):
-  for c in np.iter("node"):
-    if c.get("class","")=="android.widget.EditText" and c.get("resource-id","")=="android:id/numberpicker_input":
-      return (c.get("text","") or "").strip()
-  return ""
-
-def np_buttons(np):
-  out=[]
-  kids = [c for c in list(np) if c.tag=="node" and c.get("class","")=="android.widget.Button"]
-  for c in kids:
-    b = parse_bounds(c.get("bounds",""))
-    if not b: continue
-    out.append((center(b), (c.get("text","") or "").strip()))
-  return out
-
-def np_bounds_str(np):
-  b = parse_bounds(np.get("bounds",""))
-  return np.get("bounds","") if b else ""
-
 def np_x1(np):
   b = parse_bounds(np.get("bounds",""))
   return b[0] if b else 1_000_000
+def find_input(np):
+  for c in np.iter("node"):
+    if c.get("class","")=="android.widget.EditText" and c.get("resource-id","")=="android:id/numberpicker_input":
+      return c
+  return None
+def input_xy(np):
+  inp = find_input(np)
+  if inp is None:
+    return None, ""
+  b = parse_bounds(inp.get("bounds",""))
+  return (center(b) if b else None), (inp.get("text","") or "").strip()
 
 nps_sorted = sorted(nps, key=np_x1)
 
+# Detect AM/PM picker by its input text AM/PM
 ap_np = None
 numeric=[]
 for np in nps_sorted:
-  t = np_input_text(np).upper()
-  if t in ("AM","PM"):
+  xy, txt = input_xy(np)
+  if txt.strip().upper() in ("AM","PM"):
     ap_np = np
   else:
     numeric.append(np)
@@ -347,69 +294,36 @@ if len(numeric) < 2:
 
 hour_np, min_np = numeric[0], numeric[1]
 
-def inc_dec_xy(np):
-  btns = np_buttons(np)
-  if len(btns) >= 2:
-    # sort by y: top is decrement (previous), bottom is increment (next)
-    btns_sorted = sorted(btns, key=lambda it: it[0][1])
-    dec_xy = btns_sorted[0][0]
-    inc_xy = btns_sorted[-1][0]
-    return dec_xy, inc_xy
-  return None, None
-
-h_dec, h_inc = inc_dec_xy(hour_np)
-m_dec, m_inc = inc_dec_xy(min_np)
+h_xy, h_cur = input_xy(hour_np)
+m_xy, m_cur = input_xy(min_np)
 
 tp_mode = "24"
+ap_xy = None
 ap_cur = ""
-ap_am = ap_pm = None
-ap_bounds = ""
 if ap_np is not None:
-  ap_cur = (np_input_text(ap_np) or "").strip().upper()
-  ap_bounds = np_bounds_str(ap_np)
-  # IMPORTANT: only accept tap targets from android.widget.Button (avoid EditText -> keyboard)
-  for c in ap_np.iter("node"):
-    if c.get("class","") != "android.widget.Button":
-      continue
-    t = ((c.get("text","") or "")).strip().upper()
-    b = parse_bounds(c.get("bounds",""))
-    if not b: continue
-    if t == "AM": ap_am = center(b)
-    if t == "PM": ap_pm = center(b)
-  if ap_cur in ("AM","PM") or ap_am or ap_pm:
+  ap_xy, ap_cur = input_xy(ap_np)
+  if ap_cur.strip().upper() in ("AM","PM"):
     tp_mode = "12"
 
-h_cur = np_input_text(hour_np) or "0"
-m_cur = np_input_text(min_np) or "0"
-
-pairs = []
-def add(k, v):
+pairs=[]
+def add(k,v):
   if v is None: return
   pairs.append(f"{k}={v}")
 
 add("TP_MODE", tp_mode)
-add("H_CUR", h_cur)
-add("M_CUR", m_cur)
-add("AP_CUR", ap_cur)
+add("H_CUR", h_cur or "0")
+add("M_CUR", m_cur or "0")
+add("AP_CUR", ap_cur.strip().upper())
 
-add("H_BOUNDS", np_bounds_str(hour_np))
-add("M_BOUNDS", np_bounds_str(min_np))
-add("AP_BOUNDS", ap_bounds)
-
-if h_dec: add("H_DEC_X", h_dec[0]); add("H_DEC_Y", h_dec[1])
-if h_inc: add("H_INC_X", h_inc[0]); add("H_INC_Y", h_inc[1])
-if m_dec: add("M_DEC_X", m_dec[0]); add("M_DEC_Y", m_dec[1])
-if m_inc: add("M_INC_X", m_inc[0]); add("M_INC_Y", m_inc[1])
-
-if ap_am: add("AP_AM_X", ap_am[0]); add("AP_AM_Y", ap_am[1])
-if ap_pm: add("AP_PM_X", ap_pm[0]); add("AP_PM_Y", ap_pm[1])
+if h_xy: add("H_INP_X", h_xy[0]); add("H_INP_Y", h_xy[1])
+if m_xy: add("M_INP_X", m_xy[0]); add("M_INP_Y", m_xy[1])
+if ap_xy: add("AP_INP_X", ap_xy[0]); add("AP_INP_Y", ap_xy[1])
 
 print(";".join(pairs))
 PY
 }
 
 _ui_apply_kv_line() {
-  # apply "K=V;K=V;..." into shell vars (no eval).
   local line="${1:-}"
   [[ -n "$line" ]] || return 1
 
@@ -420,7 +334,6 @@ _ui_apply_kv_line() {
     [[ -n "$p" && "$p" == *"="* ]] || continue
     k="${p%%=*}"
     v="${p#*=}"
-    # very strict key validation
     [[ "$k" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
     printf -v "$k" '%s' "$v"
   done
@@ -443,149 +356,49 @@ ui_datetime_set_time_24h() {
     ui_refresh || true
     line="$(ui_datetime_time_parse_line 2>/dev/null || true)"
   fi
-
   [[ -n "$line" ]] || { warn "TimePicker still not parsable"; return 1; }
 
-  _dbg "time_kv=$line"
-
-  # Defaults
-  TP_MODE="${TP_MODE:-24}"
-  H_CUR="${H_CUR:-0}"
-  M_CUR="${M_CUR:-0}"
-  AP_CUR="${AP_CUR:-}"
-  H_DEC_X="${H_DEC_X:-0}"; H_DEC_Y="${H_DEC_Y:-0}"
-  H_INC_X="${H_INC_X:-0}"; H_INC_Y="${H_INC_Y:-0}"
-  M_DEC_X="${M_DEC_X:-0}"; M_DEC_Y="${M_DEC_Y:-0}"
-  M_INC_X="${M_INC_X:-0}"; M_INC_Y="${M_INC_Y:-0}"
-  AP_AM_X="${AP_AM_X:-0}"; AP_AM_Y="${AP_AM_Y:-0}"
-  AP_PM_X="${AP_PM_X:-0}"; AP_PM_Y="${AP_PM_Y:-0}"
-  H_BOUNDS="${H_BOUNDS:-}"; M_BOUNDS="${M_BOUNDS:-}"; AP_BOUNDS="${AP_BOUNDS:-}"
+  # defaults (anti -u)
+  TP_MODE="24"
+  H_CUR="0"
+  M_CUR="0"
+  AP_CUR=""
+  H_INP_X="0"; H_INP_Y="0"
+  M_INP_X="0"; M_INP_Y="0"
+  AP_INP_X="0"; AP_INP_Y="0"
 
   _ui_apply_kv_line "$line"
 
-  _dbg "time_parse: TP_MODE=$TP_MODE H_CUR=$H_CUR M_CUR=$M_CUR AP_CUR=$AP_CUR"
-  _dbg "time_parse: H_DEC=($H_DEC_X,$H_DEC_Y) H_INC=($H_INC_X,$H_INC_Y) M_DEC=($M_DEC_X,$M_DEC_Y) M_INC=($M_INC_X,$M_INC_Y)"
-  _dbg "time_parse: H_BOUNDS=$H_BOUNDS M_BOUNDS=$M_BOUNDS AP_BOUNDS=$AP_BOUNDS AP_AM=($AP_AM_X,$AP_AM_Y) AP_PM=($AP_PM_X,$AP_PM_Y)"
-
-  local TAP_DELAY="${TAP_DELAY:-0.06}"
-
-  _inc_hour() {
-    if [[ "$H_INC_X" != "0" ]]; then
-      _ui_tap_xy "$H_INC_X" "$H_INC_Y"
-    elif [[ -n "$H_BOUNDS" ]]; then
-      _maybe adb shell input swipe $(_ui_swipe_bounds "$H_BOUNDS" inc 180) || true
-    fi
-    sleep "$TAP_DELAY"
-  }
-  _dec_hour() {
-    if [[ "$H_DEC_X" != "0" ]]; then
-      _ui_tap_xy "$H_DEC_X" "$H_DEC_Y"
-    elif [[ -n "$H_BOUNDS" ]]; then
-      _maybe adb shell input swipe $(_ui_swipe_bounds "$H_BOUNDS" dec 180) || true
-    fi
-    sleep "$TAP_DELAY"
-  }
-  _inc_min() {
-    if [[ "$M_INC_X" != "0" ]]; then
-      _ui_tap_xy "$M_INC_X" "$M_INC_Y"
-    elif [[ -n "$M_BOUNDS" ]]; then
-      _maybe adb shell input swipe $(_ui_swipe_bounds "$M_BOUNDS" inc 180) || true
-    fi
-    sleep "$TAP_DELAY"
-  }
-  _dec_min() {
-    if [[ "$M_DEC_X" != "0" ]]; then
-      _ui_tap_xy "$M_DEC_X" "$M_DEC_Y"
-    elif [[ -n "$M_BOUNDS" ]]; then
-      _maybe adb shell input swipe $(_ui_swipe_bounds "$M_BOUNDS" dec 180) || true
-    fi
-    sleep "$TAP_DELAY"
-  }
-
-  local i
-
-  _set_ampm() {
-    local target="$1"  # AM or PM
-    [[ "$TP_MODE" == "12" ]] || return 0
-    if [[ "$target" == "AM" && "${AP_AM_X:-0}" != "0" ]]; then
-      _ui_tap_xy "$AP_AM_X" "$AP_AM_Y"
-      sleep "$TAP_DELAY"
-      return 0
-    fi
-    if [[ "$target" == "PM" && "${AP_PM_X:-0}" != "0" ]]; then
-      _ui_tap_xy "$AP_PM_X" "$AP_PM_Y"
-      sleep "$TAP_DELAY"
-      return 0
-    fi
-    # Fallback: swipe inside AM/PM picker bounds (does not focus EditText)
-    if [[ -n "${AP_BOUNDS:-}" ]]; then
-      # One swipe usually toggles; do 2 max just in case
-      _maybe adb shell input swipe $(_ui_swipe_bounds "$AP_BOUNDS" inc 180) || true
-      sleep "$TAP_DELAY"
-      return 0
-    fi
-    return 0
-  }
+  _dbg "time_kv=$line"
+  _dbg "time_parse: TP_MODE=$TP_MODE H_INP=($H_INP_X,$H_INP_Y) M_INP=($M_INP_X,$M_INP_Y) AP_INP=($AP_INP_X,$AP_INP_Y)"
 
   if [[ "$TP_MODE" == "12" ]]; then
     local target_ampm="AM"
     (( th >= 12 )) && target_ampm="PM"
     local th12=$(( th % 12 )); (( th12 == 0 )) && th12=12
 
-    # enforce AM/PM first (safe)
-    _set_ampm "$target_ampm"
+    # 1) set hour
+    _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th12")" || {
+      warn "Hour typing failed (missing coords?)"
+      return 1
+    }
 
-    # Hour wrap 12 (ring where 12->0)
-    local curH=$((10#${H_CUR:-0}))
-    local tgtH=$((10#${th12:-12}))
-    local cur0=$((curH % 12))
-    local tgt0=$((tgtH % 12))
-    local fwd=$(((tgt0 - cur0 + 12) % 12))
-    local bwd=$(((cur0 - tgt0 + 12) % 12))
+    # 2) set minute (2 digits)
+    _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || {
+      warn "Minute typing failed (missing coords?)"
+      return 1
+    }
 
-    if (( fwd <= bwd )); then
-      for ((i=0;i<fwd;i++)); do _inc_hour; done
+    # 3) set AM/PM by typing into the active AM/PM field
+    if [[ "$AP_INP_X" != "0" && "$AP_INP_Y" != "0" ]]; then
+      _ui_type_at "$AP_INP_X" "$AP_INP_Y" "$target_ampm" || true
     else
-      for ((i=0;i<bwd;i++)); do _dec_hour; done
+      warn "AM/PM input coords missing; cannot type AM/PM"
     fi
-
-    # Minute wrap 60
-    local curM=$((10#${M_CUR:-0}))
-    local tgtM=$tm
-    fwd=$(((tgtM - curM + 60) % 60))
-    bwd=$(((curM - tgtM + 60) % 60))
-
-    if (( fwd <= bwd )); then
-      for ((i=0;i<fwd;i++)); do _inc_min; done
-    else
-      for ((i=0;i<bwd;i++)); do _dec_min; done
-    fi
-
-    # enforce AM/PM again
-    _set_ampm "$target_ampm"
 
   else
     # 24h mode
-    local curH=$((10#${H_CUR:-0}))
-    local tgtH=$th
-    local fwd=$(((tgtH - curH + 24) % 24))
-    local bwd=$(((curH - tgtH + 24) % 24))
-
-    if (( fwd <= bwd )); then
-      for ((i=0;i<fwd;i++)); do _inc_hour; done
-    else
-      for ((i=0;i<bwd;i++)); do _dec_hour; done
-    fi
-
-    local curM=$((10#${M_CUR:-0}))
-    local tgtM=$tm
-    fwd=$(((tgtM - curM + 60) % 60))
-    bwd=$(((curM - tgtM + 60) % 60))
-
-    if (( fwd <= bwd )); then
-      for ((i=0;i<fwd;i++)); do _inc_min; done
-    else
-      for ((i=0;i<bwd;i++)); do _dec_min; done
-    fi
+    _ui_type_at "$H_INP_X" "$H_INP_Y" "$(printf "%d" "$th")" || return 1
+    _ui_type_at "$M_INP_X" "$M_INP_Y" "$(printf "%02d" "$tm")" || return 1
   fi
 }
