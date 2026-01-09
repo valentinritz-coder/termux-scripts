@@ -161,7 +161,8 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
     fi
     if [[ -n "$TIME_HM_TRIM" ]]; then
-      ui_datetime_set_time_24h "$TIME_HM_TRIM"
+      #ui_datetime_set_time_24h "$TIME_HM_TRIM"
+      ui_datetime_set_time_by_typing "$TIME_HM_TRIM"
     fi
     ui_datetime_ok
     ui_snap_here "08g_after_datetime_ok" "$SNAP_MODE"
