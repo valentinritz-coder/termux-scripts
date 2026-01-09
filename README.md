@@ -61,13 +61,13 @@ adb devices -l
 ### 2) Un trajet précis
 ```bash
 ADB_TCP_PORT=37099 \
-UI_STEP_SLEEP=0 \
+UI_STEP_SLEEP=5 \
 UI_DT_DEBUG=1 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
 CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime.sh" \
 DATE_YMD="2026-01-13" \
-TIME_HM="19:40" \
+TIME_HM="4:40" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
   --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
 ```
