@@ -31,10 +31,14 @@ CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 . "$CFL_CODE_DIR/lib/common.sh"
 . "$CFL_CODE_DIR/lib/snap.sh"
 
+need python
+
 # UI libs
 . "$CFL_CODE_DIR/lib/ui_core.sh"
 . "$CFL_CODE_DIR/lib/ui_select.sh"
 . "$CFL_CODE_DIR/lib/ui_api.sh"
+. "$CFL_CODE_DIR/lib/ui_datetime.sh"
+
 
 # Inputs
 START_TEXT="${START_TEXT:-LUXEMBOURG}"
@@ -48,11 +52,18 @@ if [ "$SNAP_MODE_SET" -eq 0 ]; then
   SNAP_MODE=2   # 2 = xml only (fast), 3 = xml+png (slower)
 fi
 
+# Date and time
+DATE_YMD="${DATE_YMD:-}"
+TIME_HM="${TIME_HM:-}"
+DATE_YMD_TRIM="$(printf '%s' "$DATE_YMD" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+TIME_HM_TRIM="$(printf '%s' "$TIME_HM" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
 # IDs (suffix) used by ui_wait_search_button
 ID_START=":id/input_start"
 ID_TARGET=":id/input_target"
 ID_SETTING=":id/button_options"
 ID_VIA=":id/input_via"
+ID_DATETIME=":id/datetime_text"
 ID_BTN_SEARCH=":id/button_search"
 ID_BTN_SEARCH_DEFAULT=":id/button_search_default"
 
@@ -62,10 +73,18 @@ WAIT_SHORT="${WAIT_SHORT:-20}"
 WAIT_LONG="${WAIT_LONG:-30}"
 
 # Snap run name
+# Snap run name
 run_name="trip_$(safe_name "$START_TEXT")_to_$(safe_name "$TARGET_TEXT")"
 if [[ -n "$VIA_TEXT_TRIM" ]]; then
   run_name="${run_name}_via_$(safe_name "$VIA_TEXT_TRIM")"
 fi
+if [[ -n "$DATE_YMD_TRIM" ]]; then
+  run_name="${run_name}_d_$(safe_name "$DATE_YMD_TRIM")"
+fi
+if [[ -n "$TIME_HM_TRIM" ]]; then
+  run_name="${run_name}_t_$(safe_name "$TIME_HM_TRIM")"
+fi
+
 snap_init "$run_name"
 
 finish() {
@@ -120,6 +139,22 @@ ui_snap "04_after_pick_start" "$SNAP_MODE"
 ui_wait_desc_any "destination field visible" "$WAIT_LONG" "destination" "arrivée" "Select destination"
 ui_snap "05_destination_visible" "$SNAP_MODE"
 
+# 7b) Règle la date
+# 7b) Règle date/heure
+if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
+  ui_tap_any "date time field" "resid:$ID_DATETIME" || true
+
+  if ui_datetime_wait_dialog "$WAIT_LONG"; then
+    [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
+    [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
+    ui_datetime_ok
+    ui_snap_here "08g_after_datetime_ok" "$SNAP_MODE"
+  else
+    warn "Datetime dialog not opened -> skipping datetime"
+  fi
+fi
+
+ui_refresh
 # 5) DEST: tap champ
 ui_tap_any "destination field" \
   "desc:destination" \
