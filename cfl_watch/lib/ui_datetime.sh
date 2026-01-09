@@ -200,7 +200,7 @@ PY
 ui_datetime_time_parse_vars() {
   local xml
   xml="$(_ui_pick_xml)" || return 1
-
+  log "xml='$xml'"
   python - <<'PY' "$xml"
 import sys, re
 import xml.etree.ElementTree as ET
