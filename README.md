@@ -58,7 +58,7 @@ ADB_TCP_PORT=37099 bash "$HOME/termux-scripts/cfl_watch/lib/adb_local.sh" start
 adb devices -l
 ```
 
-### 2) Un trajet précis
+### 2a) Un trajet précis
 ```bash
 ADB_TCP_PORT=37099 \
 UI_STEP_SLEEP=0 \
@@ -70,6 +70,20 @@ DATE_YMD="2026-01-09" \
 TIME_HM="14:50" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
   --start "LUXEMBOURG" --target "ARLON" --snap-mode 3
+```
+
+### 2b) Un trajet précis avec via
+```bash
+ADB_TCP_PORT=37099 \
+UI_STEP_SLEEP=0 \
+UI_DT_DEBUG=0 \
+CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
+CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime.sh" \
+DATE_YMD="2026-01-09" \
+TIME_HM="14:50" \
+bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
+  --start "LUXEMBOURG" --target "ARLON" --via "Bettembourg" --snap-mode 3
 ```
 
 ### 3) Trois trajets aléatoires (N=3)
