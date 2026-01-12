@@ -112,6 +112,24 @@ ui_wait_search_button(){
 # Tap helpers (readable)
 # -------------------------
 
+ui_tap_xy() {
+  # Usage:
+  #   ui_tap_xy "label" x y
+
+  local label="$1"
+  local x="$2"
+  local y="$3"
+
+  if [[ -z "$x" || -z "$y" ]]; then
+    warn "ui_tap_xy: coordonnées invalides ($x,$y)"
+    return 1
+  fi
+
+  log "Tap $label at $x,$y"
+  maybe tap "$x" "$y"
+  return 0
+}
+
 ui_tap_resid(){
   local label="$1"; local resid="$2"
   tap_by_selector "$label" "$UI_DUMP_CACHE" "resource-id=$resid"
