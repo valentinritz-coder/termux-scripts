@@ -319,12 +319,7 @@ log "Lancement de la recherche"
 
 log "Wait toolbar visible with Results"
 
-ui_wait_element_has_text \
-  "wait result page" \
-  "resid::id/toolbar" \
-  "Results" \
-  "$WAIT_LONG"
-
+ui_wait_resid "one connection is visible" ":id/haf_connection_view" "$WAIT_LONG"
 
 ui_refresh
 ui_list_resid_bounds ":id/haf_connection_view" | nl
@@ -348,16 +343,10 @@ while read -r x1 y1 x2 y2; do
 
   _ui_key 4 || true
   
-  ui_wait_element_has_text \
-  "wait result page" \
-  "resid::id/toolbar" \
-  "Results" \
-  "$WAIT_LONG"
+  ui_wait_resid "one connection is visible" ":id/haf_connection_view" "$WAIT_LONG"
 
   idx=$((idx + 1))
 done < <(ui_list_resid_bounds ":id/haf_connection_view")
-
-
 
 
 # -------------------------
