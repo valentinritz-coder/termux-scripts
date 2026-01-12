@@ -43,11 +43,22 @@ ui_wait_resid(){
   log "wait ok: $label"
 }
 
-ui_wait_desc_any(){
-  # ui_wait_desc_any "label" timeout "destination" "arrivée" ...
+ui_wait_desc_any() {
+  # Usage:
+  #   ui_wait_desc_any "label" "Select start"
+  #   ui_wait_desc_any "label" "Select start" 10
+  #   ui_wait_desc_any "label" "destination" "arrivée" 15
+
   local label="$1"
-  local timeout="$2"
-  shift 2
+  shift
+
+  local timeout="$WAIT_LONG"
+
+  # Si le dernier argument est un nombre → timeout
+  if [[ "${@: -1}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    timeout="${@: -1}"
+    set -- "${@:1:$(($#-1))}"
+  fi
 
   local parts=()
   local n
@@ -58,7 +69,15 @@ ui_wait_desc_any(){
 
   local joined
   joined="$(IFS='|'; printf '%s' "${parts[*]}")"
-  UI_DUMP_CACHE="$(wait_dump_grep "content-desc=\"[^\"]*(${joined})[^\"]*\"" "$timeout" "$WAIT_POLL" || dump_ui)"
+
+  UI_DUMP_CACHE="$(
+    wait_dump_grep \
+      "content-desc=\"[^\"]*(${joined})[^\"]*\"" \
+      "$timeout" \
+      "$WAIT_POLL" \
+    || dump_ui
+  )"
+
   log "wait ok: $label"
 }
 
