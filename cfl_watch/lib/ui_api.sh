@@ -508,7 +508,6 @@ ui_collect_all_resid_bounds() {
   while true; do
     ui_refresh
 
-    # IMPORTANT: ne jamais laisser set -e tuer la boucle
     mapfile -t VISIBLE < <(ui_list_resid_bounds "$resid" || true)
 
     log "Visible count: ${#VISIBLE[@]}"
@@ -523,17 +522,16 @@ ui_collect_all_resid_bounds() {
 
     log "Total collected so far: ${#ALL[@]}"
 
-    # Aucun nouvel élément → stop
+    # Stop si plus rien de nouveau
     [[ $new -eq 0 ]] && break
 
-    ((scrolls++))
+    scrolls=$((scrolls + 1))
     [[ $scrolls -ge $max_scroll ]] && break
 
     ui_scroll_down
     sleep_s 0.4
   done
 
-  # SORTIE STDOUT (CRITIQUE)
   printf '%s\n' "${ALL[@]}"
 }
 
