@@ -312,14 +312,12 @@ fi
 ui_snap_here "060_after_search" 3
 
 # -------------------------
-# Drill all visible connections
+# Drill all visible connections (DEBUG)
 # -------------------------
 
-log "Lancement de la recherche"
+log "=== START drill connections ==="
 
 ui_wait_resid "results page visible" ":id/haf_connection_view" "$WAIT_LONG"
-
-log "Drill connections (content-desc driven)"
 
 declare -A SEEN_CONNECTIONS
 
@@ -327,123 +325,82 @@ scrolls=0
 final_pass=0
 
 while true; do
+  log "--- LOOP START scrolls=$scrolls final_pass=$final_pass ---"
+
   ui_refresh
   mapfile -t ITEMS < <(ui_list_resid_desc_bounds ":id/haf_connection_view")
 
+  log "Visible connections count: ${#ITEMS[@]}"
+
+  idx=0
   new=0
 
   for item in "${ITEMS[@]}"; do
+    idx=$((idx + 1))
     IFS=$'\t' read -r desc bounds <<<"$item"
 
     raw_key="$desc"
     key="$(hash_key "$raw_key")"
 
-    [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
+    log "[$idx] SEEN=${SEEN_CONNECTIONS[$key]:-0} key=$(printf '%.40s' "$raw_key")"
 
-    # ---- compute tap coords ----
-    [[ "$bounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
-    cx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
-    cy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
-
-    log "Open connection"
-    ui_tap_xy "connection" "$cx" "$cy"
-
-    if ! ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"; then
-      warn "Connection not opened, retry later"
+    if [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]]; then
+      log "[$idx] -> skip (already SEEN)"
       continue
     fi
 
-    # ---- mark SEEN only after success ----
+    if [[ ! "$bounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]]; then
+      warn "[$idx] invalid bounds: $bounds"
+      continue
+    fi
+
+    cx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
+    cy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
+
+    log "[$idx] TAP at $cx,$cy"
+    ui_tap_xy "connection" "$cx" "$cy"
+
+    if ! ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"; then
+      warn "[$idx] FAILED to open details"
+      continue
+    fi
+
+    log "[$idx] SUCCESS open details"
     SEEN_CONNECTIONS["$key"]=1
     new=1
 
-    ui_snap "070_connection" 3
-
-    # -------------------------
-    # Drill routes
-    # -------------------------
-
-    declare -A SEEN_ROUTES
-    route_scrolls=0
-    route_final_pass=0
-
-    while true; do
-      ui_refresh
-      mapfile -t ROUTES < <(ui_list_resid_text_bounds ":id/text_line_name")
-
-      rnew=0
-
-      for r in "${ROUTES[@]}"; do
-        IFS=$'\t' read -r text rbounds <<<"$r"
-
-        raw_rkey="$text"
-        rkey="$(hash_key "$raw_rkey")"
-
-        [[ -n "${SEEN_ROUTES[$rkey]:-}" ]] && continue
-
-        [[ "$rbounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
-        rcx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
-        rcy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
-
-        log "Open route: $text"
-        ui_tap_xy "route" "$rcx" "$rcy"
-
-        if ! ui_wait_resid "route details" ":id/journey_details_head" "$WAIT_LONG"; then
-          warn "Route not opened, retry later"
-          continue
-        fi
-
-        SEEN_ROUTES["$rkey"]=1
-        rnew=1
-
-        ui_snap "080_route" 3
-
-        # route details = scroll to bottom once
-        ui_scroll_down
-        ui_scroll_down
-        sleep_s 0.3
-
-        _ui_key 4 || true
-        ui_wait_resid "back to details" ":id/text_line_name" "$WAIT_LONG"
-      done
-
-      if [[ $rnew -eq 0 ]]; then
-        if [[ $route_final_pass -eq 1 ]]; then
-          break
-        fi
-        route_final_pass=1
-      else
-        route_final_pass=0
-      fi
-
-      route_scrolls=$((route_scrolls + 1))
-      [[ $route_scrolls -ge 8 ]] && break
-
-      ui_scroll_down
-      sleep_s 0.4
-    done
+    ui_snap "070_connection_${scrolls}_${idx}" 3
 
     # ---- back to results ----
     _ui_key 4 || true
     ui_wait_resid "back to results" ":id/haf_connection_view" "$WAIT_LONG"
   done
 
+  log "Loop result: new=$new"
+
   if [[ $new -eq 0 ]]; then
     if [[ $final_pass -eq 1 ]]; then
+      log "EXIT: no new items after final pass"
       break
     fi
+    log "No new items, doing FINAL PASS"
     final_pass=1
   else
     final_pass=0
   fi
 
   scrolls=$((scrolls + 1))
-  [[ $scrolls -ge 10 ]] && break
+  if [[ $scrolls -ge 10 ]]; then
+    warn "EXIT: max scrolls reached"
+    break
+  fi
 
+  log "SCROLL DOWN"
   ui_scroll_down
   sleep_s 0.4
 done
 
+log "=== END drill connections ==="
 
 # -------------------------
 # End heuristic (soft)
