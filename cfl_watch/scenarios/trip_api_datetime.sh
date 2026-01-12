@@ -288,10 +288,7 @@ log "Lancement de la recherche"
 ui_wait_resid "search button visible" ":id/button_search_default" "$WAIT_LONG"
 
 if ! ui_tap_any "search button" \
-  "resid:$ID_BTN_SEARCH_DEFAULT" \
-  "resid:$ID_BTN_SEARCH" \
-  "text:Rechercher" \
-  "text:Itinéraires"; then
+  "resid::id/button_search_default"; then
   warn "Search button not tappable → ENTER fallback"
   maybe key 66 || true
 fi
