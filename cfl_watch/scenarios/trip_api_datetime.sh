@@ -325,6 +325,10 @@ ui_wait_element_has_text \
   "Results" \
   "$WAIT_LONG"
 
+
+ui_refresh
+ui_list_resid_bounds ":id/haf_connection_view" | nl
+
 log "Drill visible connections"
 
 idx=0
