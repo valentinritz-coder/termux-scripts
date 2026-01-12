@@ -201,6 +201,12 @@ else
 fi
 
 ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
+# 1) attendre que le clavier soit là (ton point clé)
+_ui_wait_ime_shown || true
+# 3) BACK (chez toi: valide + ferme clavier)
+_ui_key 4 || true
+# 4) attendre que le clavier soit vraiment parti avant de re-cliquer ailleurs
+_ui_wait_ime_hidden || true
 ui_type_and_wait_results "start" "$START_TEXT"
 ui_snap "031_after_type_start" "$SNAP_MODE"
 
@@ -233,6 +239,12 @@ fi
 
 ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
 ui_type_and_wait_results "destination" "$TARGET_TEXT"
+# 1) attendre que le clavier soit là (ton point clé)
+_ui_wait_ime_shown || true
+# 3) BACK (chez toi: valide + ferme clavier)
+_ui_key 4 || true
+# 4) attendre que le clavier soit vraiment parti avant de re-cliquer ailleurs
+_ui_wait_ime_hidden || true
 ui_snap "041_after_type_destination" "$SNAP_MODE"
 
 if ! ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"; then
@@ -264,6 +276,12 @@ if [[ -n "$VIA_TEXT_TRIM" ]]; then
       ui_snap_here "051_after_tap_via" "$SNAP_MODE"
 
       ui_type_and_wait_results "via" "$VIA_TEXT_TRIM"
+      # 1) attendre que le clavier soit là (ton point clé)
+      _ui_wait_ime_shown || true
+      # 3) BACK (chez toi: valide + ferme clavier)
+      _ui_key 4 || true
+      # 4) attendre que le clavier soit vraiment parti avant de re-cliquer ailleurs
+      _ui_wait_ime_hidden || true
       ui_snap "052_after_type_via" "$SNAP_MODE"
 
       ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM" || true
