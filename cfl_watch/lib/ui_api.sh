@@ -436,7 +436,6 @@ PY
 ui_list_resid_bounds() {
   # Usage:
   #   ui_list_resid_bounds ":id/haf_connection_view"
-  #   ui_list_resid_bounds "de.hafas.android.cfl:id/haf_connection_view"
 
   local resid="$1"
 
@@ -447,8 +446,10 @@ ui_list_resid_bounds() {
     resid="${APP_PACKAGE:-de.hafas.android.cfl}${resid}"
   fi
 
-  # Extraire toutes les bounds correspondantes
+  local esc_resid
+  esc_resid="$(regex_escape_ere "$resid")"
+
   sed -n \
-    "s/.*resource-id=\"$resid\".*bounds=\"\\[\\([0-9]*\\),\\([0-9]*\\)\\]\\[\\([0-9]*\\),\\([0-9]*\\)\\]\".*/\\1 \\2 \\3 \\4/p" \
+    "s/.*resource-id=\"$esc_resid\".*bounds=\"\\[\\([0-9]*\\),\\([0-9]*\\)\\]\\[\\([0-9]*\\),\\([0-9]*\\)\\]\".*/\\1 \\2 \\3 \\4/p" \
     "$UI_DUMP_CACHE"
 }
