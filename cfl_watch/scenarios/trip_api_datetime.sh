@@ -187,7 +187,7 @@ if ui_has_element "desc:Select start"; then
   ui_tap_any "start field" "desc:Select start"
 
 # Cas 2: champ déjà rempli → structure container
-elif ui_has_element "resid:de.hafas.android.cfl:id/request_screen_container"; then
+elif ui_has_element "resid::id/request_screen_container"; then
   log "Start field already filled → using first child of container"
   ui_tap_child_of_resid \
     "start field (container)" \
