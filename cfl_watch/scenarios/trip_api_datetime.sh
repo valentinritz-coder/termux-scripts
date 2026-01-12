@@ -76,6 +76,11 @@ if [[ -n "$TIME_HM_TRIM" ]]; then
   run_name="${run_name}_t_$(safe_name "$TIME_HM_TRIM")"
 fi
 
+log() {
+  local msg="$*"
+  printf '[%(%Y-%m-%d %H:%M:%S)T] %s\n' -1 "$msg"
+}
+
 snap_init "$run_name"
 
 finish() {
@@ -103,27 +108,39 @@ fi
 
 maybe cfl_launch
 
+log "01"
 ui_wait_resid "toolbar visible" ":id/toolbar" "$WAIT_LONG"
-
+log "02"
 ui_snap "000_opening" "$SNAP_MODE"
+log "03"
 
 if ui_element_has_text "resid::id/toolbar" "Home"; then
+  log "04"
   log "Toolbar affiche Home"
   ui_tap_any "burger icon tap" "desc:Show navigation drawer" || true
+  log "05"
   ui_wait_resid "drawer visible" ":id/left_drawer" "$WAIT_LONG"
+  log "06"
   ui_snap "001_after_tap_burger" "$SNAP_MODE"
+  log "07"
   ui_tap_any "trip planner menu" "text:Trip Planner" || true
+  log "08"
+  ui_wait_element_has_text "wait trip planner page" "resid::id/toolbar" "Trip Planner" 10
+  log "09"
 fi
 
-ui_wait_element_has_text "wait trip planner page" "resid::id/toolbar" "Trip Planner" 10
-
 if ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
+  log "10"
   log "Toolbar affiche Trip Planner"
   if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
+    log "11"
     log "Réglage de la date et de l'heure"
     if ui_has_element "resid::id/datetime_text"; then
+      log "12"
       ui_tap_any "date time field" "resid::id/datetime_text"
+      log "13"
       if ui_wait_resid "time picker visible" ":id/picker_time" "$WAIT_LONG"; then
+        log "14"
         [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
         [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
         if ui_has_element "resid::id/button1"; then
