@@ -31,6 +31,11 @@ ui_refresh(){
   UI_DUMP_CACHE="$(dump_ui)"
 }
 
+ui_scroll_down() {
+  # Scroll vertical standard, stable sur 99% des écrans
+  maybe adb shell input swipe 540 1600 540 600 300
+}
+
 # -------------------------
 # Wait helpers (readable)
 # -------------------------
@@ -490,3 +495,39 @@ for node in root.iter("node"):
     print(" ".join(b))
 PY
 }
+
+ui_collect_all_resid_bounds() {
+  # Usage:
+  #   ui_collect_all_resid_bounds ":id/haf_connection_view" MAX_SCROLL
+
+  local resid="$1"
+  local max_scroll="${2:-15}"
+
+  local ALL=()
+  local scrolls=0
+
+  while true; do
+    ui_refresh
+    mapfile -t VISIBLE < <(ui_list_resid_bounds "$resid")
+
+    local new=0
+    for line in "${VISIBLE[@]}"; do
+      if [[ ! " ${ALL[*]} " =~ " $line " ]]; then
+        ALL+=("$line")
+        new=1
+      fi
+    done
+
+    # Plus rien de nouveau → terminé
+    [[ $new -eq 0 ]] && break
+
+    ((scrolls++))
+    [[ $scrolls -ge $max_scroll ]] && break
+
+    ui_scroll_down
+    sleep_s 0.4
+  done
+
+  printf '%s\n' "${ALL[@]}"
+}
+
