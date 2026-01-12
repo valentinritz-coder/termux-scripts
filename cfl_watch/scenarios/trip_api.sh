@@ -301,8 +301,6 @@ fi
 # Search
 # -------------------------
 
-log "Lancement de la recherche"
-
 ui_wait_resid "search button visible" ":id/button_search_default" "$WAIT_LONG"
 
 if ! ui_tap_any "search button" \
@@ -314,6 +312,69 @@ fi
 ui_snap_here "060_after_search" 3
 
 # -------------------------
+# Drill all visible connections
+# -------------------------
+
+log "Lancement de la recherche"
+
+ui_wait_resid "results page visible" ":id/haf_connection_view" "$WAIT_LONG"
+
+log "Drill visible connections"
+mapfile -t CONNECTIONS < <(ui_list_resid_bounds ":id/haf_connection_view")
+
+conn_idx=0
+for line in "${CONNECTIONS[@]}"; do
+  read -r x1 y1 x2 y2 <<<"$line"
+
+  cx=$(( (x1 + x2) / 2 ))
+  cy=$(( (y1 + y2) / 2 ))
+
+  log "Open connection #$conn_idx"
+  ui_tap_xy "connection" "$cx" "$cy"
+
+  ui_wait_resid "details page visible" ":id/text_line_name" "$WAIT_LONG"
+
+  ui_snap "070_result_$conn_idx" 3
+
+  # -------------------------
+  # Drill route details
+  # -------------------------
+
+  log "Drill route details for connection #$conn_idx"
+  #ui_refresh
+  mapfile -t ROUTES < <(ui_list_resid_bounds ":id/text_line_name")
+
+  route_idx=0
+  for rline in "${ROUTES[@]}"; do
+    read -r rx1 ry1 rx2 ry2 <<<"$rline"
+
+    rcx=$(( (rx1 + rx2) / 2 ))
+    rcy=$(( (ry1 + ry2) / 2 ))
+
+    log "Open route #$route_idx (connection #$conn_idx)"
+    ui_tap_xy "route detail" "$rcx" "$rcy"
+
+    ui_wait_resid "route details visible" ":id/journey_details_head" "$WAIT_LONG"
+
+    ui_snap "080_result_${conn_idx}_route_${route_idx}" 3
+
+    _ui_key 4 || true
+    ui_wait_resid "back to details page" ":id/text_line_name" "$WAIT_LONG"
+
+    route_idx=$((route_idx + 1))
+  done
+
+  # -------------------------
+  # Back to connections list
+  # -------------------------
+
+  _ui_key 4 || true
+  ui_wait_resid "back to results page" ":id/haf_connection_view" "$WAIT_LONG"
+
+  conn_idx=$((conn_idx + 1))
+done
+
+# -------------------------
 # End heuristic (soft)
 # -------------------------
 
@@ -323,5 +384,5 @@ if [[ -n "$latest_xml" ]] && grep -qiE 'Results|Résultats|Itinéraire|Itinérai
   exit 0
 fi
 
-warn "Scenario ended without strong marker (not necessarily a failure)"
+#warn "Scenario ended without strong marker (not necessarily a failure)"
 exit 0
