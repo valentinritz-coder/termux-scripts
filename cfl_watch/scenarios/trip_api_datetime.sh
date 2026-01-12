@@ -324,36 +324,39 @@ log "Drill connections (content-desc driven)"
 declare -A SEEN_CONNECTIONS
 
 scrolls=0
+final_pass=0
+
 while true; do
   ui_refresh
   mapfile -t ITEMS < <(ui_list_resid_desc_bounds ":id/haf_connection_view")
 
   new=0
+
   for item in "${ITEMS[@]}"; do
     IFS=$'\t' read -r desc bounds <<<"$item"
 
-    # ---- dedup connection ----
     raw_key="$desc"
     key="$(hash_key "$raw_key")"
 
     [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
 
-    # ---- click connection ----
+    # ---- compute tap coords ----
     [[ "$bounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
     cx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
     cy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
 
     log "Open connection"
     ui_tap_xy "connection" "$cx" "$cy"
-    if ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"; then
-      SEEN_CONNECTIONS["$key"]=1
-      new=1
-      ui_snap "070_connection" 3
-    else
-      warn "Connection not opened, will retry"
+
+    if ! ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"; then
+      warn "Connection not opened, retry later"
       continue
     fi
-    #ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"
+
+    # ---- mark SEEN only after success ----
+    SEEN_CONNECTIONS["$key"]=1
+    new=1
+
     ui_snap "070_connection" 3
 
     # -------------------------
@@ -362,24 +365,22 @@ while true; do
 
     declare -A SEEN_ROUTES
     route_scrolls=0
+    route_final_pass=0
 
     while true; do
       ui_refresh
       mapfile -t ROUTES < <(ui_list_resid_text_bounds ":id/text_line_name")
 
       rnew=0
+
       for r in "${ROUTES[@]}"; do
         IFS=$'\t' read -r text rbounds <<<"$r"
 
-        # ---- dedup route ----
         raw_rkey="$text"
         rkey="$(hash_key "$raw_rkey")"
 
         [[ -n "${SEEN_ROUTES[$rkey]:-}" ]] && continue
-        SEEN_ROUTES["$rkey"]=1
-        rnew=1
 
-        # ---- click route ----
         [[ "$rbounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
         rcx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
         rcy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
@@ -387,10 +388,17 @@ while true; do
         log "Open route: $text"
         ui_tap_xy "route" "$rcx" "$rcy"
 
-        ui_wait_resid "route details" ":id/journey_details_head" "$WAIT_LONG"
+        if ! ui_wait_resid "route details" ":id/journey_details_head" "$WAIT_LONG"; then
+          warn "Route not opened, retry later"
+          continue
+        fi
+
+        SEEN_ROUTES["$rkey"]=1
+        rnew=1
+
         ui_snap "080_route" 3
 
-        # route details = scroll to bottom ONCE
+        # route details = scroll to bottom once
         ui_scroll_down
         ui_scroll_down
         sleep_s 0.3
@@ -399,7 +407,15 @@ while true; do
         ui_wait_resid "back to details" ":id/text_line_name" "$WAIT_LONG"
       done
 
-      [[ $rnew -eq 0 ]] && break
+      if [[ $rnew -eq 0 ]]; then
+        if [[ $route_final_pass -eq 1 ]]; then
+          break
+        fi
+        route_final_pass=1
+      else
+        route_final_pass=0
+      fi
+
       route_scrolls=$((route_scrolls + 1))
       [[ $route_scrolls -ge 8 ]] && break
 
@@ -412,13 +428,22 @@ while true; do
     ui_wait_resid "back to results" ":id/haf_connection_view" "$WAIT_LONG"
   done
 
-  [[ $new -eq 0 ]] && break
+  if [[ $new -eq 0 ]]; then
+    if [[ $final_pass -eq 1 ]]; then
+      break
+    fi
+    final_pass=1
+  else
+    final_pass=0
+  fi
+
   scrolls=$((scrolls + 1))
   [[ $scrolls -ge 10 ]] && break
 
   ui_scroll_down
   sleep_s 0.4
 done
+
 
 # -------------------------
 # End heuristic (soft)
