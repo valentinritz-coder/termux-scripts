@@ -190,10 +190,10 @@ if ui_has_element "desc:Select start"; then
 elif ui_has_element "resid::id/request_screen_container"; then
   log "Start field already filled → using first child of container"
   ui_tap_child_of_resid \
-    "start field (container)" \
-    ":id/request_screen_container" \
-    0 \
-    clickable
+  "start field (container)" \
+  ":id/request_screen_container" \
+  0 \
+  clickable
 else
   warn "Start field not found"
   return 1
@@ -214,138 +214,99 @@ fi
 ui_snap "032_after_pick_start" "$SNAP_MODE"
 
 
+# ---- Station de destination
+log "Réglage de la station de destination"
 
+# On attend que l'écran de requête soit là
+ui_wait_resid "request screen visible" \
+  ":id/request_screen_container" \
+  "$WAIT_LONG"
 
+ui_snap "040_before_set_destination" "$SNAP_MODE"
 
+# Cas 1: champ vide → Select destination visible
+if ui_has_element "desc:Select destination"; then
+  log "Destination field empty → using Select destination"
+  ui_tap_any "destination field" "desc:Select destination"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ui_wait_desc_any "start field visible" "Select start" "$WAIT_LONG"
-ui_snap "030_before_set_start" "$SNAP_MODE"
-
-if ! ui_tap_any "start field" "desc:Select start"; then
-  warn "Start field not tappable"
+# Cas 2: champ déjà rempli → structure container
+elif ui_has_element "resid::id/request_screen_container"; then
+  log "Destination field already filled → using second child of container"
+  ui_tap_child_of_resid \
+    "destination field (container)" \
+    ":id/request_screen_container" \
+    2 \
+    clickable
+else
+  warn "Destination field not found"
   return 1
 fi
 
+# Champ de saisie
 ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
-ui_type_and_wait_results "start" "$START_TEXT"
-ui_snap "031_after_type_start" "$SNAP_MODE"
 
-if ! ui_pick_suggestion "start suggestion" "$START_TEXT"; then
-  warn "Start suggestion not found"
+ui_type_and_wait_results "destination" "$TARGET_TEXT"
+ui_snap "041_after_type_destination" "$SNAP_MODE"
+
+# Choix suggestion
+if ! ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"; then
+  warn "Destination suggestion not found"
   return 1
 fi
 
-ui_snap "032_after_pick_start" "$SNAP_MODE"
+ui_snap "042_after_pick_destination" "$SNAP_MODE"
 
 
+# ---- VIA (optionnel)
+if [[ -n "$VIA_TEXT_TRIM" ]]; then
+  log "Réglage de la station VIA"
 
-
-
-
-
-
-
-
-
-  
-  log "Réglage de la station de départ"
-  ui_wait_desc_any "start field visible" "$WAIT_LONG" "Select start"
-  ui_snap "030_before_set_start" "$SNAP_MODE"
-
-  if ui_has_element "desc:Select start"; then 
-    ui_tap_any "start field" "desc:Select start"
-    ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
-    if ui_has_element "resid::id/input_location_name"; then 
-      ui_type_and_wait_results "start" "$START_TEXT"
-      ui_snap "03_after_type_start" "$SNAP_MODE"
-      # 3) START: choisir suggestion
-      ui_pick_suggestion "start suggestion" "$START_TEXT"
-
-      ui_snap "04_after_pick_start" "$SNAP_MODE"
-    else
-      warn "Issue with selection start"
-    fi
+  # Ouvrir les options avancées
+  if ! ui_wait_resid "options button visible" "$ID_SETTING" "$WAIT_LONG"; then
+    warn "VIA enabled but options button not found → skipping VIA"
+    goto_after_via=1
   else
-    warn "Issue with selection start field"
-  fi
-    
-  ui_wait_desc_any "destination field visible" "$WAIT_LONG" "Select destination"
-  ui_snap "030_before_set_destination" "$SNAP_MODE"
-  if ui_has_element "desc:Select destination"; then 
-    ui_tap_any "start field" "desc:Select destination"
-    ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
-    if ui_has_element "resid::id/input_location_name"; then 
-      ui_type_and_wait_results "destination" "$TARGET_TEXT"
-      ui_snap "03_after_type_destination" "$SNAP_MODE"
-      # 3) START: choisir suggestion
-      ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"
-
-      ui_snap "04_after_pick_destination" "$SNAP_MODE"
-    else
-      warn "Issue with selection destination"
-    fi
-  else
-    warn "Issue with selection destination field"
-  fi
-  
-  # VIA (optional)
-  if [[ -n "$VIA_TEXT_TRIM" ]]; then
-  # attendre bouton options
-  if ui_wait_resid "options button visible" "$ID_SETTING" "$WAIT_LONG"; then
-    # tap options
     ui_tap_any "options button" \
       "desc:Extended search options" \
       "resid:$ID_SETTING" \
     || true
-    ui_snap_here "08a_after_open_options" "$SNAP_MODE"
-  
-    # attendre champ via
-    if ui_wait_resid "via field visible" "$ID_VIA" "$WAIT_LONG"; then
-      # tap champ via
-      ui_tap_any "tap via field" \
+
+    ui_snap_here "050_after_open_options" "$SNAP_MODE"
+
+    # Champ VIA
+    if ! ui_wait_resid "via field visible" "$ID_VIA" "$WAIT_LONG"; then
+      warn "VIA enabled but via field not found → skipping VIA"
+      goto_after_via=1
+    else
+      ui_tap_any "via field" \
         "text:Enter stop" \
         "resid:$ID_VIA" \
       || true
-      ui_snap_here "08b_after_tap_via" "$SNAP_MODE"
-  
-      # taper + suggestions
+
+      ui_snap_here "051_after_tap_via" "$SNAP_MODE"
+
+      # Saisie VIA
       ui_type_and_wait_results "via" "$VIA_TEXT_TRIM"
-      ui_snap "08c_after_type_via" "$SNAP_MODE"
-  
-      # choisir suggestion
-      ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM"
-      ui_refresh
-      ui_snap "08d_after_pick_via" "$SNAP_MODE"
-  
-      # revenir (navigate up)
-      ui_tap_any "tap back button" \
+      ui_snap "052_after_type_via" "$SNAP_MODE"
+
+      # Choix suggestion
+      if ! ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM"; then
+        warn "VIA suggestion not found → skipping VIA"
+      else
+        ui_snap "053_after_pick_via" "$SNAP_MODE"
+      fi
+
+      # Retour vers Trip Planner
+      ui_tap_any "back from via" \
         "desc:Navigate up" \
       || true
-      ui_snap_here "08e_after_back_from_via" "$SNAP_MODE"
-    else
-      warn "VIA enabled but via field not found -> skipping VIA"
+
+      ui_snap_here "054_after_back_from_via" "$SNAP_MODE"
     fi
-  else
-    warn "VIA enabled but options button not found -> skipping VIA"
   fi
-  fi
+fi
+
+
   
   # 8) SEARCH: attendre bouton
   ui_wait_search_button "$WAIT_LONG"
