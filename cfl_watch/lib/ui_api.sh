@@ -497,18 +497,21 @@ PY
 }
 
 ui_collect_all_resid_bounds() {
-  # Usage:
-  #   ui_collect_all_resid_bounds ":id/haf_connection_view" MAX_SCROLL
-
   local resid="$1"
   local max_scroll="${2:-15}"
 
   local ALL=()
   local scrolls=0
 
+  log "Collect all for $resid (max_scroll=$max_scroll)"
+
   while true; do
     ui_refresh
-    mapfile -t VISIBLE < <(ui_list_resid_bounds "$resid")
+
+    # IMPORTANT: ne jamais laisser set -e tuer la boucle
+    mapfile -t VISIBLE < <(ui_list_resid_bounds "$resid" || true)
+
+    log "Visible count: ${#VISIBLE[@]}"
 
     local new=0
     for line in "${VISIBLE[@]}"; do
@@ -518,7 +521,9 @@ ui_collect_all_resid_bounds() {
       fi
     done
 
-    # Plus rien de nouveau → terminé
+    log "Total collected so far: ${#ALL[@]}"
+
+    # Aucun nouvel élément → stop
     [[ $new -eq 0 ]] && break
 
     ((scrolls++))
@@ -528,6 +533,8 @@ ui_collect_all_resid_bounds() {
     sleep_s 0.4
   done
 
+  # SORTIE STDOUT (CRITIQUE)
   printf '%s\n' "${ALL[@]}"
 }
+
 
