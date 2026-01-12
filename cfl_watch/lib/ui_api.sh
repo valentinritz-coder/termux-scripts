@@ -36,6 +36,10 @@ ui_scroll_down() {
   maybe adb shell input swipe 540 1600 540 600 300
 }
 
+hash_key() {
+  printf '%s' "$1" | sha1sum | awk '{print $1}'
+}
+
 # -------------------------
 # Wait helpers (readable)
 # -------------------------
