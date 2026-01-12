@@ -434,9 +434,6 @@ PY
 }
 
 ui_list_resid_bounds() {
-  # Usage:
-  #   ui_list_resid_bounds ":id/haf_connection_view"
-
   local resid="$1"
 
   [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
@@ -449,8 +446,6 @@ ui_list_resid_bounds() {
   local esc_resid
   esc_resid="$(regex_escape_ere "$resid")"
 
-  sed -n \
-    "s|.*resource-id=\"$esc_resid\".*bounds=\"\\[\\([0-9]*\\),\\([0-9]*\\)\\]\\[\\([0-9]*\\),\\([0-9]*\\)\\]\".*|\\1 \\2 \\3 \\4|p" \
-    "$UI_DUMP_CACHE"
-
+  grep -E "resource-id=\"$esc_resid\"" "$UI_DUMP_CACHE" | \
+  sed -n 's|.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]".*|\1 \2 \3 \4|p'
 }
