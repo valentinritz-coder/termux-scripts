@@ -330,7 +330,9 @@ idx=0
 while read -r x1 y1 x2 y2; do
   cx=$(( (x1 + x2) / 2 ))
   cy=$(( (y1 + y2) / 2 ))
-
+  
+  log "coords: $x1,$y1 → $x2,$y2"
+  
   log "Open connection #$idx"
   ui_tap_xy "connection" "$cx" "$cy"
 
@@ -346,6 +348,7 @@ while read -r x1 y1 x2 y2; do
   ui_wait_resid "one connection is visible" ":id/haf_connection_view" "$WAIT_LONG"
 
   idx=$((idx + 1))
+  log "iteration: $idx"
 done < <(ui_list_resid_bounds ":id/haf_connection_view")
 
 
