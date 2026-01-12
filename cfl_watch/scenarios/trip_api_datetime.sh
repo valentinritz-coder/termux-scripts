@@ -317,39 +317,40 @@ ui_snap_here "060_after_search" 3
 
 log "Lancement de la recherche"
 
-log "Wait toolbar visible with Results"
-
 ui_wait_resid "one connection is visible" ":id/haf_connection_view" "$WAIT_LONG"
 
-ui_refresh
-ui_list_resid_bounds ":id/haf_connection_view" | nl
+log "Drill visible connections"
+mapfile -t CONNECTIONS < <(ui_list_resid_bounds ":id/haf_connection_view")
 
 log "Drill visible connections"
 
 idx=0
-while read -r x1 y1 x2 y2; do
+for line in "${CONNECTIONS[@]}"; do
+  read -r x1 y1 x2 y2 <<<"$line"
+
   cx=$(( (x1 + x2) / 2 ))
   cy=$(( (y1 + y2) / 2 ))
-  
+
   log "coords: $x1,$y1 → $x2,$y2"
-  
   log "Open connection #$idx"
+
   ui_tap_xy "connection" "$cx" "$cy"
 
   ui_wait_element_has_text \
-  "wait result page" \
-  "resid::id/toolbar" \
-  "Detail" \
-  "$WAIT_LONG"
+    "wait result page" \
+    "resid::id/toolbar" \
+    "Detail" \
+    "$WAIT_LONG"
+
   ui_snap "070_connection_$idx" 3
 
   _ui_key 4 || true
-  
   ui_wait_resid "one connection is visible" ":id/haf_connection_view" "$WAIT_LONG"
 
   idx=$((idx + 1))
   log "iteration: $idx"
-done < <(ui_list_resid_bounds ":id/haf_connection_view")
+done
+
 
 
 # -------------------------
