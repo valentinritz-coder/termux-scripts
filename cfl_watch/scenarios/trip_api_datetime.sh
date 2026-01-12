@@ -331,8 +331,11 @@ while true; do
 
   new=0
   for item in "${ITEMS[@]}"; do
-    IFS=$'\t' read -r key bounds <<<"$item"
-
+    IFS=$'\t' read -r desc bounds <<<"$item"
+    
+    raw_key="$desc"
+    key="$(hash_key "$raw_key")"
+    
     [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
     SEEN_CONNECTIONS["$key"]=1
     new=1
@@ -357,8 +360,9 @@ while true; do
 
       rnew=0
       for r in "${ROUTES[@]}"; do
-        IFS=$'\t' read -r rkey rbounds <<<"$r"
-
+        raw_rkey="$text"
+        rkey="$(hash_key "$raw_rkey")"
+        
         [[ -n "${SEEN_ROUTES[$rkey]:-}" ]] && continue
         SEEN_ROUTES["$rkey"]=1
         rnew=1
