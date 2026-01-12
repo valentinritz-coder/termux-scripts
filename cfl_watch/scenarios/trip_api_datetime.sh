@@ -320,7 +320,9 @@ log "Lancement de la recherche"
 ui_wait_resid "results page visible" ":id/haf_connection_view" "$WAIT_LONG"
 
 log "Drill visible connections"
-mapfile -t CONNECTIONS < <(ui_list_resid_bounds ":id/haf_connection_view")
+mapfile -t CONNECTIONS < <(
+  ui_collect_all_resid_bounds ":id/haf_connection_view" 15
+)
 
 conn_idx=0
 for line in "${CONNECTIONS[@]}"; do
@@ -342,7 +344,9 @@ for line in "${CONNECTIONS[@]}"; do
 
   log "Drill route details for connection #$conn_idx"
   #ui_refresh
-  mapfile -t ROUTES < <(ui_list_resid_bounds ":id/text_line_name")
+  mapfile -t ROUTES < <(
+    ui_collect_all_resid_bounds ":id/text_line_name" 10
+  )
 
   route_idx=0
   for rline in "${ROUTES[@]}"; do
