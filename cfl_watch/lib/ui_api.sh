@@ -400,11 +400,12 @@ ui_tap_child_of_resid() {
   local grep_child="index=\"$index\""
   [[ -n "$filter" ]] && grep_child="$grep_child.*$filter"
 
-  # Extraire les bounds du child demandé
+  # Extraire les bounds du child demandé (ligne exacte)
   local bounds
   bounds="$(
-    sed -n "$line,$((line+60))p" "$UI_DUMP_CACHE" \
-      | grep "$grep_child" \
+    sed -n "$line,$((line+40))p" "$UI_DUMP_CACHE" \
+      | grep "index=\"$index\"" \
+      | grep 'clickable="true"' \
       | sed -n 's/.*bounds="\([^"]*\)".*/\1/p' \
       | head -n1
   )"
