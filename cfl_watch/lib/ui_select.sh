@@ -60,6 +60,32 @@ sys.exit(0)
 PY
 }
 
+tap_bounds() {
+  # Usage:
+  #   tap_bounds "label" "[x1,y1][x2,y2]"
+
+  local label="$1"
+  local bounds="$2"
+
+  if [[ ! "$bounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]]; then
+    warn "tap_bounds: invalid bounds ($bounds)"
+    return 1
+  fi
+
+  local x1="${BASH_REMATCH[1]}"
+  local y1="${BASH_REMATCH[2]}"
+  local x2="${BASH_REMATCH[3]}"
+  local y2="${BASH_REMATCH[4]}"
+
+  # Centre du rectangle
+  local x=$(( (x1 + x2) / 2 ))
+  local y=$(( (y1 + y2) / 2 ))
+
+  log "Tap $label at $x,$y"
+  maybe tap "$x" "$y"
+  return 0
+}
+
 first_result_center(){
   local dump="$1"
   python - "$dump" <<'PY' 2>/dev/null
