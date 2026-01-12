@@ -63,9 +63,6 @@ WAIT_POLL="${WAIT_POLL:-0.0}"
 WAIT_SHORT="${WAIT_SHORT:-20}"
 WAIT_LONG="${WAIT_LONG:-30}"
 
-declare -A SEEN_CONNECTIONS
-declare -A SEEN_ROUTES
-
 # Snap run name
 # Snap run name
 run_name="trip_$(safe_name "$START_TEXT")_to_$(safe_name "$TARGET_TEXT")"
@@ -324,6 +321,8 @@ ui_wait_resid "results page visible" ":id/haf_connection_view" "$WAIT_LONG"
 
 log "Drill connections (content-desc driven)"
 
+declare -A SEEN_CONNECTIONS
+
 scrolls=0
 while true; do
   ui_refresh
@@ -332,25 +331,30 @@ while true; do
   new=0
   for item in "${ITEMS[@]}"; do
     IFS=$'\t' read -r desc bounds <<<"$item"
-    
+
+    # ---- dedup connection ----
     raw_key="$desc"
     key="$(hash_key "$raw_key")"
-    
+
     [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
     SEEN_CONNECTIONS["$key"]=1
     new=1
 
+    # ---- click connection ----
     [[ "$bounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
     cx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
     cy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
 
-    log "Open connection: $key"
+    log "Open connection"
     ui_tap_xy "connection" "$cx" "$cy"
 
     ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"
     ui_snap "070_connection" 3
 
-    # ---- routes ----
+    # -------------------------
+    # Drill routes
+    # -------------------------
+
     declare -A SEEN_ROUTES
     route_scrolls=0
 
@@ -360,24 +364,28 @@ while true; do
 
       rnew=0
       for r in "${ROUTES[@]}"; do
+        IFS=$'\t' read -r text rbounds <<<"$r"
+
+        # ---- dedup route ----
         raw_rkey="$text"
         rkey="$(hash_key "$raw_rkey")"
-        
+
         [[ -n "${SEEN_ROUTES[$rkey]:-}" ]] && continue
         SEEN_ROUTES["$rkey"]=1
         rnew=1
 
+        # ---- click route ----
         [[ "$rbounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
         rcx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
         rcy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
 
-        log "Open route: $rkey"
+        log "Open route: $text"
         ui_tap_xy "route" "$rcx" "$rcy"
 
         ui_wait_resid "route details" ":id/journey_details_head" "$WAIT_LONG"
         ui_snap "080_route" 3
 
-        # scroll to bottom ONCE
+        # route details = scroll to bottom ONCE
         ui_scroll_down
         ui_scroll_down
         sleep_s 0.3
@@ -387,19 +395,20 @@ while true; do
       done
 
       [[ $rnew -eq 0 ]] && break
-      route_scrolls=$((route_scrolls+1))
+      route_scrolls=$((route_scrolls + 1))
       [[ $route_scrolls -ge 8 ]] && break
 
       ui_scroll_down
       sleep_s 0.4
     done
 
+    # ---- back to results ----
     _ui_key 4 || true
     ui_wait_resid "back to results" ":id/haf_connection_view" "$WAIT_LONG"
   done
 
   [[ $new -eq 0 ]] && break
-  scrolls=$((scrolls+1))
+  scrolls=$((scrolls + 1))
   [[ $scrolls -ge 10 ]] && break
 
   ui_scroll_down
