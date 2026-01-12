@@ -374,47 +374,61 @@ ui_wait_element_has_text() {
 
 ui_tap_child_of_resid() {
   # Usage:
-  #   ui_tap_child_of_resid "label" ":id/request_screen_container" 0 [filter]
+  #   ui_tap_child_of_resid "label" ":id/request_screen_container" 0
 
   local label="$1"
   local resid="$2"
   local index="$3"
-  local filter="${4:-}"
 
   [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
 
-  # Normaliser :id/foo → package:id/foo
+  # Normaliser :id/foo
   if [[ "$resid" == :id/* ]]; then
     resid="${APP_PACKAGE:-de.hafas.android.cfl}${resid}"
   fi
 
-  # Trouver la ligne du container
-  local line
-  line="$(grep -n "$(resid_regex "$resid")" "$UI_DUMP_CACHE" | cut -d: -f1 | head -n1)"
-  [[ -n "$line" ]] || {
-    warn "Container not found: $resid"
-    return 1
-  }
+  local coords
+  coords="$(
+    python - "$UI_DUMP_CACHE" "$resid" "$index" <<'PY'
+import sys, re, xml.etree.ElementTree as ET
 
-  # Construire le grep enfant
-  local grep_child="index=\"$index\""
-  [[ -n "$filter" ]] && grep_child="$grep_child.*$filter"
+dump, resid, index = sys.argv[1], sys.argv[2], sys.argv[3]
 
-  # Extraire les bounds du child demandé (ligne exacte)
-  local bounds
-  bounds="$(
-    sed -n "$line,$((line+40))p" "$UI_DUMP_CACHE" \
-      | grep "index=\"$index\"" \
-      | grep 'clickable="true"' \
-      | sed -n 's/.*bounds="\([^"]*\)".*/\1/p' \
-      | head -n1
+_bounds = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
+
+def center(b):
+    m = _bounds.match(b or "")
+    if not m:
+        return None
+    x1,y1,x2,y2 = map(int, m.groups())
+    return (x1+x2)//2, (y1+y2)//2
+
+root = ET.parse(dump).getroot()
+
+for node in root.iter("node"):
+    if node.get("resource-id") != resid:
+        continue
+
+    # enfant direct seulement
+    for child in node:
+        if child.get("index") == index and child.get("clickable") == "true":
+            c = center(child.get("bounds"))
+            if c:
+                print(f"{c[0]} {c[1]}")
+                sys.exit(0)
+
+sys.exit(1)
+PY
   )"
 
-  [[ -n "$bounds" ]] || {
+  if [[ -z "${coords// }" ]]; then
     warn "Child index=$index not found in $resid"
     return 1
-  }
+  fi
 
-  tap_bounds "$label" "$bounds"
+  local x y
+  read -r x y <<<"$coords"
+
+  log "Tap $label at $x,$y"
+  maybe tap "$x" "$y"
 }
-
