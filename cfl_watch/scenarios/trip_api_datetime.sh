@@ -108,55 +108,101 @@ fi
 
 maybe cfl_launch
 
-log "01"
+log "Wait toolbar visible"
 ui_wait_resid "toolbar visible" ":id/toolbar" "$WAIT_LONG"
-log "02"
-ui_snap "000_opening" "$SNAP_MODE"
-log "03"
 
+ui_snap "000_opening" "$SNAP_MODE"
+
+# -------------------------
+# From Home → Trip Planner
+# -------------------------
 if ui_element_has_text "resid::id/toolbar" "Home"; then
-  log "04"
   log "Toolbar affiche Home"
-  ui_tap_any "burger icon tap" "desc:Show navigation drawer" || true
-  log "05"
+
+  ui_tap_any "burger icon tap" \
+    "desc:Show navigation drawer" || true
+
   ui_wait_resid "drawer visible" ":id/left_drawer" "$WAIT_LONG"
-  log "06"
   ui_snap "001_after_tap_burger" "$SNAP_MODE"
-  log "07"
-  ui_tap_any "trip planner menu" "text:Trip Planner" || true
-  log "08"
-  ui_wait_element_has_text "wait trip planner page" "resid::id/toolbar" "Trip Planner" 10
-  log "09"
+
+  ui_tap_any "trip planner menu" \
+    "text:Trip Planner" || true
+
+  ui_wait_element_has_text \
+    "wait trip planner page" \
+    "resid::id/toolbar" \
+    "Trip Planner" \
+    "$WAIT_LONG"
 fi
 
-if ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
-  log "10"
-  log "Toolbar affiche Trip Planner"
-  if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
-    log "11"
-    log "Réglage de la date et de l'heure"
-    if ui_has_element "resid::id/datetime_text"; then
-      log "12"
-      ui_tap_any "date time field" "resid::id/datetime_text"
-      log "13"
-      if ui_wait_resid "time picker visible" ":id/picker_time" "$WAIT_LONG"; then
-        log "14"
-        [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
-        [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
-        if ui_has_element "resid::id/button1"; then
-          ui_snap "020_after_set_datetime" "$SNAP_MODE"
-          ui_tap_any "OK button" "resid:android:id/button1"
-        else
-          _ui_key 4 || true
-          warn "Datetime dialog not validated -> try back key"
-        fi
+# -------------------------
+# Trip Planner page logic
+# -------------------------
+if ! ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
+  warn "Trip Planner page not detected"
+  return 1
+fi
+
+log "Toolbar affiche Trip Planner"
+
+# ---- Datetime (optionnel)
+if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
+  log "Réglage de la date et de l'heure"
+
+  if ui_has_element "resid::id/datetime_text"; then
+    ui_tap_any "date time field" "resid::id/datetime_text"
+
+    if ui_wait_resid "time picker visible" ":id/picker_time" "$WAIT_LONG"; then
+      [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
+      [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
+
+      if ui_has_element "resid::id/button1"; then
+        ui_snap "020_after_set_datetime" "$SNAP_MODE"
+        ui_tap_any "OK button" "resid:android:id/button1"
       else
-        warn "Datetime dialog not opened -> skipping datetime"
+        _ui_key 4 || true
+        warn "Datetime dialog not validated → back fallback"
       fi
     else
-      warn "Date/Time field absent → skip datetime"
+      warn "Datetime dialog not opened → skipping"
     fi
+  else
+    warn "Date/Time field absent → skip datetime"
   fi
+fi
+
+# ---- Station de départ
+log "Réglage de la station de départ"
+
+ui_wait_desc_any "start field visible" "Select start" "$WAIT_LONG"
+ui_snap "030_before_set_start" "$SNAP_MODE"
+
+if ! ui_tap_any "start field" "desc:Select start"; then
+  warn "Start field not tappable"
+  return 1
+fi
+
+ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
+ui_type_and_wait_results "start" "$START_TEXT"
+ui_snap "031_after_type_start" "$SNAP_MODE"
+
+if ! ui_pick_suggestion "start suggestion" "$START_TEXT"; then
+  warn "Start suggestion not found"
+  return 1
+fi
+
+ui_snap "032_after_pick_start" "$SNAP_MODE"
+
+
+
+
+
+
+
+
+
+
+
   
   log "Réglage de la station de départ"
   ui_wait_desc_any "start field visible" "$WAIT_LONG" "Select start"
