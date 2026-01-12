@@ -432,3 +432,23 @@ PY
   log "Tap $label at $x,$y"
   maybe tap "$x" "$y"
 }
+
+ui_list_resid_bounds() {
+  # Usage:
+  #   ui_list_resid_bounds ":id/haf_connection_view"
+  #   ui_list_resid_bounds "de.hafas.android.cfl:id/haf_connection_view"
+
+  local resid="$1"
+
+  [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
+
+  # Normaliser :id/foo
+  if [[ "$resid" == :id/* ]]; then
+    resid="${APP_PACKAGE:-de.hafas.android.cfl}${resid}"
+  fi
+
+  # Extraire toutes les bounds correspondantes
+  sed -n \
+    "s/.*resource-id=\"$resid\".*bounds=\"\\[\\([0-9]*\\),\\([0-9]*\\)\\]\\[\\([0-9]*\\),\\([0-9]*\\)\\]\".*/\\1 \\2 \\3 \\4/p" \
+    "$UI_DUMP_CACHE"
+}
