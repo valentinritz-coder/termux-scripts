@@ -503,14 +503,14 @@ ui_collect_all_resid_bounds() {
   local ALL=()
   local scrolls=0
 
-  log "Collect all for $resid (max_scroll=$max_scroll)"
+  log "Collect all for $resid (max_scroll=$max_scroll)" >&2
 
   while true; do
     ui_refresh
 
     mapfile -t VISIBLE < <(ui_list_resid_bounds "$resid" || true)
 
-    log "Visible count: ${#VISIBLE[@]}"
+    log "Visible count: ${#VISIBLE[@]}" >&2
 
     local new=0
     for line in "${VISIBLE[@]}"; do
@@ -520,9 +520,8 @@ ui_collect_all_resid_bounds() {
       fi
     done
 
-    log "Total collected so far: ${#ALL[@]}"
+    log "Total collected so far: ${#ALL[@]}" >&2
 
-    # Stop si plus rien de nouveau
     [[ $new -eq 0 ]] && break
 
     scrolls=$((scrolls + 1))
@@ -532,7 +531,6 @@ ui_collect_all_resid_bounds() {
     sleep_s 0.4
   done
 
+  # DONNÉES UNIQUEMENT
   printf '%s\n' "${ALL[@]}"
 }
-
-
