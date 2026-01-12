@@ -1,102 +1,17 @@
-[*] Log: /sdcard/cfl_watch/logs/2026-01-12_14-39-10_runner.log
-[*] Start ADB local on 127.0.0.1:37099
-[*] Activation ADB TCP sur 127.0.0.1:37099 (root)
-[*] Redémarrage adbd
-[*] Attente adbd=running
-[*] adb connect (retry) -> 127.0.0.1:37099
-[*] connected to 127.0.0.1:37099
-[*] getprop:
-37099
-running
-[*] adb devices -l:
-List of devices attached
-127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
-
-[*] Tip: export ANDROID_SERIAL=127.0.0.1:37099
-[*] Device list:
-List of devices attached
-127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
-
-[*] Disable Android animations (temporary)
-[*] === RUN: LUXEMBOURG -> ARLON (SNAP_MODE=0) ===
-[2026-01-12 14:39:17] SNAP_DIR=/sdcard/cfl_watch/runs/2026-01-12_14-39-17_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450 (SNAP_MODE=0)
-[2026-01-12 14:39:17] Scenario: LUXEMBOURG -> ARLON (SNAP_MODE=0)
-[2026-01-12 14:39:17] VIA enabled: Bettembourg
-[2026-01-12 14:39:17] Wait toolbar visible
-[*] ui_dump: dump=2399ms cat=192ms total=2592ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:20] wait ok: toolbar visible
-[2026-01-12 14:39:20] Toolbar affiche Home
-[2026-01-12 14:39:20] Tap burger icon tap (desc) at 77,154
-[*] ui_dump: dump=2399ms cat=188ms total=2587ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:23] wait ok: drawer visible
-[2026-01-12 14:39:23] Tap trip planner menu (text) at 423,724
-[*] ui_dump: dump=2485ms cat=186ms total=2672ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:26] wait ok: wait trip planner page
-[2026-01-12 14:39:26] Toolbar affiche Trip Planner
-[2026-01-12 14:39:26] Réglage de la date et de l'heure
-[2026-01-12 14:39:26] Tap date time field (id) at 471,605
-[*] ui_dump: dump=2400ms cat=155ms total=2556ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:29] wait ok: time picker visible
-[2026-01-12 14:39:29] Tap one day earlier (id) at 143,1389
-[2026-01-12 14:39:29] Tap one day earlier (id) at 143,1389
-[2026-01-12 14:39:29] Tap one day earlier (id) at 143,1389
-[2026-01-12 14:39:33] Tap OK button (id) at 887,1535
-[2026-01-12 14:39:33] Réglage de la station de départ
-[*] ui_dump: dump=2442ms cat=185ms total=2627ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:36] wait ok: request screen visible
-[2026-01-12 14:39:36] Start field filled → container child
-[2026-01-12 14:39:36] Tap start field (container) at 534,330
-[*] ui_dump: dump=2397ms cat=166ms total=2564ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:39] wait ok: input location name visible
-[2026-01-12 14:39:39] Type start: LUXEMBOURG
-[*] ui_dump: dump=3538ms cat=156ms total=3695ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:43] wait_results_ready: iter=1 list=1 loader=0
-[*] ui_dump: dump=2476ms cat=184ms total=2661ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:47] Tap start suggestion (desc) at 540,700
-[2026-01-12 14:39:48] Réglage de la station de destination
-[*] ui_dump: dump=2434ms cat=170ms total=2604ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:50] wait ok: request screen visible
-[2026-01-12 14:39:50] Destination field filled → container child
-[2026-01-12 14:39:50] Tap destination field (container) at 534,473
-[*] ui_dump: dump=2364ms cat=174ms total=2538ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:53] wait ok: input location name visible
-[2026-01-12 14:39:53] Type destination: ARLON
-[*] ui_dump: dump=3512ms cat=152ms total=3665ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:39:57] wait_results_ready: iter=1 list=1 loader=0
-[*] ui_dump: dump=2462ms cat=169ms total=2631ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:40:02] Tap destination suggestion (desc) at 540,700
-[2026-01-12 14:40:02] Réglage de la station VIA
-[*] ui_dump: dump=2400ms cat=182ms total=2582ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:40:04] wait ok: options button visible
-[2026-01-12 14:40:04] Tap options button (desc) at 997,605
-[*] ui_dump: dump=2393ms cat=189ms total=2582ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[*] ui_dump: dump=2452ms cat=199ms total=2652ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:40:10] wait ok: via field visible
-[2026-01-12 14:40:10] Tap via field (text) at 587,313
-[*] ui_dump: dump=2361ms cat=177ms total=2538ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:40:13] Type via: Bettembourg
-[*] ui_dump: dump=3585ms cat=174ms total=3760ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:40:17] wait_results_ready: iter=1 list=1 loader=0
-[*] ui_dump: dump=2483ms cat=176ms total=2660ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:40:22] Tap via suggestion (desc) at 540,313
-[2026-01-12 14:40:22] Tap back from via (desc) at 77,154
-[*] ui_dump: dump=2391ms cat=177ms total=2569ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[*] ui_dump: dump=2539ms cat=192ms total=2731ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:40:27] wait ok: search button visible
-[2026-01-12 14:40:28] Tap search button (id) at 540,784
-[*] ui_dump: dump=3323ms cat=189ms total=3512ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:40:32] snap: 14-40-31_060_after_search (mode=3)
-[2026-01-12 14:40:32] Lancement de la recherche
-[*] ui_dump: dump=2468ms cat=162ms total=2630ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-[2026-01-12 14:40:35] wait ok: results page visible
-[*] ui_dump: dump=2456ms cat=164ms total=2621ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
-     1	[2026-01-12 14:40:35] Collect all for :id/haf_connection_view (max_scroll=5)
-     2	[2026-01-12 14:40:37] Visible count: 3
-     3	[2026-01-12 14:40:37] Total collected so far: 3
-[!] Run FAILED (rc=1) -> viewer
-[2026-01-12 14:40:38] Viewer: /sdcard/cfl_watch/runs/2026-01-12_14-39-17_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/viewers/index.html
-[*] RC=1
-[*] Run artifacts: /sdcard/cfl_watch/runs/2026-01-12_14-39-17_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450
-[*] Viewer: /sdcard/cfl_watch/runs/2026-01-12_14-39-17_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/viewers/index.html
-[*] Done. fail_count=1
-[*] Restore Android animations: W=0 T=0 A=0
+~/termux-scripts $ ADB_TCP_PORT=37099 UI_STEP_SLEEP=0 UI_DT_DEBUG=0 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch CFL_TMP_DIR="$HOME/.cache/cfl_watch" CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime.sh" DATE_YMD="2026-01-09" TIME_HM="14:50" bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim   --start "LUXEMBOURG" --target "ARLON" --via "Bettembourg" --snap-mode 0                                             [*] Log: /sdcard/cfl_watch/logs/2026-01-12_14-48-39_runner.log                                                  [*] Start ADB local on 127.0.0.1:37099                  [*] Activation ADB TCP sur 127.0.0.1:37099 (root)       [*] Redémarrage adbd                                    [*] Attente adbd=running                                [*] adb connect (retry) -> 127.0.0.1:37099              [*] connected to 127.0.0.1:37099                        [*] getprop:                                            37099                                                   running                                                 [*] adb devices -l:
+List of devices attached                                127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1                                                                             [*] Tip: export ANDROID_SERIAL=127.0.0.1:37099          [*] Device list:                                        List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1                                                                             [*] Disable Android animations (temporary)
+[*] === RUN: LUXEMBOURG -> ARLON (SNAP_MODE=0) ===      [2026-01-12 14:48:46] SNAP_DIR=/sdcard/cfl_watch/runs/2026-01-12_14-48-46_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450 (SNAP_MODE=0)                    [2026-01-12 14:48:46] Scenario: LUXEMBOURG -> ARLON (SNAP_MODE=0)                                               [2026-01-12 14:48:46] VIA enabled: Bettembourg          [2026-01-12 14:48:46] Wait toolbar visible              [*] ui_dump: dump=2393ms cat=175ms total=2569ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:48:49] wait ok: toolbar visible          [2026-01-12 14:48:49] Toolbar affiche Home              [2026-01-12 14:48:49] Tap burger icon tap (desc) at 77,154                                                      [*] ui_dump: dump=2364ms cat=193ms total=2558ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-12 14:48:52] wait ok: drawer visible           [2026-01-12 14:48:52] Tap trip planner menu (text) at 423,724
+[*] ui_dump: dump=2578ms cat=182ms total=2760ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:48:55] wait ok: wait trip planner page
+[2026-01-12 14:48:55] Toolbar affiche Trip Planner      [2026-01-12 14:48:55] Réglage de la date et de l'heure  [2026-01-12 14:48:55] Tap date time field (id) at 471,605                                                       [*] ui_dump: dump=2329ms cat=179ms total=2508ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:48:57] wait ok: time picker visible      [2026-01-12 14:48:58] Tap one day earlier (id) at 143,1389                                                      [2026-01-12 14:48:58] Tap one day earlier (id) at 143,1389                                                      [2026-01-12 14:48:58] Tap one day earlier (id) at 143,1389                                                      [2026-01-12 14:49:02] Tap OK button (id) at 887,1535    [2026-01-12 14:49:02] Réglage de la station de départ   [*] ui_dump: dump=2456ms cat=178ms total=2634ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:04] wait ok: request screen visible   [2026-01-12 14:49:04] Start field filled → container child                                                      [2026-01-12 14:49:05] Tap start field (container) at 534,330                                                    [*] ui_dump: dump=2374ms cat=186ms total=2561ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:07] wait ok: input location name visible                                                      [2026-01-12 14:49:07] Type start: LUXEMBOURG            [*] ui_dump: dump=3720ms cat=182ms total=3903ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:12] wait_results_ready: iter=1 list=1 loader=0                                                [*] ui_dump: dump=2432ms cat=179ms total=2611ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-12 14:49:16] Tap start suggestion (desc) at 540,700
+[2026-01-12 14:49:16] Réglage de la station de destination                                                      [*] ui_dump: dump=2442ms cat=177ms total=2619ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:19] wait ok: request screen visible   [2026-01-12 14:49:19] Destination field filled → container child                                                [2026-01-12 14:49:19] Tap destination field (container) at 534,473                                              [*] ui_dump: dump=2332ms cat=200ms total=2533ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:22] wait ok: input location name visible                                                      [2026-01-12 14:49:22] Type destination: ARLON           [*] ui_dump: dump=3736ms cat=188ms total=3924ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:26] wait_results_ready: iter=1 list=1 loader=0                                                [*] ui_dump: dump=2447ms cat=174ms total=2621ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:31] Tap destination suggestion (desc) at 540,700                                              [2026-01-12 14:49:31] Réglage de la station VIA         [*] ui_dump: dump=2407ms cat=178ms total=2586ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:34] wait ok: options button visible   [2026-01-12 14:49:34] Tap options button (desc) at 997,605                                                      [*] ui_dump: dump=2423ms cat=180ms total=2603ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2505ms cat=177ms total=2682ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:39] wait ok: via field visible        [2026-01-12 14:49:39] Tap via field (text) at 587,313   [*] ui_dump: dump=2349ms cat=177ms total=2526ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:42] Type via: Bettembourg             [*] ui_dump: dump=3629ms cat=185ms total=3814ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:46] wait_results_ready: iter=1 list=1 loader=0                                                [*] ui_dump: dump=2504ms cat=185ms total=2690ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:51] Tap via suggestion (desc) at 540,313                                                      [2026-01-12 14:49:51] Tap back from via (desc) at 77,154[*] ui_dump: dump=2367ms cat=180ms total=2547ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [*] ui_dump: dump=2548ms cat=189ms total=2737ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:49:57] wait ok: search button visible    [2026-01-12 14:49:57] Tap search button (id) at 540,784 [*] ui_dump: dump=3296ms cat=188ms total=3485ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-12 14:50:01] snap: 14-50-00_060_after_search (mode=3)                                                  [2026-01-12 14:50:01] Lancement de la recherche         [*] ui_dump: dump=2504ms cat=187ms total=2692ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-12 14:50:04] wait ok: results page visible     [*] ui_dump: dump=2432ms cat=182ms total=2615ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [*] ui_dump: dump=2431ms cat=194ms total=2625ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                           1  [2026-01-12 14:50:04] Collect all for :id/haf_connection_view (max_scroll=5)                                 2  [2026-01-12 14:50:07] Visible count: 3               3  [2026-01-12 14:50:07] Total collected so far: 3      4  [2026-01-12 14:50:10] Visible count: 3               5  [2026-01-12 14:50:10] Total collected so far: 3      6  0 625 1080 871
+     7  0 874 1080 1203                                      8  0 1206 1080 1535                                [*] ui_dump: dump=2494ms cat=194ms total=2688ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [*] ui_dump: dump=2499ms cat=166ms total=2665ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:50:10] Collect all for :id/haf_connection_view (max_scroll=5)
+[2026-01-12 14:50:13] Visible count: 3                  [2026-01-12 14:50:13] Total collected so far: 3         [2026-01-12 14:50:17] Visible count: 3
+[2026-01-12 14:50:17] Total collected so far: 3         0 625 1080 871                                          0 874 1080 1203
+0 1206 1080 1535                                        [2026-01-12 14:50:17] Drill visible connections         [*] ui_dump: dump=2454ms cat=184ms total=2638ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [*] ui_dump: dump=2476ms cat=164ms total=2641ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml                                                      [2026-01-12 14:50:24] Drill visible connections 2       /data/data/com.termux/files/home/termux-scripts/cfl_watch/scenarios/trip_api_datetime.sh: line 339: [2026-01-12: arithmetic syntax error: operand expected (error token is "[2026-01-12")                                       [2026-01-12 14:50:24] Scenario success (keyword detected)                                                       [*] RC=0                                                [*] Run artifacts: /sdcard/cfl_watch/runs/2026-01-12_14-48-46_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450                                              [*] Done. fail_count=0                                  [*] Restore Android animations: W=0 T=0 A=0
+~/termux-scripts $                                      
