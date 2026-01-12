@@ -228,7 +228,7 @@ else
   ui_tap_child_of_resid \
     "destination field (container)" \
     ":id/request_screen_container" \
-    1
+    2
 fi
 
 ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
