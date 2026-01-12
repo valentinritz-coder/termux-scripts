@@ -371,3 +371,41 @@ ui_wait_element_has_text() {
     sleep_s "${WAIT_POLL:-0.5}"
   done
 }
+
+ui_tap_child_of_resid() {
+  # Usage:
+  #   ui_tap_child_of_resid "label" "resid" index [filter]
+  #
+  # Examples:
+  #   ui_tap_child_of_resid "start field" "de.hafas.android.cfl:id/request_screen_container" 0
+  #   ui_tap_child_of_resid "second option" "resid" 1 clickable
+
+  local label="$1"
+  local resid="$2"
+  local index="$3"
+  local filter="${4:-}"
+
+  [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
+
+  # Trouver la ligne du container
+  local line
+  line="$(grep -n "$(resid_regex "$resid")" "$UI_DUMP_CACHE" | cut -d: -f1 | head -n1)"
+  [[ -n "$line" ]] || return 1
+
+  # Construire le grep enfant
+  local grep_child="index=\"$index\""
+  [[ -n "$filter" ]] && grep_child="$grep_child.*$filter"
+
+  # Extraire les bounds du child demandé
+  local bounds
+  bounds="$(
+    sed -n "$line,$((line+60))p" "$UI_DUMP_CACHE" \
+    | grep "$grep_child" \
+    | sed -n 's/.*bounds="\([^"]*\)".*/\1/p' \
+    | head -n1
+  )"
+
+  [[ -n "$bounds" ]] || return 1
+
+  tap_bounds "$label" "$bounds"
+}
