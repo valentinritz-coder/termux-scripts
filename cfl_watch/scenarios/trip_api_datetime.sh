@@ -174,6 +174,67 @@ fi
 # ---- Station de départ
 log "Réglage de la station de départ"
 
+# On attend que l'écran de requête soit là
+ui_wait_resid "request screen visible" \
+  ":id/request_screen_container" \
+  "$WAIT_LONG"
+
+ui_snap "030_before_set_start" "$SNAP_MODE"
+
+# Cas 1: champ vide → Select start visible directement
+if ui_has_element "desc:Select start"; then
+  log "Start field empty → using Select start"
+  ui_tap_any "start field" "desc:Select start"
+
+# Cas 2: champ déjà rempli → structure container
+elif ui_has_element "resid:de.hafas.android.cfl:id/request_screen_container"; then
+  log "Start field already filled → using first child of container"
+  ui_tap_child_of_resid \
+    "start field (container)" \
+    ":id/request_screen_container" \
+    0 \
+    clickable
+else
+  warn "Start field not found"
+  return 1
+fi
+
+# Champ de saisie
+ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
+
+ui_type_and_wait_results "start" "$START_TEXT"
+ui_snap "031_after_type_start" "$SNAP_MODE"
+
+# Choix suggestion
+if ! ui_pick_suggestion "start suggestion" "$START_TEXT"; then
+  warn "Start suggestion not found"
+  return 1
+fi
+
+ui_snap "032_after_pick_start" "$SNAP_MODE"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ui_wait_desc_any "start field visible" "Select start" "$WAIT_LONG"
 ui_snap "030_before_set_start" "$SNAP_MODE"
 
