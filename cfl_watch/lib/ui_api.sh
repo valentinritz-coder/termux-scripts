@@ -450,6 +450,7 @@ ui_list_resid_bounds() {
   esc_resid="$(regex_escape_ere "$resid")"
 
   sed -n \
-    "s/.*resource-id=\"$esc_resid\".*bounds=\"\\[\\([0-9]*\\),\\([0-9]*\\)\\]\\[\\([0-9]*\\),\\([0-9]*\\)\\]\".*/\\1 \\2 \\3 \\4/p" \
+    "s|.*resource-id=\"$esc_resid\".*bounds=\"\\[\\([0-9]*\\),\\([0-9]*\\)\\]\\[\\([0-9]*\\),\\([0-9]*\\)\\]\".*|\\1 \\2 \\3 \\4|p" \
     "$UI_DUMP_CACHE"
+
 }
