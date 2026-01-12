@@ -261,27 +261,27 @@ ui_snap "042_after_pick_destination" "$SNAP_MODE"
 if [[ -n "$VIA_TEXT_TRIM" ]]; then
   log "Réglage de la station VIA"
 
-  if ui_wait_resid "options button visible" "$ID_SETTING" "$WAIT_LONG"; then
+  if ui_wait_resid "options button visible" ":id/button_options" "$WAIT_LONG"; then
     ui_tap_any "options button" \
       "desc:Extended search options" \
-      "resid:$ID_SETTING" || true
+      "resid::id/button_options" || true
 
     ui_snap_here "050_after_open_options" "$SNAP_MODE"
 
-    if ui_wait_resid "via field visible" "$ID_VIA" "$WAIT_LONG"; then
+    if ui_wait_resid "via field visible" ":id/input_via" "$WAIT_LONG"; then
       ui_tap_any "via field" \
         "text:Enter stop" \
-        "resid:$ID_VIA" || true
-
-      ui_snap_here "051_after_tap_via" "$SNAP_MODE"
-
-      ui_type_and_wait_results "via" "$VIA_TEXT_TRIM"
+        "resid::id/input_via" || true
       # 1) attendre que le clavier soit là (ton point clé)
       _ui_wait_ime_shown || true
       # 3) BACK (chez toi: valide + ferme clavier)
       _ui_key 4 || true
       # 4) attendre que le clavier soit vraiment parti avant de re-cliquer ailleurs
       _ui_wait_ime_hidden || true
+
+      ui_snap_here "051_after_tap_via" "$SNAP_MODE"
+
+      ui_type_and_wait_results "via" "$VIA_TEXT_TRIM"
       ui_snap "052_after_type_via" "$SNAP_MODE"
 
       ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM" || true
