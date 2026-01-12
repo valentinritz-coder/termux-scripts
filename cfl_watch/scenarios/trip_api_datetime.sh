@@ -319,10 +319,18 @@ log "Lancement de la recherche"
 
 ui_wait_resid "results page visible" ":id/haf_connection_view" "$WAIT_LONG"
 
+ui_collect_all_resid_bounds ":id/haf_connection_view" 5 | nl
+
+ui_collect_all_resid_bounds ":id/haf_connection_view" 5 > /sdcard/debug_connections.txt
+adb shell cat /sdcard/debug_connections.txt
+
+
 log "Drill visible connections"
 mapfile -t CONNECTIONS < <(
   ui_collect_all_resid_bounds ":id/haf_connection_view" 15
 )
+
+log "Drill visible connections 2"
 
 conn_idx=0
 for line in "${CONNECTIONS[@]}"; do
