@@ -374,11 +374,7 @@ ui_wait_element_has_text() {
 
 ui_tap_child_of_resid() {
   # Usage:
-  #   ui_tap_child_of_resid "label" "resid" index [filter]
-  #
-  # Examples:
-  #   ui_tap_child_of_resid "start field" "de.hafas.android.cfl:id/request_screen_container" 0
-  #   ui_tap_child_of_resid "second option" "resid" 1 clickable
+  #   ui_tap_child_of_resid "label" ":id/request_screen_container" 0 [filter]
 
   local label="$1"
   local resid="$2"
@@ -387,10 +383,18 @@ ui_tap_child_of_resid() {
 
   [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
 
+  # Normaliser :id/foo → package:id/foo
+  if [[ "$resid" == :id/* ]]; then
+    resid="${APP_PACKAGE:-de.hafas.android.cfl}${resid}"
+  fi
+
   # Trouver la ligne du container
   local line
   line="$(grep -n "$(resid_regex "$resid")" "$UI_DUMP_CACHE" | cut -d: -f1 | head -n1)"
-  [[ -n "$line" ]] || return 1
+  [[ -n "$line" ]] || {
+    warn "Container not found: $resid"
+    return 1
+  }
 
   # Construire le grep enfant
   local grep_child="index=\"$index\""
@@ -400,12 +404,16 @@ ui_tap_child_of_resid() {
   local bounds
   bounds="$(
     sed -n "$line,$((line+60))p" "$UI_DUMP_CACHE" \
-    | grep "$grep_child" \
-    | sed -n 's/.*bounds="\([^"]*\)".*/\1/p' \
-    | head -n1
+      | grep "$grep_child" \
+      | sed -n 's/.*bounds="\([^"]*\)".*/\1/p' \
+      | head -n1
   )"
 
-  [[ -n "$bounds" ]] || return 1
+  [[ -n "$bounds" ]] || {
+    warn "Child index=$index not found in $resid"
+    return 1
+  }
 
   tap_bounds "$label" "$bounds"
 }
+
