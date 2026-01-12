@@ -108,14 +108,18 @@ fi
 
 maybe cfl_launch
 
+# -------------------------
+# App ready
+# -------------------------
+
 log "Wait toolbar visible"
 ui_wait_resid "toolbar visible" ":id/toolbar" "$WAIT_LONG"
-
 ui_snap "000_opening" "$SNAP_MODE"
 
 # -------------------------
 # From Home → Trip Planner
 # -------------------------
+
 if ui_element_has_text "resid::id/toolbar" "Home"; then
   log "Toolbar affiche Home"
 
@@ -136,16 +140,21 @@ if ui_element_has_text "resid::id/toolbar" "Home"; then
 fi
 
 # -------------------------
-# Trip Planner page logic
+# Trip Planner page
 # -------------------------
+
 if ! ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
   warn "Trip Planner page not detected"
-  return 1
+  ui_snap_here "trip_planner_not_detected" "$SNAP_MODE"
+  exit 1
 fi
 
 log "Toolbar affiche Trip Planner"
 
-# ---- Datetime (optionnel)
+# -------------------------
+# Datetime (optional)
+# -------------------------
+
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   log "Réglage de la date et de l'heure"
 
@@ -164,177 +173,139 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
         warn "Datetime dialog not validated → back fallback"
       fi
     else
-      warn "Datetime dialog not opened → skipping"
+      warn "Datetime dialog not opened → skipping datetime"
     fi
   else
     warn "Date/Time field absent → skip datetime"
   fi
 fi
 
-# ---- Station de départ
+# -------------------------
+# Start station
+# -------------------------
+
 log "Réglage de la station de départ"
 
-# On attend que l'écran de requête soit là
-ui_wait_resid "request screen visible" \
-  ":id/request_screen_container" \
-  "$WAIT_LONG"
-
+ui_wait_resid "request screen visible" ":id/request_screen_container" "$WAIT_LONG"
 ui_snap "030_before_set_start" "$SNAP_MODE"
 
-# Cas 1: champ vide → Select start visible directement
 if ui_has_element "desc:Select start"; then
-  log "Start field empty → using Select start"
+  log "Start field empty → Select start"
   ui_tap_any "start field" "desc:Select start"
-
-# Cas 2: champ déjà rempli → structure container
-elif ui_has_element "resid::id/request_screen_container"; then
-  log "Start field already filled → using first child of container"
-  ui_tap_child_of_resid \
-  "start field (container)" \
-  ":id/request_screen_container" \
-  0 \
-  clickable
 else
-  warn "Start field not found"
-  return 1
+  log "Start field filled → container child"
+  ui_tap_child_of_resid \
+    "start field (container)" \
+    ":id/request_screen_container" \
+    0
 fi
 
-# Champ de saisie
 ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
-
 ui_type_and_wait_results "start" "$START_TEXT"
 ui_snap "031_after_type_start" "$SNAP_MODE"
 
-# Choix suggestion
 if ! ui_pick_suggestion "start suggestion" "$START_TEXT"; then
   warn "Start suggestion not found"
-  return 1
+  exit 1
 fi
 
 ui_snap "032_after_pick_start" "$SNAP_MODE"
 
+# -------------------------
+# Destination station
+# -------------------------
 
-# ---- Station de destination
 log "Réglage de la station de destination"
 
-# On attend que l'écran de requête soit là
-ui_wait_resid "request screen visible" \
-  ":id/request_screen_container" \
-  "$WAIT_LONG"
-
+ui_wait_resid "request screen visible" ":id/request_screen_container" "$WAIT_LONG"
 ui_snap "040_before_set_destination" "$SNAP_MODE"
 
-# Cas 1: champ vide → Select destination visible
 if ui_has_element "desc:Select destination"; then
-  log "Destination field empty → using Select destination"
+  log "Destination field empty → Select destination"
   ui_tap_any "destination field" "desc:Select destination"
-
-# Cas 2: champ déjà rempli → structure container
-elif ui_has_element "resid::id/request_screen_container"; then
-  log "Destination field already filled → using second child of container"
+else
+  log "Destination field filled → container child"
   ui_tap_child_of_resid \
     "destination field (container)" \
     ":id/request_screen_container" \
-    2 \
-    clickable
-else
-  warn "Destination field not found"
-  return 1
+    1
 fi
 
-# Champ de saisie
 ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
-
 ui_type_and_wait_results "destination" "$TARGET_TEXT"
 ui_snap "041_after_type_destination" "$SNAP_MODE"
 
-# Choix suggestion
 if ! ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"; then
   warn "Destination suggestion not found"
-  return 1
+  exit 1
 fi
 
 ui_snap "042_after_pick_destination" "$SNAP_MODE"
 
+# -------------------------
+# VIA (optional)
+# -------------------------
 
-# ---- VIA (optionnel)
 if [[ -n "$VIA_TEXT_TRIM" ]]; then
   log "Réglage de la station VIA"
 
-  # Ouvrir les options avancées
-  if ! ui_wait_resid "options button visible" "$ID_SETTING" "$WAIT_LONG"; then
-    warn "VIA enabled but options button not found → skipping VIA"
-    goto_after_via=1
-  else
+  if ui_wait_resid "options button visible" "$ID_SETTING" "$WAIT_LONG"; then
     ui_tap_any "options button" \
       "desc:Extended search options" \
-      "resid:$ID_SETTING" \
-    || true
+      "resid:$ID_SETTING" || true
 
     ui_snap_here "050_after_open_options" "$SNAP_MODE"
 
-    # Champ VIA
-    if ! ui_wait_resid "via field visible" "$ID_VIA" "$WAIT_LONG"; then
-      warn "VIA enabled but via field not found → skipping VIA"
-      goto_after_via=1
-    else
+    if ui_wait_resid "via field visible" "$ID_VIA" "$WAIT_LONG"; then
       ui_tap_any "via field" \
         "text:Enter stop" \
-        "resid:$ID_VIA" \
-      || true
+        "resid:$ID_VIA" || true
 
       ui_snap_here "051_after_tap_via" "$SNAP_MODE"
 
-      # Saisie VIA
       ui_type_and_wait_results "via" "$VIA_TEXT_TRIM"
       ui_snap "052_after_type_via" "$SNAP_MODE"
 
-      # Choix suggestion
-      if ! ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM"; then
-        warn "VIA suggestion not found → skipping VIA"
-      else
-        ui_snap "053_after_pick_via" "$SNAP_MODE"
-      fi
+      ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM" || true
+      ui_snap "053_after_pick_via" "$SNAP_MODE"
 
-      # Retour vers Trip Planner
-      ui_tap_any "back from via" \
-        "desc:Navigate up" \
-      || true
-
+      ui_tap_any "back from via" "desc:Navigate up" || true
       ui_snap_here "054_after_back_from_via" "$SNAP_MODE"
+    else
+      warn "VIA field not found → skipping VIA"
     fi
+  else
+    warn "Options button not found → skipping VIA"
   fi
 fi
 
+# -------------------------
+# Search
+# -------------------------
 
-  
-  # 8) SEARCH: attendre bouton
-  ui_wait_search_button "$WAIT_LONG"
-  ui_snap "09_search_ready" "$SNAP_MODE"
-  
-  # 9) SEARCH: tap bouton (ou ENTER)
-  if ! ui_tap_any "search button" \
+log "Lancement de la recherche"
+
+ui_wait_resid "search button visible" ":id/button_search_default" "$WAIT_LONG"
+
+if ! ui_tap_any "search button" \
   "resid:$ID_BTN_SEARCH_DEFAULT" \
   "resid:$ID_BTN_SEARCH" \
   "text:Rechercher" \
-  "text:Itinéraires"
-  then
-  warn "Search button not found -> ENTER fallback"
+  "text:Itinéraires"; then
+  warn "Search button not tappable → ENTER fallback"
   maybe key 66 || true
-  fi
-  
-  # Force xml+png after search for debugging even if SNAP_MODE=2
-  ui_snap_here "10_after_search" 3
-  
-  # Heuristique de succès (optionnel)
-  latest_xml="$(ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true)"
-  if [[ -n "${latest_xml:-}" ]] && grep -qiE 'Results|Résultats|Itinéraire|Itinéraires|Trajet' "$latest_xml"; then
+fi
+
+ui_snap_here "060_after_search" 3
+
+# -------------------------
+# End heuristic (soft)
+# -------------------------
+
+latest_xml="$(ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true)"
+if [[ -n "$latest_xml" ]] && grep -qiE 'Results|Résultats|Itinéraire|Itinéraires|Trajet' "$latest_xml"; then
   log "Scenario success (keyword detected)"
   exit 0
-  fi
-else
-  warn "Toolbar dans un état inattendu"
-  ui_snap_here "toolbar_unexpected_state" "$SNAP_MODE"
 fi
 
 warn "Scenario ended without strong marker (not necessarily a failure)"
