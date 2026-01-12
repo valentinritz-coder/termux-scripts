@@ -337,8 +337,6 @@ while true; do
     key="$(hash_key "$raw_key")"
 
     [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
-    SEEN_CONNECTIONS["$key"]=1
-    new=1
 
     # ---- click connection ----
     [[ "$bounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
@@ -347,8 +345,15 @@ while true; do
 
     log "Open connection"
     ui_tap_xy "connection" "$cx" "$cy"
-
-    ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"
+    if ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"; then
+      SEEN_CONNECTIONS["$key"]=1
+      new=1
+      ui_snap "070_connection" 3
+    else
+      warn "Connection not opened, will retry"
+      continue
+    fi
+    #ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"
     ui_snap "070_connection" 3
 
     # -------------------------
