@@ -301,8 +301,6 @@ fi
 # Search
 # -------------------------
 
-log "Lancement de la recherche"
-
 ui_wait_resid "search button visible" ":id/button_search_default" "$WAIT_LONG"
 
 if ! ui_tap_any "search button" \
@@ -312,6 +310,51 @@ if ! ui_tap_any "search button" \
 fi
 
 ui_snap_here "060_after_search" 3
+
+# -------------------------
+# Drill all visible connections
+# -------------------------
+
+log "Lancement de la recherche"
+
+log "Wait toolbar visible with Results"
+
+ui_wait_element_has_text \
+  "wait result page" \
+  "resid::id/toolbar" \
+  "Results" \
+  "$WAIT_LONG"
+
+log "Drill visible connections"
+
+idx=0
+while read -r x1 y1 x2 y2; do
+  cx=$(( (x1 + x2) / 2 ))
+  cy=$(( (y1 + y2) / 2 ))
+
+  log "Open connection #$idx"
+  ui_tap_xy "connection" "$cx" "$cy"
+
+  ui_wait_element_has_text \
+  "wait result page" \
+  "resid::id/toolbar" \
+  "Detail" \
+  "$WAIT_LONG"
+  ui_snap "070_connection_$idx" 3
+
+  _ui_key 4 || true
+  
+  ui_wait_element_has_text \
+  "wait result page" \
+  "resid::id/toolbar" \
+  "Results" \
+  "$WAIT_LONG"
+
+  idx=$((idx + 1))
+done < <(ui_list_resid_bounds ":id/haf_connection_view")
+
+
+
 
 # -------------------------
 # End heuristic (soft)
