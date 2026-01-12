@@ -63,6 +63,9 @@ WAIT_POLL="${WAIT_POLL:-0.0}"
 WAIT_SHORT="${WAIT_SHORT:-20}"
 WAIT_LONG="${WAIT_LONG:-30}"
 
+declare -A SEEN_CONNECTIONS
+declare -A SEEN_ROUTES
+
 # Snap run name
 # Snap run name
 run_name="trip_$(safe_name "$START_TEXT")_to_$(safe_name "$TARGET_TEXT")"
@@ -319,65 +322,84 @@ log "Lancement de la recherche"
 
 ui_wait_resid "results page visible" ":id/haf_connection_view" "$WAIT_LONG"
 
-log "Drill visible connections"
-mapfile -t CONNECTIONS < <(
-  ui_collect_all_resid_bounds ":id/haf_connection_view" 15
-)
+log "Drill connections (content-desc driven)"
 
-log "Drill visible connections 2"
+scrolls=0
+while true; do
+  ui_refresh
+  mapfile -t ITEMS < <(ui_list_resid_desc_bounds ":id/haf_connection_view")
 
-conn_idx=0
-for line in "${CONNECTIONS[@]}"; do
-  read -r x1 y1 x2 y2 <<<"$line"
+  new=0
+  for item in "${ITEMS[@]}"; do
+    IFS=$'\t' read -r key bounds <<<"$item"
 
-  cx=$(( (x1 + x2) / 2 ))
-  cy=$(( (y1 + y2) / 2 ))
+    [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
+    SEEN_CONNECTIONS["$key"]=1
+    new=1
 
-  log "Open connection #$conn_idx"
-  ui_tap_xy "connection" "$cx" "$cy"
+    [[ "$bounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
+    cx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
+    cy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
 
-  ui_wait_resid "details page visible" ":id/text_line_name" "$WAIT_LONG"
+    log "Open connection: $key"
+    ui_tap_xy "connection" "$cx" "$cy"
 
-  ui_snap "070_result_$conn_idx" 3
+    ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"
+    ui_snap "070_connection" 3
 
-  # -------------------------
-  # Drill route details
-  # -------------------------
+    # ---- routes ----
+    declare -A SEEN_ROUTES
+    route_scrolls=0
 
-  log "Drill route details for connection #$conn_idx"
-  #ui_refresh
-  mapfile -t ROUTES < <(
-    ui_collect_all_resid_bounds ":id/text_line_name" 10
-  )
+    while true; do
+      ui_refresh
+      mapfile -t ROUTES < <(ui_list_resid_text_bounds ":id/text_line_name")
 
-  route_idx=0
-  for rline in "${ROUTES[@]}"; do
-    read -r rx1 ry1 rx2 ry2 <<<"$rline"
+      rnew=0
+      for r in "${ROUTES[@]}"; do
+        IFS=$'\t' read -r rkey rbounds <<<"$r"
 
-    rcx=$(( (rx1 + rx2) / 2 ))
-    rcy=$(( (ry1 + ry2) / 2 ))
+        [[ -n "${SEEN_ROUTES[$rkey]:-}" ]] && continue
+        SEEN_ROUTES["$rkey"]=1
+        rnew=1
 
-    log "Open route #$route_idx (connection #$conn_idx)"
-    ui_tap_xy "route detail" "$rcx" "$rcy"
+        [[ "$rbounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
+        rcx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
+        rcy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
 
-    ui_wait_resid "route details visible" ":id/journey_details_head" "$WAIT_LONG"
+        log "Open route: $rkey"
+        ui_tap_xy "route" "$rcx" "$rcy"
 
-    ui_snap "080_result_${conn_idx}_route_${route_idx}" 3
+        ui_wait_resid "route details" ":id/journey_details_head" "$WAIT_LONG"
+        ui_snap "080_route" 3
+
+        # scroll to bottom ONCE
+        ui_scroll_down
+        ui_scroll_down
+        sleep_s 0.3
+
+        _ui_key 4 || true
+        ui_wait_resid "back to details" ":id/text_line_name" "$WAIT_LONG"
+      done
+
+      [[ $rnew -eq 0 ]] && break
+      route_scrolls=$((route_scrolls+1))
+      [[ $route_scrolls -ge 8 ]] && break
+
+      ui_scroll_down
+      sleep_s 0.4
+    done
 
     _ui_key 4 || true
-    ui_wait_resid "back to details page" ":id/text_line_name" "$WAIT_LONG"
-
-    route_idx=$((route_idx + 1))
+    ui_wait_resid "back to results" ":id/haf_connection_view" "$WAIT_LONG"
   done
 
-  # -------------------------
-  # Back to connections list
-  # -------------------------
+  [[ $new -eq 0 ]] && break
+  scrolls=$((scrolls+1))
+  [[ $scrolls -ge 10 ]] && break
 
-  _ui_key 4 || true
-  ui_wait_resid "back to results page" ":id/haf_connection_view" "$WAIT_LONG"
-
-  conn_idx=$((conn_idx + 1))
+  ui_scroll_down
+  sleep_s 0.4
 done
 
 # -------------------------
