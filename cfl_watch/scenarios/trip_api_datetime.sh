@@ -322,36 +322,57 @@ ui_wait_resid "one connection is visible" ":id/haf_connection_view" "$WAIT_LONG"
 log "Drill visible connections"
 mapfile -t CONNECTIONS < <(ui_list_resid_bounds ":id/haf_connection_view")
 
-log "Drill visible connections"
-
-idx=0
+conn_idx=0
 for line in "${CONNECTIONS[@]}"; do
   read -r x1 y1 x2 y2 <<<"$line"
 
   cx=$(( (x1 + x2) / 2 ))
   cy=$(( (y1 + y2) / 2 ))
 
-  log "coords: $x1,$y1 → $x2,$y2"
-  log "Open connection #$idx"
-
+  log "Open connection #$conn_idx"
   ui_tap_xy "connection" "$cx" "$cy"
 
-  ui_wait_element_has_text \
-    "wait result page" \
-    "resid::id/toolbar" \
-    "Detail" \
-    "$WAIT_LONG"
+  ui_wait_resid "back to results list" ":id/text_line_name" "$WAIT_LONG"
 
-  ui_snap "070_connection_$idx" 3
+  ui_snap "070_result_$conn_idx" 3
+
+  # -------------------------
+  # Drill route details
+  # -------------------------
+
+  log "Drill route details for connection #$conn_idx"
+  ui_refresh
+  mapfile -t ROUTES < <(ui_list_resid_bounds ":id/text_line_name")
+
+  route_idx=0
+  for rline in "${ROUTES[@]}"; do
+    read -r rx1 ry1 rx2 ry2 <<<"$rline"
+
+    rcx=$(( (rx1 + rx2) / 2 ))
+    rcy=$(( (ry1 + ry2) / 2 ))
+
+    log "Open route #$route_idx (connection #$conn_idx)"
+    ui_tap_xy "route detail" "$rcx" "$rcy"
+
+    ui_wait_resid "back to results list" ":id/journey_details_head" "$WAIT_LONG"
+
+    ui_snap "080_result_${conn_idx}_route_${route_idx}" 3
+
+    _ui_key 4 || true
+    ui_wait_resid "back to results list" ":id/text_line_name" "$WAIT_LONG"
+
+    route_idx=$((route_idx + 1))
+  done
+
+  # -------------------------
+  # Back to connections list
+  # -------------------------
 
   _ui_key 4 || true
-  ui_wait_resid "one connection is visible" ":id/haf_connection_view" "$WAIT_LONG"
+  ui_wait_resid "back to results list" ":id/haf_connection_view" "$WAIT_LONG"
 
-  idx=$((idx + 1))
-  log "iteration: $idx"
+  conn_idx=$((conn_idx + 1))
 done
-
-
 
 # -------------------------
 # End heuristic (soft)
