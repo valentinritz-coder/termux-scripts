@@ -434,6 +434,9 @@ PY
 }
 
 ui_list_resid_bounds() {
+  # Usage:
+  #   ui_list_resid_bounds ":id/haf_connection_view"
+
   local resid="$1"
 
   [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
@@ -443,9 +446,29 @@ ui_list_resid_bounds() {
     resid="${APP_PACKAGE:-de.hafas.android.cfl}${resid}"
   fi
 
-  local esc_resid
-  esc_resid="$(regex_escape_ere "$resid")"
+  python - "$UI_DUMP_CACHE" "$resid" <<'PY'
+import sys, re, xml.etree.ElementTree as ET
 
-  grep -E "resource-id=\"$esc_resid\"" "$UI_DUMP_CACHE" | \
-  sed -n 's|.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]".*|\1 \2 \3 \4|p'
+dump, resid = sys.argv[1], sys.argv[2]
+
+_bounds = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
+
+def bounds(b):
+    m = _bounds.match(b or "")
+    if not m:
+        return None
+    return m.groups()
+
+root = ET.parse(dump).getroot()
+
+for node in root.iter("node"):
+    if node.get("resource-id") != resid:
+        continue
+
+    b = bounds(node.get("bounds"))
+    if not b:
+        continue
+
+    print(" ".join(b))
+PY
 }
