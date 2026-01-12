@@ -534,3 +534,58 @@ ui_collect_all_resid_bounds() {
   # DONNÉES UNIQUEMENT
   printf '%s\n' "${ALL[@]}"
 }
+
+ui_list_resid_desc_bounds() {
+  # Usage: ui_list_resid_desc_bounds ":id/haf_connection_view"
+  local resid="$1"
+
+  [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
+
+  if [[ "$resid" == :id/* ]]; then
+    resid="${APP_PACKAGE:-de.hafas.android.cfl}${resid}"
+  fi
+
+  python - "$UI_DUMP_CACHE" "$resid" <<'PY'
+import sys, re, xml.etree.ElementTree as ET
+
+dump, resid = sys.argv[1], sys.argv[2]
+root = ET.parse(dump).getroot()
+b = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
+
+for n in root.iter("node"):
+    if n.get("resource-id") != resid:
+        continue
+    desc = (n.get("content-desc") or "").strip()
+    bounds = n.get("bounds")
+    if not desc or not bounds:
+        continue
+    print(f"{desc}\t{bounds}")
+PY
+}
+
+ui_list_resid_text_bounds() {
+  local resid="$1"
+
+  [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
+
+  if [[ "$resid" == :id/* ]]; then
+    resid="${APP_PACKAGE:-de.hafas.android.cfl}${resid}"
+  fi
+
+  python - "$UI_DUMP_CACHE" "$resid" <<'PY'
+import sys, re, xml.etree.ElementTree as ET
+
+dump, resid = sys.argv[1], sys.argv[2]
+root = ET.parse(dump).getroot()
+
+for n in root.iter("node"):
+    if n.get("resource-id") != resid:
+        continue
+    text = (n.get("text") or "").strip()
+    bounds = n.get("bounds")
+    if not text or not bounds:
+        continue
+    print(f"{text}\t{bounds}")
+PY
+}
+
