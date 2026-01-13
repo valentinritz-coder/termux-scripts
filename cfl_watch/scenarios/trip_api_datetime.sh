@@ -344,12 +344,6 @@ while true; do
     raw_key="$desc"
     key="$(hash_key "$raw_key")"
 
-    log "SEEN_CONNECTIONS size=${#SEEN_CONNECTIONS[@]}"
-
-    for k in "${!SEEN_CONNECTIONS[@]}"; do
-      log "SEEN_CONNECTIONS[$(printf '%q' "$k")]=$(printf '%q' "${SEEN_CONNECTIONS[$k]}")"
-    done
-
     [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
 
     # ---- compute tap coords ----
