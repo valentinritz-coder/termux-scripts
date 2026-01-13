@@ -244,49 +244,47 @@ ui_pick_suggestion(){
 # Fast snapshots using the current dump cache
 # -------------------------
 
-_ui_ts(){ date +%H-%M-%S; }
-
 ui_snap(){
   # ui_snap "tag" [mode]
-  # mode: 0=off, 1=png, 2=xml(from cache), 3=png+xml(from cache)
   local tag="${1:-snap}"
   local mode="${2:-${SNAP_MODE:-3}}"
 
-  if [ -z "${SNAP_DIR:-}" ]; then
-    warn "ui_snap: SNAP_DIR vide (tu as oublié snap_init ?)"
+  [[ -n "${PNG_DIR:-}" && -n "${XML_DIR:-}" ]] || {
+    warn "ui_snap: PNG_DIR / XML_DIR non définis (snap_init manquant ?)"
     return 1
-  fi
+  }
 
-  mkdir -p "$SNAP_DIR" >/dev/null 2>&1 || true
-
-  local ts base
-  ts="$(_ui_ts)"
-  # safe_tag comes from snap.sh; fallback if not sourced
-  if ! command -v safe_tag >/dev/null 2>&1; then
-    safe_tag(){ printf '%s' "$1" | tr ' /' '__' | tr -cd 'A-Za-z0-9._-'; }
-  fi
-  base="$SNAP_DIR/${ts}_$(safe_tag "$tag")"
+  local base
+  base="$(date +"%Y%m%d_%H%M%S_%3N")__$(safe_tag "$tag")"
 
   case "$mode" in
     0) return 0 ;;
+
     1)
-      adb -s "${SERIAL:-${ANDROID_SERIAL:-127.0.0.1:37099}}" shell screencap -p "${base}.png" >/dev/null 2>&1 \
+      adb -s "${SERIAL:-${ANDROID_SERIAL:-127.0.0.1:37099}}" \
+        shell screencap -p "$PNG_DIR/${base}.png" >/dev/null 2>&1 \
         || warn "ui_snap: screencap failed"
       ;;
+
     2)
-      if [ -n "${UI_DUMP_CACHE:-}" ] && [ -s "$UI_DUMP_CACHE" ]; then
-        cp -f "$UI_DUMP_CACHE" "${base}.xml" >/dev/null 2>&1 || warn "ui_snap: copy xml failed"
+      if [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]]; then
+        cp -f "$UI_DUMP_CACHE" "$XML_DIR/${base}.xml" \
+          || warn "ui_snap: copy xml failed"
       else
-        warn "ui_snap: pas de cache xml (appelle ui_refresh avant)"
+        warn "ui_snap: pas de cache xml (ui_refresh manquant)"
       fi
       ;;
+
     3)
-      if [ -n "${UI_DUMP_CACHE:-}" ] && [ -s "$UI_DUMP_CACHE" ]; then
-        cp -f "$UI_DUMP_CACHE" "${base}.xml" >/dev/null 2>&1 || warn "ui_snap: copy xml failed"
+      if [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]]; then
+        cp -f "$UI_DUMP_CACHE" "$XML_DIR/${base}.xml" \
+          || warn "ui_snap: copy xml failed"
       else
-        warn "ui_snap: pas de cache xml (appelle ui_refresh avant)"
+        warn "ui_snap: pas de cache xml (ui_refresh manquant)"
       fi
-      adb -s "${SERIAL:-${ANDROID_SERIAL:-127.0.0.1:37099}}" shell screencap -p "${base}.png" >/dev/null 2>&1 \
+
+      adb -s "${SERIAL:-${ANDROID_SERIAL:-127.0.0.1:37099}}" \
+        shell screencap -p "$PNG_DIR/${base}.png" >/dev/null 2>&1 \
         || warn "ui_snap: screencap failed"
       ;;
     *)
@@ -295,7 +293,7 @@ ui_snap(){
       ;;
   esac
 
-  log "snap: ${ts}_${tag} (mode=$mode)"
+  log "snap: $base (mode=$mode)"
 }
 
 ui_snap_here(){
