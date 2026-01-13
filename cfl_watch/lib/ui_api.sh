@@ -348,28 +348,58 @@ ui_has_element() {
   # Usage:
   #   ui_has_element "resid:$ID_DATETIME"
   #   ui_has_element "desc:Show navigation drawer"
-  #   ui_has_element "text:Trip Planner"
+  #   ui_has_element "desc:Tab layout_itineraries_accessibility_label" contains
   #
   [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
 
   local sel="$1"
+  local mode="${2:-exact}"   # exact | contains
 
   case "$sel" in
     resid:*)
+      # resid est déjà en regex → toujours contains
       grep -Eq "$(resid_regex "${sel#resid:}")" "$UI_DUMP_CACHE"
       ;;
+
     desc:*)
-      grep -Fq "content-desc=\"${sel#desc:}\"" "$UI_DUMP_CACHE"
+      case "$mode" in
+        exact)
+          grep -Fq "content-desc=\"${sel#desc:}\"" "$UI_DUMP_CACHE"
+          ;;
+        contains)
+          grep -Fq "content-desc=\"" "$UI_DUMP_CACHE" \
+            && grep -Fq "${sel#desc:}" "$UI_DUMP_CACHE"
+          ;;
+        *)
+          warn "ui_has_element: invalid match mode ($mode)"
+          return 2
+          ;;
+      esac
       ;;
+
     text:*)
-      grep -Fq "text=\"${sel#text:}\"" "$UI_DUMP_CACHE"
+      case "$mode" in
+        exact)
+          grep -Fq "text=\"${sel#text:}\"" "$UI_DUMP_CACHE"
+          ;;
+        contains)
+          grep -Fq "text=\"" "$UI_DUMP_CACHE" \
+            && grep -Fq "${sel#text:}" "$UI_DUMP_CACHE"
+          ;;
+        *)
+          warn "ui_has_element: invalid match mode ($mode)"
+          return 2
+          ;;
+      esac
       ;;
+
     *)
       warn "ui_has_element: sélecteur inconnu ($sel)"
       return 2
       ;;
   esac
 }
+
 
 ui_wait_element_has_text() {
   local label="$1"
