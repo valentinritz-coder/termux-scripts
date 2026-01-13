@@ -734,20 +734,26 @@ PY
 
 ui_calendar_pick_day_ymd() {
   local ymd="$1"   # YYYY-MM-DD
-  [[ "$ymd" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || return 1
+  [[ "$ymd" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || {
+    warn "calendar pick day: bad format ($ymd)"
+    return 1
+  }
 
-  local y="${ymd%%-*}"
-  local m="${ymd#*-}"; m="${m%%-*}"
   local d="${ymd##*-}"
+  d="${d#0}"   # enlève le 0 éventuel (09 -> 9)
 
-  local month_name
-  month_name="$(date -d "$ymd" +"%B")" || return 1
+  log "Phase: calendar | Action: pick_day | Target: day | Result: requested day=$d"
 
-  local needle
-  needle="$(printf "%02d %s %04d" "$d" "$month_name" "$y")"
+  # Tentatives robustes, ordre du plus précis au plus permissif
+  if ui_tap_any "calendar day $ymd" \
+      "desc:$d " \
+      "text:$d" \
+      "text:0$d"; then
+    return 0
+  fi
 
-  ui_tap_any "calendar day $ymd" \
-    "desc:$needle"
+  warn "Phase: calendar | Action: pick_day | Target: day | Result: not_found day=$d"
+  return 1
 }
 
 ui_calendar_set_date_ymd() {
@@ -759,8 +765,18 @@ ui_calendar_set_date_ymd() {
 
   local ym="${ymd%??}"   # YYYY-MM
 
-  ui_calendar_goto_ym "$ym" || return 1
-  ui_calendar_pick_day_ymd "$ymd" || return 1
+  log "Phase: calendar | Action: goto_month | Target: calendar | Result: requested ym=$ym"
+  if ! ui_calendar_goto_ym "$ym"; then
+    warn "Phase: calendar | Action: goto_month | Target: calendar | Result: failed ym=$ym"
+    return 1
+  fi
+
+  if ! ui_calendar_pick_day_ymd "$ymd"; then
+    warn "Phase: calendar | Action: pick_day | Target: calendar | Result: failed ymd=$ymd"
+    return 1
+  fi
+
+  log "Phase: calendar | Action: set_date | Target: calendar | Result: success ymd=$ymd"
 }
 
 ui_datetime_set_time_12h_text() {
