@@ -86,6 +86,18 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
   --start "LUXEMBOURG" --target "ARLON" --via "Bettembourg" --snap-mode 3
 ```
 
+### 2c) Un trajet précis avec via
+```bash
+ADB_TCP_PORT=37099 \
+UI_STEP_SLEEP=0 \
+UI_DT_DEBUG=0 \
+CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
+CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime.sh" \
+bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
+  --start "Luxembourg" --target "Rodange" --via "Bettembourg" --snap-mode 3
+```
+
 ### 3) Trois trajets aléatoires (N=3)
 ```bash
 N=3 \
