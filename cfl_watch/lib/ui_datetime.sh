@@ -650,3 +650,117 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     ui_datetime_ok
   fi
 fi
+
+
+
+
+#CFL GO
+
+ui_calendar_read_ym() {
+  local xml
+  xml="$(_ui_pick_xml_need 'android:id/date_picker_header_date')" || return 1
+
+  python - <<'PY' "$xml"
+import sys, re
+import xml.etree.ElementTree as ET
+from datetime import datetime
+
+root = ET.parse(sys.argv[1]).getroot()
+
+year = None
+month = None
+
+for n in root.iter("node"):
+  rid = n.get("resource-id","")
+  txt = (n.get("text","") or "").strip()
+
+  if rid == "android:id/date_picker_header_year":
+    year = int(txt)
+
+  if rid == "android:id/date_picker_header_date":
+    # ex: "Tue, Jan 13"
+    m = re.search(r"\b([A-Za-z]+)\b", txt)
+    if m:
+      month = datetime.strptime(m.group(1), "%b").month
+
+if year and month:
+  print(f"{year:04d}-{month:02d}")
+  sys.exit(0)
+
+sys.exit(1)
+PY
+}
+
+ui_calendar_goto_ym() {
+  local target="$1"   # YYYY-MM
+  [[ "$target" =~ ^[0-9]{4}-[0-9]{2}$ ]] || return 1
+
+  local cur diff
+  cur="$(ui_calendar_read_ym || true)" || return 1
+
+  diff="$(python - <<'PY' "$cur" "$target"
+from datetime import date
+import sys
+
+y1,m1 = map(int, sys.argv[1].split("-"))
+y2,m2 = map(int, sys.argv[2].split("-"))
+
+print((y2-y1)*12 + (m2-m1))
+PY
+)"
+
+  if (( diff > 120 || diff < -120 )); then
+    warn "Calendar diff insane ($diff months)"
+    return 1
+  fi
+
+  if (( diff > 0 )); then
+    for ((i=0;i<diff;i++)); do
+      ui_tap_any "calendar next month" \
+        "resid:android:id/next" \
+        "desc:Next month"
+      sleep_s 0.15
+    done
+  elif (( diff < 0 )); then
+    diff=$(( -diff ))
+    for ((i=0;i<diff;i++)); do
+      ui_tap_any "calendar previous month" \
+        "resid:android:id/prev" \
+        "desc:Previous month"
+      sleep_s 0.15
+    done
+  fi
+}
+
+ui_calendar_pick_day_ymd() {
+  local ymd="$1"   # YYYY-MM-DD
+  [[ "$ymd" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || return 1
+
+  local y="${ymd%%-*}"
+  local m="${ymd#*-}"; m="${m%%-*}"
+  local d="${ymd##*-}"
+
+  local month_name
+  month_name="$(date -d "$ymd" +"%B")" || return 1
+
+  local needle
+  needle="$(printf "%02d %s %04d" "$d" "$month_name" "$y")"
+
+  ui_tap_any "calendar day $ymd" \
+    "desc:$needle"
+}
+
+ui_calendar_set_date_ymd() {
+  local ymd="$1"
+  [[ "$ymd" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || {
+    warn "Bad DATE_YMD format: $ymd"
+    return 1
+  }
+
+  local ym="${ymd%??}"   # YYYY-MM
+
+  ui_calendar_goto_ym "$ym" || return 1
+  ui_calendar_pick_day_ymd "$ymd" || return 1
+}
+
+
