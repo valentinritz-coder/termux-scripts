@@ -243,7 +243,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
     if ui_wait_desc_any \
       "Phase: datetime | Action: wait | Target: calendar | Result: visible" \
       "Previous month" "$WAIT_LONG"; then
-
+      
       ui_calendar_set_date_ymd "$DATE_YMD_TRIM"
 
       log "Phase: datetime | Action: validate | Target: date | Result: ok"
