@@ -44,6 +44,42 @@ hash_key() {
 # Wait helpers (readable)
 # -------------------------
 
+_ui_match_regex() {
+  local sel="$1"
+  local mode="$2"
+
+  case "$sel" in
+    resid:*)
+      # resid = toujours regex contains
+      resid_regex "${sel#resid:}"
+      ;;
+
+    desc:*)
+      local v
+      v="$(regex_escape_ere "${sel#desc:}")"
+      case "$mode" in
+        exact)    echo "content-desc=\"$v\"" ;;
+        contains) echo "content-desc=\"[^\"]*$v[^\"]*\"" ;;
+        *) return 2 ;;
+      esac
+      ;;
+
+    text:*)
+      local v
+      v="$(regex_escape_ere "${sel#text:}")"
+      case "$mode" in
+        exact)    echo "text=\"$v\"" ;;
+        contains) echo "text=\"[^\"]*$v[^\"]*\"" ;;
+        *) return 2 ;;
+      esac
+      ;;
+
+    *)
+      return 2
+      ;;
+  esac
+}
+
 ui_wait_resid(){
   local label="$1"
   local resid="$2"
@@ -642,5 +678,37 @@ for n in root.iter("node"):
     print(f"{text}\t{bounds}")
 PY
 }
+
+ui_wait_element_gone() {
+  local label="$1"
+  local sel="$2"
+  local mode="${3:-exact}"
+  local timeout="${4:-$WAIT_LONG}"
+
+  local re
+  re="$(_ui_match_regex "$sel" "$mode")" || {
+    warn "ui_wait_element_gone: invalid selector ($sel)"
+    return 2
+  }
+
+  local start
+  start="$(date +%s)"
+
+  while true; do
+    ui_refresh
+
+    if ! grep -Eq "$re" "$UI_DUMP_CACHE"; then
+      log "wait gone ok: $label"
+      return 0
+    fi
+
+    (( $(date +%s) - start >= timeout )) && break
+    sleep_s "$WAIT_POLL"
+  done
+
+  warn "wait gone timeout: $label"
+  return 1
+}
+
 
 
