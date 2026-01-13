@@ -402,8 +402,8 @@ while true; do
         SEEN_ROUTES["$rkey"]=1
         rnew=1
 
-        full_route_png="$(ui_scrollshot_region "080_route_${rkey}" ":id/journey_details_head" 30 0.45 30 160)"
-        log "route scrollshot saved: $full_route_png"
+        dir="$(ui_scrollshot_region "route_${rkey}" ":id/journey_details_head")"
+        log "route scrollshot saved in $dir"
         
         #ui_snap "080_route" 3
         # route details = scroll to bottom once
@@ -430,8 +430,6 @@ while true; do
       ui_scroll_down
       sleep_s 0.4
     done
-    full_list_png="$(ui_scrollshot_region "071_routes_list_${key}" ":id/text_line_name" 20 0.40 80 160)"
-    log "routes list scrollshot saved: $full_list_png"
 
     # ---- back to results ----
     _ui_key 4 || true
