@@ -679,7 +679,7 @@ for n in root.iter("node"):
 
   if rid == "android:id/date_picker_header_date":
     # ex: "Tue, Jan 13"
-    m = re.search(r"\b([A-Za-z]+)\b", txt)
+    m = re.search(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b", txt)
     if m:
       month = datetime.strptime(m.group(1), "%b").month
 
