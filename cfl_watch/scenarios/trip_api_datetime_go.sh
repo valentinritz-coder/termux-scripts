@@ -268,7 +268,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
 
     if ui_wait_resid \
       "Phase: datetime | Action: wait | Target: time_picker | Result: visible" \
-      "android:id/input_hour" "$WAIT_LONG"; then
+      "android:id/radial_picker" "$WAIT_LONG"; then
 
       # Passer en mode texte
       ui_tap_any "switch to text mode" "resid:android:id/toggle_mode"
@@ -280,7 +280,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       ui_datetime_set_time_12h_text "$TIME_HM_TRIM"
 
       log "Phase: datetime | Action: validate | Target: time | Result: ok"
-      ui_tap_any "time ok" "resid:android:id/button1"
+      ui_tap_any "date ok" "text:OK"
 
       # Retour menu CFL
       ui_wait_desc_any \
