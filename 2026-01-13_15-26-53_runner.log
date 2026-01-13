@@ -1,0 +1,79 @@
+[*] Log: /sdcard/cfl_watch/logs/2026-01-13_15-26-53_runner.log
+[*] Start ADB local on 127.0.0.1:37099
+[*] Activation ADB TCP sur 127.0.0.1:37099 (root)
+[*] Redémarrage adbd
+[*] Attente adbd=running
+[*] adb connect (retry) -> 127.0.0.1:37099
+[*] connected to 127.0.0.1:37099
+[*] getprop:
+37099
+running
+[*] adb devices -l:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Tip: export ANDROID_SERIAL=127.0.0.1:37099
+[*] Device list:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Disable Android animations (temporary)
+[*] === RUN: LUXEMBOURG -> ARLON (SNAP_MODE=3) ===
+2026-01-13T15:27:00+01:00 | INFO | SNAP_DIR=/sdcard/cfl_watch/runs/20260113_152700_trip_LUXEMBOURG_to_ARLON_d_2026-01-09_t_1450
+2026-01-13T15:27:00+01:00 | INFO | Phase: launch | Action: scenario | Target: trip_planner | Result: start=LUXEMBOURG target=ARLON snap_mode=3
+2026-01-13T15:27:00+01:00 | INFO | Phase: launch | Action: config | Target: via | Result: skipped empty
+2026-01-13T15:27:00+01:00 | INFO | Phase: launch | Action: wait | Target: toolbar | Result: requested
+[*] ui_dump: dump=2537ms cat=178ms total=2715ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-13T15:27:03+01:00 | INFO | Phase: launch | Action: wait | Target: toolbar buttons | Result: visible
+2026-01-13T15:27:04+01:00 | INFO | snap: 20260113_152703_869__000_launch__app_open__visible (mode=3)
+2026-01-13T15:27:04+01:00 | INFO | Phase: planner | Action: detect_page | Target: toolbar | Result: trip_planner_visible
+2026-01-13T15:27:04+01:00 | INFO | Phase: datetime | Action: set | Target: request | Result: requested date=2026-01-09 time=14:50
+2026-01-13T15:27:04+01:00 | INFO | Phase: datetime | Action: tap | Target: time_field | Result: requested
+2026-01-13T15:27:04+01:00 | INFO | Tap open datetime menu (desc) at 540,905
+[*] ui_dump: dump=2525ms cat=198ms total=2723ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-13T15:27:07+01:00 | INFO | Phase: datetime | Action: wait | Target: datetime_menu | Result: visible
+2026-01-13T15:27:07+01:00 | INFO | Phase: datetime | Action: set | Target: date | Result: requested value=2026-01-09
+2026-01-13T15:27:07+01:00 | INFO | Tap open date picker (desc) at 540,861
+[*] ui_dump: dump=2399ms cat=182ms total=2582ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-13T15:27:10+01:00 | INFO | Phase: datetime | Action: wait | Target: calendar | Result: visible
+2026-01-13T15:27:10+01:00 | INFO | Phase: calendar | Action: goto_month | Target: calendar | Result: requested ym=2026-01
+Traceback (most recent call last):
+  File "<stdin>", line 21, in <module>
+  File "/data/data/com.termux/files/usr/lib/python3.12/_strptime.py", line 653, in _strptime_datetime
+    tt, fraction, gmtoff_fraction = _strptime(data_string, format)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/_strptime.py", line 432, in _strptime
+    raise ValueError("time data %r does not match format %r" %
+ValueError: time data 'Tue' does not match format '%b'
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+ValueError: invalid literal for int() with base 10: ''
+2026-01-13T15:27:10+01:00 | INFO | Phase: calendar | Action: pick_day | Target: day | Result: requested day=9
+2026-01-13T15:27:10+01:00 | INFO | Tap calendar day 2026-01-09 (desc) at 732,1073
+2026-01-13T15:27:10+01:00 | INFO | Phase: calendar | Action: set_date | Target: calendar | Result: success ymd=2026-01-09
+2026-01-13T15:27:10+01:00 | INFO | Phase: datetime | Action: validate | Target: date | Result: ok
+2026-01-13T15:27:10+01:00 | INFO | Tap date ok (id) at 815,1645
+[*] ui_dump: dump=2227ms cat=135ms total=2363ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2301ms cat=128ms total=2430ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2412ms cat=153ms total=2566ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2364ms cat=172ms total=2537ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2452ms cat=191ms total=2643ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2412ms cat=181ms total=2593ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2530ms cat=181ms total=2712ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2465ms cat=182ms total=2647ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2494ms cat=172ms total=2666ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2457ms cat=171ms total=2628ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2467ms cat=181ms total=2648ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2551ms cat=8555ms total=11106ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-13T15:27:51+01:00 | WARN | wait_dump_grep timeout: regex=content-desc="[^"]*(Date,|Time,)[^"]*"
+[*] ui_dump: dump=52872ms cat=176ms total=53049ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-13T15:28:45+01:00 | INFO | Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible
+2026-01-13T15:28:45+01:00 | INFO | Phase: datetime | Action: set | Target: time | Result: requested value=14:50
+2026-01-13T15:28:45+01:00 | WARN | Selector introuvable: open time picker (desc) (criteria: content-desc=Time,)
+2026-01-13T15:28:45+01:00 | WARN | Phase: finish | Action: exit_trap | Target: run | Result: failed rc=0
+2026-01-13T15:28:45+01:00 | INFO | Phase: finish | Action: viewer | Target: snapshot_dir | Result: /sdcard/cfl_watch/runs/20260113_152700_trip_LUXEMBOURG_to_ARLON_d_2026-01-09_t_1450/viewers/index.html
+[*] RC=1
+[*] Run artifacts: /sdcard/cfl_watch/runs/20260113_152700_trip_LUXEMBOURG_to_ARLON_d_2026-01-09_t_1450
+[*] Viewer: /sdcard/cfl_watch/runs/20260113_152700_trip_LUXEMBOURG_to_ARLON_d_2026-01-09_t_1450/viewers/index.html
+[*] Done. fail_count=1
+[*] Restore Android animations: W=0 T=0 A=0
