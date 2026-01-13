@@ -285,6 +285,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       ui_datetime_set_time_12h_text "$TIME_HM_TRIM"
 
       log "Phase: datetime | Action: validate | Target: time | Result: ok"
+      sleep_s 1
       ui_tap_any "date ok" "text:OK"
 
       # Retour menu CFL
