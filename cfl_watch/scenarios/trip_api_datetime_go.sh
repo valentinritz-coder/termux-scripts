@@ -247,6 +247,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       ui_calendar_set_date_ymd "$DATE_YMD_TRIM"
 
       log "Phase: datetime | Action: validate | Target: date | Result: ok"
+      sleep_s 1
       ui_tap_any "date ok" "text:OK"
 
       ui_wait_element_gone \
