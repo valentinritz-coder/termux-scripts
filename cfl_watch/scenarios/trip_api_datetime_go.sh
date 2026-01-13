@@ -185,7 +185,7 @@ snap "launch" "app_open" "visible" "$SNAP_MODE"
 # From Home → Trip Planner
 # -------------------------
 
-if ! ui_has_element "desc:Tab layout_itineraries_accessibility_label  selected"; then
+if ! ui_has_element "desc:Tab layout_itineraries_accessibility_label  selected" contains; then
   log "Phase: other tab | Action: tap itineraries tab | Target: itineraries tab | Result: itineraries tab selected"
 
   ui_tap_any "tab itineraries" \
@@ -199,7 +199,7 @@ fi
 # Trip Planner page
 # -------------------------
 
-if ! ui_has_element "desc:Tab layout_itineraries_accessibility_label  selected"; then
+if ! ui_has_element "desc:Tab layout_itineraries_accessibility_label  selected" contains; then
   warn "Phase: planner | Action: detect_page | Target: toolbar | Result: trip_planner_not_detected"
   snap_here "planner" "detect_page" "error" "$SNAP_MODE"
   exit 1
@@ -214,14 +214,14 @@ log "Phase: planner | Action: detect_page | Target: toolbar | Result: trip_plann
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   log "Phase: datetime | Action: set_datetime | Target: request | Result: requested date=$DATE_YMD_TRIM time=$TIME_HM_TRIM"
 
-  if ui_has_element "desc:Time field"; then
+  if ui_has_element "desc:Time field" contains; then
     ui_tap_any "date_time_button_tap" "desc:Time field"
 
     if ui_wait_desc_any "Phase: datetime | Action: wait | Target: time_picker | Result: visible" "Leave now" "Tab Departure" "Tab Arrival" "Date," "Time," "$WAIT_LONG"; then
       [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
       [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
 
-      if ui_has_element "desc:Apply"; then
+      if ui_has_element "desc:Apply" contains; then
         snap "datetime" "set_datetime" "filled" "$SNAP_MODE"
         ui_tap_any "ok_button_tap" "desc:Apply"
       else
