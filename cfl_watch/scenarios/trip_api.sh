@@ -38,7 +38,7 @@ need python
 . "$CFL_CODE_DIR/lib/ui_select.sh"
 . "$CFL_CODE_DIR/lib/ui_api.sh"
 . "$CFL_CODE_DIR/lib/ui_datetime.sh"
-
+. "$CFL_CODE_DIR/lib/ui_scrollshot.sh"
 
 # Inputs
 START_TEXT="${START_TEXT:-LUXEMBOURG}"
@@ -114,26 +114,26 @@ maybe cfl_launch
 
 log "Wait toolbar visible"
 ui_wait_resid "toolbar visible" ":id/toolbar" "$WAIT_LONG"
-ui_snap "000_opening" "$SNAP_MODE"
+ui_snap "app_opening" "$SNAP_MODE"
 
 # -------------------------
 # From Home → Trip Planner
 # -------------------------
 
 if ui_element_has_text "resid::id/toolbar" "Home"; then
-  log "Toolbar affiche Home"
+  log "toolbar_show_home"
 
   ui_tap_any "burger icon tap" \
     "desc:Show navigation drawer" || true
 
   ui_wait_resid "drawer visible" ":id/left_drawer" "$WAIT_LONG"
-  ui_snap "001_after_tap_burger" "$SNAP_MODE"
+  ui_snap "burger_button_tap" "$SNAP_MODE"
 
-  ui_tap_any "trip planner menu" \
+  ui_tap_any "trip_planner_button_tap" \
     "text:Trip Planner" || true
 
   ui_wait_element_has_text \
-    "wait trip planner page" \
+    "wait_trip_planner_page" \
     "resid::id/toolbar" \
     "Trip Planner" \
     "$WAIT_LONG"
@@ -144,30 +144,30 @@ fi
 # -------------------------
 
 if ! ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
-  warn "Trip Planner page not detected"
-  ui_snap_here "trip_planner_not_detected" "$SNAP_MODE"
+  warn "trip_planner_page_not_detected"
+  ui_snap_here "trip_planner_page_not_detected" "$SNAP_MODE"
   exit 1
 fi
 
-log "Toolbar affiche Trip Planner"
+log "toolbar_show_trip_planner"
 
 # -------------------------
 # Datetime (optional)
 # -------------------------
 
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
-  log "Réglage de la date et de l'heure"
+  log "setting_date_and_time"
 
   if ui_has_element "resid::id/datetime_text"; then
-    ui_tap_any "date time field" "resid::id/datetime_text"
+    ui_tap_any "date_time_button_tap" "resid::id/datetime_text"
 
-    if ui_wait_resid "time picker visible" ":id/picker_time" "$WAIT_LONG"; then
+    if ui_wait_resid "wait_time_picker" ":id/picker_time" "$WAIT_LONG"; then
       [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
       [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
 
       if ui_has_element "resid::id/button1"; then
-        ui_snap "020_after_set_datetime" "$SNAP_MODE"
-        ui_tap_any "OK button" "resid:android:id/button1"
+        ui_snap "setting_date_and_time" "$SNAP_MODE"
+        ui_tap_any "ok_button_tap" "resid:android:id/button1"
       else
         _ui_key 4 || true
         warn "Datetime dialog not validated → back fallback"
@@ -319,59 +319,132 @@ log "Lancement de la recherche"
 
 ui_wait_resid "results page visible" ":id/haf_connection_view" "$WAIT_LONG"
 
-log "Drill visible connections"
-mapfile -t CONNECTIONS < <(ui_list_resid_bounds ":id/haf_connection_view")
+log "Drill connections (content-desc driven)"
 
-conn_idx=0
-for line in "${CONNECTIONS[@]}"; do
-  read -r x1 y1 x2 y2 <<<"$line"
+declare -A SEEN_CONNECTIONS
 
-  cx=$(( (x1 + x2) / 2 ))
-  cy=$(( (y1 + y2) / 2 ))
+scrolls=0
+final_pass=0
 
-  log "Open connection #$conn_idx"
-  ui_tap_xy "connection" "$cx" "$cy"
+while true; do
+  ui_refresh
+  mapfile -t ITEMS < <(ui_list_resid_desc_bounds ":id/haf_connection_view")
+  log "ITEMS count=${#ITEMS[@]}"
 
-  ui_wait_resid "details page visible" ":id/text_line_name" "$WAIT_LONG"
-
-  ui_snap "070_result_$conn_idx" 3
-
-  # -------------------------
-  # Drill route details
-  # -------------------------
-
-  log "Drill route details for connection #$conn_idx"
-  #ui_refresh
-  mapfile -t ROUTES < <(ui_list_resid_bounds ":id/text_line_name")
-
-  route_idx=0
-  for rline in "${ROUTES[@]}"; do
-    read -r rx1 ry1 rx2 ry2 <<<"$rline"
-
-    rcx=$(( (rx1 + rx2) / 2 ))
-    rcy=$(( (ry1 + ry2) / 2 ))
-
-    log "Open route #$route_idx (connection #$conn_idx)"
-    ui_tap_xy "route detail" "$rcx" "$rcy"
-
-    ui_wait_resid "route details visible" ":id/journey_details_head" "$WAIT_LONG"
-
-    ui_snap "080_result_${conn_idx}_route_${route_idx}" 3
-
-    _ui_key 4 || true
-    ui_wait_resid "back to details page" ":id/text_line_name" "$WAIT_LONG"
-
-    route_idx=$((route_idx + 1))
+  for i in "${!ITEMS[@]}"; do
+    # %q affiche une version échappée (tabs, espaces, etc.)
+    log "ITEMS[$i]=$(printf '%q' "${ITEMS[$i]}")"
   done
 
-  # -------------------------
-  # Back to connections list
-  # -------------------------
+  new=0
 
-  _ui_key 4 || true
-  ui_wait_resid "back to results page" ":id/haf_connection_view" "$WAIT_LONG"
+  for item in "${ITEMS[@]}"; do
+    IFS=$'\t' read -r desc bounds <<<"$item"
 
-  conn_idx=$((conn_idx + 1))
+    raw_key="$desc"
+    key="$(hash_key "$raw_key")"
+
+    [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
+
+    # ---- compute tap coords ----
+    [[ "$bounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
+    cx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
+    cy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
+
+    log "Open connection"
+    ui_tap_xy "connection" "$cx" "$cy"
+
+    if ! ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"; then
+      warn "Connection not opened, retry later"
+      continue
+    fi
+
+    # ---- mark SEEN only after success ----
+    SEEN_CONNECTIONS["$key"]=1
+    new=1
+
+    ui_snap "070_connection" 3
+
+    # -------------------------
+    # Drill routes
+    # -------------------------
+
+    declare -A SEEN_ROUTES
+    route_scrolls=0
+    route_final_pass=0
+
+    while true; do
+      ui_refresh
+      mapfile -t ROUTES < <(ui_list_resid_text_bounds ":id/text_line_name")
+
+      rnew=0
+
+      for r in "${ROUTES[@]}"; do
+        IFS=$'\t' read -r text rbounds <<<"$r"
+
+        raw_rkey="$text"
+        rkey="$(hash_key "$raw_rkey")"
+
+        [[ -n "${SEEN_ROUTES[$rkey]:-}" ]] && continue
+
+        [[ "$rbounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
+        rcx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
+        rcy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
+
+        log "Open route: $text"
+        ui_tap_xy "route" "$rcx" "$rcy"
+
+        if ! ui_wait_resid "route details" ":id/journey_details_head" "$WAIT_LONG"; then
+          warn "Route not opened, retry later"
+          continue
+        fi
+
+        SEEN_ROUTES["$rkey"]=1
+        rnew=1
+
+        ui_scrollshot_region "route_${rkey}" ":id/journey_details_head"
+        log "route scrollshot captured for route_${rkey}"
+        sleep_s 0.3
+
+        _ui_key 4 || true
+        ui_wait_resid "back to details" ":id/text_line_name" "$WAIT_LONG"
+      done
+
+      if [[ $rnew -eq 0 ]]; then
+        if [[ $route_final_pass -eq 1 ]]; then
+          break
+        fi
+        route_final_pass=1
+      else
+        route_final_pass=0
+      fi
+
+      route_scrolls=$((route_scrolls + 1))
+      [[ $route_scrolls -ge 8 ]] && break
+
+      ui_scroll_down
+      sleep_s 0.4
+    done
+
+    # ---- back to results ----
+    _ui_key 4 || true
+    ui_wait_resid "back to results" ":id/haf_connection_view" "$WAIT_LONG"
+  done
+
+  if [[ $new -eq 0 ]]; then
+    if [[ $final_pass -eq 1 ]]; then
+      break
+    fi
+    final_pass=1
+  else
+    final_pass=0
+  fi
+
+  scrolls=$((scrolls + 1))
+  [[ $scrolls -ge 10 ]] && break
+
+  ui_scroll_down
+  sleep_s 0.4
 done
 
 # -------------------------
