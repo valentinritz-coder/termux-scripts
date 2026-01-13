@@ -1,6 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
+# ------------------------------------------------------------
+# Summary (non-behavioral refactor only)
+# - All comments and user-facing labels/messages are now in English.
+# - All explicit log messages were renamed to a consistent structure:
+#   "Phase: <phase> | Action: <action> | Target: <target> | Result: <result>"
+# - Logging now always uses ISO-8601 timestamps with timezone:
+#   2026-01-13T11:07:32+01:00 | INFO | ...
+# - Snapshots are now named with a consistent convention and a runtime
+#   sequential counter without holes:
+#   <NNN>_<phase>__<action>__<state>
+# - Note: renaming snapshot tags can break external tooling if it expects the
+#   old snapshot filenames. Logic/flow is unchanged.
+# ------------------------------------------------------------
+
 # CFL trip scenario (API version, readable)
 # Env: START_TEXT, TARGET_TEXT, VIA_TEXT (optional), SNAP_MODE, WAIT_*, CFL_DRY_RUN
 
@@ -64,7 +78,6 @@ WAIT_SHORT="${WAIT_SHORT:-20}"
 WAIT_LONG="${WAIT_LONG:-30}"
 
 # Snap run name
-# Snap run name
 run_name="trip_$(safe_name "$START_TEXT")_to_$(safe_name "$TARGET_TEXT")"
 if [[ -n "$VIA_TEXT_TRIM" ]]; then
   run_name="${run_name}_via_$(safe_name "$VIA_TEXT_TRIM")"
@@ -76,9 +89,61 @@ if [[ -n "$TIME_HM_TRIM" ]]; then
   run_name="${run_name}_t_$(safe_name "$TIME_HM_TRIM")"
 fi
 
-log() {
+# -------------------------
+# Timestamped logging (ISO-8601 + timezone)
+# -------------------------
+
+_iso_ts() {
+  local ts z
+  ts="$(printf '%(%Y-%m-%dT%H:%M:%S)T' -1)"
+  z="$(printf '%(%z)T' -1)" # e.g. +0100
+  printf '%s%s:%s' "$ts" "${z:0:3}" "${z:3:2}"
+}
+
+_log_line() {
+  local level="$1"
+  shift
   local msg="$*"
-  printf '[%(%Y-%m-%d %H:%M:%S)T] %s\n' -1 "$msg"
+
+  # Libraries sometimes emit: "wait ok: <label>"
+  # If the label already starts with "Phase:", strip the library prefix
+  # to keep a consistent structured message.
+  if [[ "$msg" == "wait ok: Phase:"* ]]; then
+    msg="${msg#wait ok: }"
+  fi
+
+  printf '%s | %s | %s\n' "$(_iso_ts)" "$level" "$msg"
+}
+
+log() {
+  _log_line "INFO" "$@"
+}
+
+warn() {
+  _log_line "WARN" "$@" >&2
+}
+
+# -------------------------
+# Snapshot naming wrappers (sequential counter, no holes)
+# Format: <NNN>_<phase>__<action>__<state>
+# -------------------------
+
+SNAP_SEQ=0
+
+_snap_name() {
+  local phase="$1" action="$2" state="$3"
+  printf '%03d_%s__%s__%s' "$SNAP_SEQ" "$phase" "$action" "$state"
+  SNAP_SEQ=$((SNAP_SEQ + 1))
+}
+
+snap() {
+  local phase="$1" action="$2" state="$3" mode="$4"
+  ui_snap "$(_snap_name "$phase" "$action" "$state")" "$mode"
+}
+
+snap_here() {
+  local phase="$1" action="$2" state="$3" mode="$4"
+  ui_snap_here "$(_snap_name "$phase" "$action" "$state")" "$mode"
 }
 
 snap_init "$run_name"
@@ -87,9 +152,9 @@ finish() {
   local rc=$?
   trap - EXIT
   if [ "$rc" -ne 0 ]; then
-    warn "Run FAILED (rc=$rc) -> viewer"
+    warn "Phase: finish | Action: exit_trap | Target: run | Result: failed rc=$rc_open_viewer"
     "$CFL_CODE_DIR/lib/viewer.sh" "$SNAP_DIR" >/dev/null 2>&1 || true
-    log "Viewer: $SNAP_DIR/viewers/index.html"
+    log "Phase: finish | Action: viewer | Target: snapshot_dir | Result: $SNAP_DIR/viewers/index.html"
   fi
   exit "$rc"
 }
@@ -99,11 +164,11 @@ trap finish EXIT
 # Scenario
 # -------------------------
 
-log "Scenario: $START_TEXT -> $TARGET_TEXT (SNAP_MODE=$SNAP_MODE)"
+log "Phase: launch | Action: scenario | Target: trip_planner | Result: start=$START_TEXT target=$TARGET_TEXT snap_mode=$SNAP_MODE"
 if [[ -n "$VIA_TEXT_TRIM" ]]; then
-  log "VIA enabled: $VIA_TEXT_TRIM"
+  log "Phase: launch | Action: config | Target: via | Result: enabled value=$VIA_TEXT_TRIM"
 else
-  log "VIA skipped (VIA_TEXT empty)"
+  log "Phase: launch | Action: config | Target: via | Result: skipped empty"
 fi
 
 maybe cfl_launch
@@ -112,28 +177,28 @@ maybe cfl_launch
 # App ready
 # -------------------------
 
-log "Wait toolbar visible"
-ui_wait_resid "toolbar visible" ":id/toolbar" "$WAIT_LONG"
-ui_snap "000_opening" "$SNAP_MODE"
+log "Phase: launch | Action: wait | Target: toolbar | Result: requested"
+ui_wait_resid "Phase: launch | Action: wait | Target: toolbar | Result: visible" ":id/toolbar" "$WAIT_LONG"
+snap "launch" "app_open" "visible" "$SNAP_MODE"
 
 # -------------------------
 # From Home → Trip Planner
 # -------------------------
 
 if ui_element_has_text "resid::id/toolbar" "Home"; then
-  log "Toolbar affiche Home"
+  log "Phase: home | Action: detect_page | Target: toolbar | Result: home_visible"
 
   ui_tap_any "burger icon tap" \
     "desc:Show navigation drawer" || true
 
-  ui_wait_resid "drawer visible" ":id/left_drawer" "$WAIT_LONG"
-  ui_snap "001_after_tap_burger" "$SNAP_MODE"
+  ui_wait_resid "Phase: home | Action: wait | Target: navigation_drawer | Result: visible" ":id/left_drawer" "$WAIT_LONG"
+  snap "home" "open_menu" "after" "$SNAP_MODE"
 
-  ui_tap_any "trip planner menu" \
+  ui_tap_any "trip_planner_button_tap" \
     "text:Trip Planner" || true
 
   ui_wait_element_has_text \
-    "wait trip planner page" \
+    "Phase: home | Action: wait | Target: toolbar | Result: trip_planner_visible" \
     "resid::id/toolbar" \
     "Trip Planner" \
     "$WAIT_LONG"
@@ -144,39 +209,39 @@ fi
 # -------------------------
 
 if ! ui_element_has_text "resid::id/toolbar" "Trip Planner"; then
-  warn "Trip Planner page not detected"
-  ui_snap_here "trip_planner_not_detected" "$SNAP_MODE"
+  warn "Phase: planner | Action: detect_page | Target: toolbar | Result: trip_planner_not_detected"
+  snap_here "planner" "detect_page" "error" "$SNAP_MODE"
   exit 1
 fi
 
-log "Toolbar affiche Trip Planner"
+log "Phase: planner | Action: detect_page | Target: toolbar | Result: trip_planner_visible"
 
 # -------------------------
 # Datetime (optional)
 # -------------------------
 
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
-  log "Réglage de la date et de l'heure"
+  log "Phase: datetime | Action: set_datetime | Target: request | Result: requested date=$DATE_YMD_TRIM time=$TIME_HM_TRIM"
 
   if ui_has_element "resid::id/datetime_text"; then
-    ui_tap_any "date time field" "resid::id/datetime_text"
+    ui_tap_any "date_time_button_tap" "resid::id/datetime_text"
 
-    if ui_wait_resid "time picker visible" ":id/picker_time" "$WAIT_LONG"; then
+    if ui_wait_resid "Phase: datetime | Action: wait | Target: time_picker | Result: visible" ":id/picker_time" "$WAIT_LONG"; then
       [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
       [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
 
       if ui_has_element "resid::id/button1"; then
-        ui_snap "020_after_set_datetime" "$SNAP_MODE"
-        ui_tap_any "OK button" "resid:android:id/button1"
+        snap "datetime" "set_datetime" "filled" "$SNAP_MODE"
+        ui_tap_any "ok_button_tap" "resid:android:id/button1"
       else
         _ui_key 4 || true
-        warn "Datetime dialog not validated → back fallback"
+        warn "Phase: datetime | Action: validate | Target: dialog | Result: ok_button_missing_back_fallback"
       fi
     else
-      warn "Datetime dialog not opened → skipping datetime"
+      warn "Phase: datetime | Action: open | Target: dialog | Result: not_opened_skip"
     fi
   else
-    warn "Date/Time field absent → skip datetime"
+    warn "Phase: datetime | Action: find_field | Target: datetime_text | Result: absent_skip"
   fi
 fi
 
@@ -184,116 +249,122 @@ fi
 # Start station
 # -------------------------
 
-log "Réglage de la station de départ"
+log "Phase: planner | Action: set_start | Target: field | Result: begin"
 
-ui_wait_resid "request screen visible" ":id/request_screen_container" "$WAIT_LONG"
-ui_snap "030_before_set_start" "$SNAP_MODE"
+ui_wait_resid "Phase: planner | Action: wait | Target: request_screen | Result: visible" ":id/request_screen_container" "$WAIT_LONG"
+snap "planner" "set_start" "before" "$SNAP_MODE"
 
 if ui_has_element "desc:Select start"; then
-  log "Start field empty → Select start"
+  log "Phase: planner | Action: open_field | Target: start | Result: empty_select_start"
   ui_tap_any "start field" "desc:Select start"
 else
-  log "Start field filled → container child"
+  log "Phase: planner | Action: open_field | Target: start | Result: filled_container_child"
   ui_tap_child_of_resid \
     "start field (container)" \
     ":id/request_screen_container" \
     0
 fi
 
-ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
+ui_wait_resid "Phase: planner | Action: wait | Target: input_location_name | Result: visible" ":id/input_location_name" "$WAIT_LONG"
 ui_type_and_wait_results "start" "$START_TEXT"
-# 1) attendre que le clavier soit là (ton point clé)
+
+# 1) Wait for keyboard to be shown (key detail)
 _ui_wait_ime_shown || true
-# 3) BACK (chez toi: valide + ferme clavier)
+# 3) BACK (in your case: validate + close keyboard)
 _ui_key 4 || true
-# 4) attendre que le clavier soit vraiment parti avant de re-cliquer ailleurs
+# 4) Wait for keyboard to be fully hidden before tapping elsewhere
 _ui_wait_ime_hidden || true
-ui_snap "031_after_type_start" "$SNAP_MODE"
+
+snap "planner" "set_start" "typed" "$SNAP_MODE"
 
 if ! ui_pick_suggestion "start suggestion" "$START_TEXT"; then
-  warn "Start suggestion not found"
+  warn "Phase: planner | Action: pick_suggestion | Target: start | Result: not_found"
   exit 1
 fi
 
-ui_snap "032_after_pick_start" "$SNAP_MODE"
+snap "planner" "set_start" "selected" "$SNAP_MODE"
 
 # -------------------------
 # Destination station
 # -------------------------
 
-log "Réglage de la station de destination"
+log "Phase: planner | Action: set_destination | Target: field | Result: begin"
 
-ui_wait_resid "request screen visible" ":id/request_screen_container" "$WAIT_LONG"
-ui_snap "040_before_set_destination" "$SNAP_MODE"
+ui_wait_resid "Phase: planner | Action: wait | Target: request_screen | Result: visible" ":id/request_screen_container" "$WAIT_LONG"
+snap "planner" "set_destination" "before" "$SNAP_MODE"
 
 if ui_has_element "desc:Select destination"; then
-  log "Destination field empty → Select destination"
+  log "Phase: planner | Action: open_field | Target: destination | Result: empty_select_destination"
   ui_tap_any "destination field" "desc:Select destination"
 else
-  log "Destination field filled → container child"
+  log "Phase: planner | Action: open_field | Target: destination | Result: filled_container_child"
   ui_tap_child_of_resid \
     "destination field (container)" \
     ":id/request_screen_container" \
     2
 fi
 
-ui_wait_resid "input location name visible" ":id/input_location_name" "$WAIT_LONG"
+ui_wait_resid "Phase: planner | Action: wait | Target: input_location_name | Result: visible" ":id/input_location_name" "$WAIT_LONG"
 ui_type_and_wait_results "destination" "$TARGET_TEXT"
-# 1) attendre que le clavier soit là (ton point clé)
+
+# 1) Wait for keyboard to be shown (key detail)
 _ui_wait_ime_shown || true
-# 3) BACK (chez toi: valide + ferme clavier)
+# 3) BACK (in your case: validate + close keyboard)
 _ui_key 4 || true
-# 4) attendre que le clavier soit vraiment parti avant de re-cliquer ailleurs
+# 4) Wait for keyboard to be fully hidden before tapping elsewhere
 _ui_wait_ime_hidden || true
-ui_snap "041_after_type_destination" "$SNAP_MODE"
+
+snap "planner" "set_destination" "typed" "$SNAP_MODE"
 
 if ! ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"; then
-  warn "Destination suggestion not found"
+  warn "Phase: planner | Action: pick_suggestion | Target: destination | Result: not_found"
   exit 1
 fi
 
-ui_snap "042_after_pick_destination" "$SNAP_MODE"
+snap "planner" "set_destination" "selected" "$SNAP_MODE"
 
 # -------------------------
 # VIA (optional)
 # -------------------------
 
 if [[ -n "$VIA_TEXT_TRIM" ]]; then
-  log "Réglage de la station VIA"
+  log "Phase: planner | Action: set_via | Target: field | Result: begin value=$VIA_TEXT_TRIM"
 
-  if ui_wait_resid "options button visible" ":id/button_options" "$WAIT_LONG"; then
+  if ui_wait_resid "Phase: planner | Action: wait | Target: options_button | Result: visible" ":id/button_options" "$WAIT_LONG"; then
     ui_tap_any "options button" \
       "desc:Extended search options" \
       "resid::id/button_options" || true
 
-    ui_snap_here "050_after_open_options" "$SNAP_MODE"
+    snap_here "planner" "open_options" "after" "$SNAP_MODE"
 
-    if ui_wait_resid "via field visible" ":id/input_via" "$WAIT_LONG"; then
+    if ui_wait_resid "Phase: planner | Action: wait | Target: via_field | Result: visible" ":id/input_via" "$WAIT_LONG"; then
       ui_tap_any "via field" \
         "text:Enter stop" \
         "resid::id/input_via" || true
 
-      ui_snap_here "051_after_tap_via" "$SNAP_MODE"
+      snap_here "planner" "set_via" "field_open" "$SNAP_MODE"
 
       ui_type_and_wait_results "via" "$VIA_TEXT_TRIM"
-      # 1) attendre que le clavier soit là (ton point clé)
+
+      # 1) Wait for keyboard to be shown (key detail)
       _ui_wait_ime_shown || true
-      # 3) BACK (chez toi: valide + ferme clavier)
+      # 3) BACK (in your case: validate + close keyboard)
       _ui_key 4 || true
-      # 4) attendre que le clavier soit vraiment parti avant de re-cliquer ailleurs
+      # 4) Wait for keyboard to be fully hidden before tapping elsewhere
       _ui_wait_ime_hidden || true
-      ui_snap "052_after_type_via" "$SNAP_MODE"
+
+      snap "planner" "set_via" "typed" "$SNAP_MODE"
 
       ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM" || true
-      ui_snap "053_after_pick_via" "$SNAP_MODE"
+      snap "planner" "set_via" "selected" "$SNAP_MODE"
 
       ui_tap_any "back from via" "desc:Navigate up" || true
-      ui_snap_here "054_after_back_from_via" "$SNAP_MODE"
+      snap_here "planner" "exit_options" "after" "$SNAP_MODE"
     else
-      warn "VIA field not found → skipping VIA"
+      warn "Phase: planner | Action: find_field | Target: via | Result: not_found_skip"
     fi
   else
-    warn "Options button not found → skipping VIA"
+    warn "Phase: planner | Action: find_button | Target: options | Result: not_found_skip_via"
   fi
 fi
 
@@ -301,25 +372,25 @@ fi
 # Search
 # -------------------------
 
-ui_wait_resid "search button visible" ":id/button_search_default" "$WAIT_LONG"
+ui_wait_resid "Phase: planner | Action: wait | Target: search_button | Result: visible" ":id/button_search_default" "$WAIT_LONG"
 
 if ! ui_tap_any "search button" \
   "resid::id/button_search_default"; then
-  warn "Search button not tappable → ENTER fallback"
+  warn "Phase: planner | Action: tap | Target: search_button | Result: not_tappable_enter_fallback"
   maybe key 66 || true
 fi
 
-ui_snap_here "060_after_search" 3
+snap_here "results" "search" "after" 3
 
 # -------------------------
 # Drill all visible connections
 # -------------------------
 
-log "Lancement de la recherche"
+log "Phase: results | Action: search | Target: request | Result: started"
 
-ui_wait_resid "results page visible" ":id/haf_connection_view" "$WAIT_LONG"
+ui_wait_resid "Phase: results | Action: wait | Target: results_page | Result: visible" ":id/haf_connection_view" "$WAIT_LONG"
 
-log "Drill connections (content-desc driven)"
+log "Phase: results | Action: drill_connections | Target: haf_connection_view | Result: begin"
 
 declare -A SEEN_CONNECTIONS
 
@@ -329,11 +400,11 @@ final_pass=0
 while true; do
   ui_refresh
   mapfile -t ITEMS < <(ui_list_resid_desc_bounds ":id/haf_connection_view")
-  log "ITEMS count=${#ITEMS[@]}"
+  log "Phase: results | Action: debug_items | Target: haf_connection_view | Result: count=${#ITEMS[@]}"
 
   for i in "${!ITEMS[@]}"; do
-    # %q affiche une version échappée (tabs, espaces, etc.)
-    log "ITEMS[$i]=$(printf '%q' "${ITEMS[$i]}")"
+    # %q prints an escaped representation (tabs, spaces, etc.)
+    log "Phase: results | Action: debug_item | Target: haf_connection_view | Result: index=$i item=$(printf '%q' "${ITEMS[$i]}")"
   done
 
   new=0
@@ -351,11 +422,11 @@ while true; do
     cx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
     cy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
 
-    log "Open connection"
+    log "Phase: results | Action: open_connection | Target: haf_connection_view | Result: tap"
     ui_tap_xy "connection" "$cx" "$cy"
 
-    if ! ui_wait_resid "details page" ":id/text_line_name" "$WAIT_LONG"; then
-      warn "Connection not opened, retry later"
+    if ! ui_wait_resid "Phase: results | Action: wait | Target: connection_details | Result: visible" ":id/text_line_name" "$WAIT_LONG"; then
+      warn "Phase: results | Action: open_connection | Target: connection_details | Result: not_opened_retry"
       continue
     fi
 
@@ -363,7 +434,7 @@ while true; do
     SEEN_CONNECTIONS["$key"]=1
     new=1
 
-    ui_snap "070_connection" 3
+    snap "results" "open_connection" "details_visible" 3
 
     # -------------------------
     # Drill routes
@@ -391,11 +462,11 @@ while true; do
         rcx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
         rcy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
 
-        log "Open route: $text"
+        log "Phase: results | Action: open_route | Target: route_list | Result: tap text=$text"
         ui_tap_xy "route" "$rcx" "$rcy"
 
-        if ! ui_wait_resid "route details" ":id/journey_details_head" "$WAIT_LONG"; then
-          warn "Route not opened, retry later"
+        if ! ui_wait_resid "Phase: results | Action: wait | Target: route_details | Result: visible" ":id/journey_details_head" "$WAIT_LONG"; then
+          warn "Phase: results | Action: open_route | Target: route_details | Result: not_opened_retry"
           continue
         fi
 
@@ -403,11 +474,11 @@ while true; do
         rnew=1
 
         ui_scrollshot_region "route_${rkey}" ":id/journey_details_head"
-        log "route scrollshot captured for route_${rkey}"
+        log "Phase: results | Action: scrollshot | Target: route | Result: captured name=route_${rkey}"
         sleep_s 0.3
 
         _ui_key 4 || true
-        ui_wait_resid "back to details" ":id/text_line_name" "$WAIT_LONG"
+        ui_wait_resid "Phase: results | Action: wait | Target: connection_details | Result: visible" ":id/text_line_name" "$WAIT_LONG"
       done
 
       if [[ $rnew -eq 0 ]]; then
@@ -428,7 +499,7 @@ while true; do
 
     # ---- back to results ----
     _ui_key 4 || true
-    ui_wait_resid "back to results" ":id/haf_connection_view" "$WAIT_LONG"
+    ui_wait_resid "Phase: results | Action: wait | Target: results_page | Result: visible" ":id/haf_connection_view" "$WAIT_LONG"
   done
 
   if [[ $new -eq 0 ]]; then
@@ -453,9 +524,9 @@ done
 
 latest_xml="$(ls -1t "$SNAP_DIR"/*.xml 2>/dev/null | head -n1 || true)"
 if [[ -n "$latest_xml" ]] && grep -qiE 'Results|Résultats|Itinéraire|Itinéraires|Trajet' "$latest_xml"; then
-  log "Scenario success (keyword detected)"
+  log "Phase: finish | Action: heuristic | Target: latest_xml | Result: success_keyword_detected"
   exit 0
 fi
 
-#warn "Scenario ended without strong marker (not necessarily a failure)"
+# warn "Scenario ended without strong marker (not necessarily a failure)"
 exit 0
