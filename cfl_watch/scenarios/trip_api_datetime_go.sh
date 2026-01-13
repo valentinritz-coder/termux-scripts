@@ -212,42 +212,96 @@ log "Phase: planner | Action: detect_page | Target: toolbar | Result: trip_plann
 # -------------------------
 
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
-  log "Phase: datetime | Action: set_datetime | Target: request | Result: requested date=$DATE_YMD_TRIM time=$TIME_HM_TRIM"
+  log "Phase: datetime | Action: set | Target: request | Result: requested date=$DATE_YMD_TRIM time=$TIME_HM_TRIM"
 
+  # ---- Open Date/Time menu (CFL) ----
   if ui_has_element "desc:Time field" contains; then
-    ui_tap_any "date_time_button_tap" "desc:Time field"
+    log "Phase: datetime | Action: tap | Target: time_field | Result: requested"
+    ui_tap_any "open datetime menu" "desc:Time field"
 
-    if ui_wait_desc_any "Phase: datetime | Action: wait | Target: time_picker | Result: visible" "Leave now" "Tab Departure" "Tab Arrival" "Date," "Time," "$WAIT_LONG"; then
-      ui_tap_any "date_button_tap" "desc:Date,"
-      if ui_wait_desc_any "Phase: datetime | Action: wait | Target: time_picker | Result: visible" "Previous month" "$WAIT_LONG"; then
-        [[ -n "$DATE_YMD_TRIM" ]] && ui_calendar_set_date_ymd "$DATE_YMD_TRIM"
-        ui_tap_any "OK button" "resid:android:id/button1"
-      fi
-      ui_tap_any "date_button_tap" "desc:Time,"
-      ui_wait_resid "Phase: planner | Action: wait | Target: request_screen | Result: visible" ":id/toggle_mode" "$WAIT_LONG"
-      ui_tap_any "OK button" "resid:android:id/toggle_mode"
-      ui_wait_element_has_text "OK button" "resid::id/top_label" "Type in time" "$WAIT_LONG"      
-      if ui_wait_desc_any "Phase: datetime | Action: wait | Target: time_picker | Result: visible" "Leave now" "Tab Departure" "Tab Arrival" "Date," "Time," "$WAIT_LONG"; then
-        [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_12h_text "$TIME_HM_TRIM"
-        ui_tap_any "OK button" "resid:android:id/button1"
-        ui_wait_resid "Phase: planner | Action: wait | Target: request_screen | Result: visible" ":id/toggle_mode" "$WAIT_LONG"
-        ui_tap_any "OK button" "resid:android:id/button1"
-      fi
-      
-      if ui_has_element "desc:Apply" contains; then
-        snap "datetime" "set_datetime" "filled" "$SNAP_MODE"
-        ui_tap_any "ok_button_tap" "desc:Apply"
-      else
-        _ui_key 4 || true
-        warn "Phase: datetime | Action: validate | Target: dialog | Result: ok_button_missing_back_fallback"
-      fi
-    else
-      warn "Phase: datetime | Action: open | Target: dialog | Result: not_opened_skip"
+    if ! ui_wait_desc_any \
+      "Phase: datetime | Action: wait | Target: datetime_menu | Result: visible" \
+      "Date," "Time," "Leave now" "$WAIT_LONG"; then
+      warn "Phase: datetime | Action: open | Target: datetime_menu | Result: failed"
+      exit 1
     fi
   else
-    warn "Phase: datetime | Action: find_field | Target: datetime_text | Result: absent_skip"
+    warn "Phase: datetime | Action: find | Target: time_field | Result: missing_skip"
+    exit 0
+  fi
+
+  # ---------------------------------------------------------------------------
+  # DATE
+  # ---------------------------------------------------------------------------
+  if [[ -n "$DATE_YMD_TRIM" ]]; then
+    log "Phase: datetime | Action: set | Target: date | Result: requested value=$DATE_YMD_TRIM"
+
+    ui_tap_any "open date picker" "desc:Date,"
+
+    if ui_wait_desc_any \
+      "Phase: datetime | Action: wait | Target: calendar | Result: visible" \
+      "Previous month" "$WAIT_LONG"; then
+
+      ui_calendar_set_date_ymd "$DATE_YMD_TRIM"
+
+      log "Phase: datetime | Action: validate | Target: date | Result: ok"
+      ui_tap_any "date ok" "resid:android:id/button1"
+
+      # Retour menu CFL
+      ui_wait_desc_any \
+        "Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible" \
+        "Date," "Time," "$WAIT_LONG"
+    else
+      warn "Phase: datetime | Action: set | Target: date | Result: calendar_not_visible"
+    fi
+  fi
+
+  # ---------------------------------------------------------------------------
+  # TIME
+  # ---------------------------------------------------------------------------
+  if [[ -n "$TIME_HM_TRIM" ]]; then
+    log "Phase: datetime | Action: set | Target: time | Result: requested value=$TIME_HM_TRIM"
+
+    ui_tap_any "open time picker" "desc:Time,"
+
+    if ui_wait_resid \
+      "Phase: datetime | Action: wait | Target: time_picker | Result: visible" \
+      "android:id/input_hour" "$WAIT_LONG"; then
+
+      # Passer en mode texte
+      ui_tap_any "switch to text mode" "resid:android:id/toggle_mode"
+
+      ui_wait_element_has_text \
+        "Phase: datetime | Action: wait | Target: time_input | Result: text_mode" \
+        "resid::id/top_label" "Type in time" "$WAIT_LONG"
+
+      ui_datetime_set_time_12h_text "$TIME_HM_TRIM"
+
+      log "Phase: datetime | Action: validate | Target: time | Result: ok"
+      ui_tap_any "time ok" "resid:android:id/button1"
+
+      # Retour menu CFL
+      ui_wait_desc_any \
+        "Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible" \
+        "Date," "Time," "$WAIT_LONG"
+    else
+      warn "Phase: datetime | Action: set | Target: time | Result: time_picker_not_visible"
+    fi
+  fi
+
+  # ---------------------------------------------------------------------------
+  # APPLY (commit CFL)
+  # ---------------------------------------------------------------------------
+  if ui_has_element "desc:Apply" contains; then
+    log "Phase: datetime | Action: apply | Target: cfl | Result: commit"
+    snap "datetime" "apply" "before" "$SNAP_MODE"
+    ui_tap_any "apply" "desc:Apply"
+  else
+    warn "Phase: datetime | Action: apply | Target: cfl | Result: missing_back_fallback"
+    _ui_key 4 || true
   fi
 fi
+
 
 # -------------------------
 # Start station
