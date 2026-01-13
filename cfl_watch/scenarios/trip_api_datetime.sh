@@ -402,13 +402,8 @@ while true; do
         SEEN_ROUTES["$rkey"]=1
         rnew=1
 
-        dir="$(ui_scrollshot_region "route_${rkey}" ":id/journey_details_head")"
-        log "route scrollshot saved in $dir"
-        
-        #ui_snap "080_route" 3
-        # route details = scroll to bottom once
-        #ui_scroll_down
-        #ui_scroll_down
+        ui_scrollshot_region "route_${rkey}" ":id/journey_details_head"
+        log "route scrollshot captured for route_${rkey}"
         sleep_s 0.3
 
         _ui_key 4 || true
