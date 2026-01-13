@@ -746,9 +746,7 @@ ui_calendar_pick_day_ymd() {
 
   # Tentatives robustes, ordre du plus précis au plus permissif
   if ui_tap_any "calendar day $ymd" \
-      "desc:$d " \
-      "text:$d" \
-      "text:0$d"; then
+      "desc:$d "; then
     return 0
   fi
 
