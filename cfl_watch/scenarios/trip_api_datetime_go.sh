@@ -199,7 +199,7 @@ fi
 # Trip Planner page
 # -------------------------
 
-if ! ui_has_element "desc:Tab layout_itineraries_accessibility_label  selected" then
+if ! ui_has_element "desc:Tab layout_itineraries_accessibility_label  selected"; then
   warn "Phase: planner | Action: detect_page | Target: toolbar | Result: trip_planner_not_detected"
   snap_here "planner" "detect_page" "error" "$SNAP_MODE"
   exit 1
