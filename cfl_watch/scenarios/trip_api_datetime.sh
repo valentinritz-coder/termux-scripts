@@ -329,6 +329,12 @@ final_pass=0
 while true; do
   ui_refresh
   mapfile -t ITEMS < <(ui_list_resid_desc_bounds ":id/haf_connection_view")
+  log "ITEMS count=${#ITEMS[@]}"
+
+  for i in "${!ITEMS[@]}"; do
+    # %q affiche une version échappée (tabs, espaces, etc.)
+    log "ITEMS[$i]=$(printf '%q' "${ITEMS[$i]}")"
+  done
 
   new=0
 
@@ -337,6 +343,12 @@ while true; do
 
     raw_key="$desc"
     key="$(hash_key "$raw_key")"
+
+    log "SEEN_CONNECTIONS size=${#SEEN_CONNECTIONS[@]}"
+
+    for k in "${!SEEN_CONNECTIONS[@]}"; do
+      log "SEEN_CONNECTIONS[$(printf '%q' "$k")]=$(printf '%q' "${SEEN_CONNECTIONS[$k]}")"
+    done
 
     [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
 
