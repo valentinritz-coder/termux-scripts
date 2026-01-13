@@ -66,13 +66,17 @@ PY
 
 ui_scrollshot_region() {
   # Usage:
-  # ui_scrollshot_region "tag" ":id/journey_details_head"
+  # ui_scrollshot_region "route_abcd1234" ":id/journey_details_head"
   local tag="$1"
   local anchor_resid="$2"
 
-  [[ -n "${SNAP_DIR:-}" ]] || { warn "SNAP_DIR not set"; return 1; }
+  [[ -n "${PNG_DIR:-}" && -n "${XML_DIR:-}" ]] || {
+    warn "scrollshot: PNG_DIR / XML_DIR not set"
+    return 1
+  }
 
   ui_refresh
+
   local top_y
   top_y="$(ui_get_resid_top_y "$anchor_resid")"
 
@@ -81,12 +85,11 @@ ui_scrollshot_region() {
     return 1
   fi
 
-  local ts dir
-  ts="$(date +%H-%M-%S)"
-  dir="$SNAP_DIR/${ts}_${tag}_scrollshot"
-  mkdir -p "$dir"
+  # 🔒 timestamp canonique UNIQUE pour toute la séquence
+  local ts
+  ts="$(date +"%Y%m%d_%H%M%S_%3N")"
 
-  log "scrollshot: anchor=$anchor_resid top_y=$top_y dir=$dir"
+  log "scrollshot: tag=$tag anchor=$anchor_resid top_y=$top_y ts=$ts"
 
   local w h
   read -r w h < <(ui_screen_size)
@@ -99,19 +102,27 @@ ui_scrollshot_region() {
 
   local prev_hash=""
   local streak=0
+  local i=1
 
-  for ((i=0; i<=SCROLLSHOT_MAX_SCROLL; i++)); do
-    local png="$dir/$(printf '%03d' "$i").png"
+  for ((n=0; n<=SCROLLSHOT_MAX_SCROLL; n++)); do
+    printf -v sfx "__S%02d" "$i"
+
+    local png="$PNG_DIR/${ts}__${tag}${sfx}.png"
+    local xml="$XML_DIR/${ts}__${tag}${sfx}.xml"
+
     ui_screencap_png "$png"
+    ui_refresh
+    cp -f "$UI_DUMP_CACHE" "$xml"
 
     local hsh
     hsh="$(ui_hash_png "$png")"
 
     if [[ -n "$prev_hash" && "$hsh" == "$prev_hash" ]]; then
-      streak=$((streak+1))
-      log "scrollshot: identical streak=$streak at i=$i"
+      streak=$((streak + 1))
+      log "scrollshot: identical streak=$streak at S$(printf '%02d' "$i")"
+
       if (( streak >= SCROLLSHOT_STOP_STREAK && i >= 2 )); then
-        rm -f "$png"
+        rm -f "$png" "$xml"
         log "scrollshot: stop (no more scroll)"
         break
       fi
@@ -120,11 +131,14 @@ ui_scrollshot_region() {
     fi
 
     prev_hash="$hsh"
+    i=$((i + 1))
 
-    adb -s "$(_ui_serial)" shell input swipe "$x" "$y_start" "$x" "$y_end" "$SCROLLSHOT_SWIPE_MS"
+    adb -s "$(_ui_serial)" shell input swipe \
+      "$x" "$y_start" "$x" "$y_end" "$SCROLLSHOT_SWIPE_MS"
+
     sleep_s "$SCROLLSHOT_SETTLE"
   done
 
-  log "scrollshot: done -> $dir"
-  printf '%s\n' "$dir"
+  log "scrollshot: done (${i}-1 frames)"
 }
+
