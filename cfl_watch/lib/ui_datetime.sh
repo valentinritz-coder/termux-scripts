@@ -763,7 +763,7 @@ ui_calendar_set_date_ymd() {
     return 1
   }
 
-  local ym="${ymd%??}"   # YYYY-MM
+  local ym="${ymd:0:7}"   # YYYY-MM (FIX CRITIQUE)
 
   log "Phase: calendar | Action: goto_month | Target: calendar | Result: requested ym=$ym"
   if ! ui_calendar_goto_ym "$ym"; then
@@ -778,6 +778,7 @@ ui_calendar_set_date_ymd() {
 
   log "Phase: calendar | Action: set_date | Target: calendar | Result: success ymd=$ymd"
 }
+
 
 ui_datetime_set_time_12h_text() {
   # Input: HH:MM (24h)
