@@ -763,4 +763,58 @@ ui_calendar_set_date_ymd() {
   ui_calendar_pick_day_ymd "$ymd" || return 1
 }
 
+ui_datetime_set_time_12h_text() {
+  # Input: HH:MM (24h)
+  local hm="$1"
+
+  [[ "$hm" =~ ^[0-9]{1,2}:[0-9]{2}$ ]] || {
+    warn "Bad TIME_HM format: '$hm'"
+    return 1
+  }
+
+  local h="${hm%:*}"
+  local m="${hm#*:}"
+  h=$((10#$h))
+  m=$((10#$m))
+
+  local ampm="AM"
+  (( h >= 12 )) && ampm="PM"
+
+  local h12=$(( h % 12 ))
+  (( h12 == 0 )) && h12=12
+
+  _dbg "time_text: h24=$h h12=$h12 m=$m ampm=$ampm"
+
+  # ---- Hour ----
+  ui_tap_any "time hour input" \
+    "resid:android:id/input_hour" || return 1
+
+  _ui_wait_ime_shown || true
+  _maybe adb shell input text "$h12"
+  _ui_key 4
+  _ui_wait_ime_hidden || true
+
+  # ---- Minute ----
+  ui_tap_any "time minute input" \
+    "resid:android:id/input_minute" || return 1
+
+  _ui_wait_ime_shown || true
+  _maybe adb shell input text "$(printf "%02d" "$m")"
+  _ui_key 4
+  _ui_wait_ime_hidden || true
+
+  # ---- AM / PM ----
+  ui_tap_any "time ampm spinner" \
+    "resid:android:id/am_pm_spinner" || return 1
+
+  sleep "${UI_TAP_DELAY:-0.1}"
+
+  ui_tap_any "time ampm select $ampm" \
+    "text:$ampm" || {
+      warn "AM/PM option '$ampm' not found"
+      return 1
+  }
+}
+
+
 
