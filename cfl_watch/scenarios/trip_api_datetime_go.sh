@@ -218,8 +218,20 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
     ui_tap_any "date_time_button_tap" "desc:Time field"
 
     if ui_wait_desc_any "Phase: datetime | Action: wait | Target: time_picker | Result: visible" "Leave now" "Tab Departure" "Tab Arrival" "Date," "Time," "$WAIT_LONG"; then
-      [[ -n "$DATE_YMD_TRIM" ]] && ui_datetime_set_date_ymd "$DATE_YMD_TRIM"
-      [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
+      ui_tap_any "date_button_tap" "desc:Date,"
+      if ui_wait_desc_any "Phase: datetime | Action: wait | Target: time_picker | Result: visible" "Previous month" "$WAIT_LONG"; then
+        [[ -n "$DATE_YMD_TRIM" ]] && ui_calendar_set_date_ymd "$DATE_YMD_TRIM"
+        ui_tap_any "OK button" "resid:android:id/button1"
+      fi
+      ui_tap_any "date_button_tap" "desc:Time,"
+      ui_wait_resid "Phase: planner | Action: wait | Target: request_screen | Result: visible" ":id/toggle_mode" "$WAIT_LONG"
+      ui_tap_any "OK button" "resid:android:id/toggle_mode"
+      ui_wait_element_has_text "OK button" "resid::id/top_label" "Type in time" "$WAIT_LONG"      
+      if ui_wait_desc_any "Phase: datetime | Action: wait | Target: time_picker | Result: visible" "Leave now" "Tab Departure" "Tab Arrival" "Date," "Time," "$WAIT_LONG"; then
+        [[ -n "$TIME_HM_TRIM"  ]] && ui_datetime_set_time_24h "$TIME_HM_TRIM"
+        ui_tap_any "OK button" "resid:android:id/button1"
+      fi
+        
 
       if ui_has_element "desc:Apply" contains; then
         snap "datetime" "set_datetime" "filled" "$SNAP_MODE"
