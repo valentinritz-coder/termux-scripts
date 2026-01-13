@@ -148,11 +148,13 @@ snap_here() {
 
 snap_init "$run_name"
 
+rc_open_viewer=0
+
 finish() {
   local rc=$?
   trap - EXIT
   if [ "$rc" -ne 0 ]; then
-    warn "Phase: finish | Action: exit_trap | Target: run | Result: failed rc=$rc_open_viewer"
+    warn "Phase: finish | Action: exit_trap | Target: run | Result: failed rc=${rc_open_viewer:-0}"
     "$CFL_CODE_DIR/lib/viewer.sh" "$SNAP_DIR" >/dev/null 2>&1 || true
     log "Phase: finish | Action: viewer | Target: snapshot_dir | Result: $SNAP_DIR/viewers/index.html"
   fi
