@@ -310,45 +310,58 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   fi
 fi
 
-
 # -------------------------
-# Start station
+# Start station (search modal)
 # -------------------------
 
-log "Phase: planner | Action: set_start | Target: field | Result: begin"
+log "Phase: planner | Action: set_start | Target: from | Result: begin"
 
-ui_wait_resid "Phase: planner | Action: wait | Target: request_screen | Result: visible" ":id/request_screen_container" "$WAIT_LONG"
-snap "planner" "set_start" "before" "$SNAP_MODE"
+# Wait for search modal title (strong anchor)
+ui_wait_resid \
+  "Phase: planner | Action: wait | Target: from_modal | Result: visible" \
+  ":id/fromModalTitle" \
+  "$WAIT_LONG"
 
-if ui_has_element "desc:Select start"; then
-  log "Phase: planner | Action: open_field | Target: start | Result: empty_select_start"
-  ui_tap_any "start field" "desc:Select start"
-else
-  log "Phase: planner | Action: open_field | Target: start | Result: filled_container_child"
-  ui_tap_child_of_resid \
-    "start field (container)" \
-    ":id/request_screen_container" \
-    0
-fi
+snap "planner" "set_start" "modal_visible" "$SNAP_MODE"
 
-ui_wait_resid "Phase: planner | Action: wait | Target: input_location_name | Result: visible" ":id/input_location_name" "$WAIT_LONG"
-ui_type_and_wait_results "start" "$START_TEXT"
+# Focus input field
+log "Phase: planner | Action: focus | Target: from_input"
 
-# 1) Wait for keyboard to be shown (key detail)
-_ui_wait_ime_shown || true
-# 3) BACK (in your case: validate + close keyboard)
-_ui_key 4 || true
-# 4) Wait for keyboard to be fully hidden before tapping elsewhere
-_ui_wait_ime_hidden || true
+ui_wait_resid \
+  "Phase: planner | Action: wait | Target: from_input | Result: visible" \
+  ":id/fromInputSearch" \
+  "$WAIT_LONG"
+
+ui_tap_resid "from input" ":id/fromInputSearch"
+
+# Clear existing text if any
+ui_maybe_tap "clear from input" "resid:fromInputSearch-clear"
+
+# Type text and wait for suggestions
+ui_type_and_wait_results "from" "$START_TEXT"
 
 snap "planner" "set_start" "typed" "$SNAP_MODE"
 
-if ! ui_pick_suggestion "start suggestion" "$START_TEXT"; then
-  warn "Phase: planner | Action: pick_suggestion | Target: start | Result: not_found"
+# Wait for at least one suggestion matching START_TEXT
+if ! ui_wait_desc_any \
+  "Phase: planner | Action: wait | Target: start_suggestion | Result: visible" \
+  "$START_TEXT"; then
+  warn "Phase: planner | Action: wait | Target: start_suggestion | Result: timeout"
+  exit 1
+fi
+
+# Pick first matching suggestion
+if ! ui_tap_desc \
+  "start suggestion" \
+  "$START_TEXT"; then
+  warn "Phase: planner | Action: pick | Target: start | Result: not_found"
   exit 1
 fi
 
 snap "planner" "set_start" "selected" "$SNAP_MODE"
+
+log "Phase: planner | Action: set_start | Target: from | Result: done"
+
 
 # -------------------------
 # Destination station
