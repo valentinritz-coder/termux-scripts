@@ -540,7 +540,6 @@ ui_collect_all_resid_bounds() {
 }
 
 ui_list_resid_desc_bounds() {
-  # Usage: ui_list_resid_desc_bounds ":id/haf_connection_view"
   local resid="$1"
 
   [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
@@ -554,24 +553,36 @@ import sys, re, xml.etree.ElementTree as ET
 
 dump, resid = sys.argv[1], sys.argv[2]
 root = ET.parse(dump).getroot()
-b = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
+
+re_nl = re.compile(r"[\r\n]+")
+re_ws = re.compile(r"[ \t]+")
 
 for n in root.iter("node"):
     if n.get("resource-id") != resid:
         continue
-    desc = (n.get("content-desc") or "").strip()
-    bounds = n.get("bounds")
+
+    desc = (n.get("content-desc") or "")
+    bounds = n.get("bounds") or ""
+
+    # ElementTree convertit &#10; -> '\n' : on remet tout sur UNE ligne
+    desc = re_nl.sub(" | ", desc)     # ou " " si tu veux
+    desc = desc.replace("\t", " ")    # protège le séparateur '\t' de ton output
+    desc = re_ws.sub(" ", desc).strip()
+
     if not desc or not bounds:
         continue
+
     print(f"{desc}\t{bounds}")
 PY
 }
 
 ui_list_resid_text_bounds() {
+  # Usage: ui_list_resid_text_bounds ":id/foo"
   local resid="$1"
 
   [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
 
+  # Normaliser :id/foo -> de.hafas.android.cfl:id/foo
   if [[ "$resid" == :id/* ]]; then
     resid="${APP_PACKAGE:-de.hafas.android.cfl}${resid}"
   fi
@@ -582,14 +593,26 @@ import sys, re, xml.etree.ElementTree as ET
 dump, resid = sys.argv[1], sys.argv[2]
 root = ET.parse(dump).getroot()
 
+re_nl = re.compile(r"[\r\n]+")
+re_ws = re.compile(r"[ \t]+")
+
 for n in root.iter("node"):
     if n.get("resource-id") != resid:
         continue
-    text = (n.get("text") or "").strip()
-    bounds = n.get("bounds")
+
+    text = n.get("text") or ""
+    bounds = n.get("bounds") or ""
+
+    # Protéger la sortie: une ligne par node, tab = séparateur réservé
+    text = re_nl.sub(" ", text)      # \r \n -> espace
+    text = text.replace("\t", " ")   # ne jamais laisser un tab dans le champ
+    text = re_ws.sub(" ", text).strip()
+
     if not text or not bounds:
         continue
+
     print(f"{text}\t{bounds}")
 PY
 }
+
 
