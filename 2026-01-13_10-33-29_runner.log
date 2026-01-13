@@ -1,0 +1,357 @@
+[*] Log: /sdcard/cfl_watch/logs/2026-01-13_10-33-29_runner.log
+[*] Start ADB local on 127.0.0.1:37099
+[*] Activation ADB TCP sur 127.0.0.1:37099 (root)
+[*] Redémarrage adbd
+[*] Attente adbd=running
+[*] adb connect (retry) -> 127.0.0.1:37099
+[*] connected to 127.0.0.1:37099
+[*] getprop:
+37099
+running
+[*] adb devices -l:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Tip: export ANDROID_SERIAL=127.0.0.1:37099
+[*] Device list:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Disable Android animations (temporary)
+[*] === RUN: LUXEMBOURG -> ARLON (SNAP_MODE=3) ===
+[2026-01-13 10:33:37] SNAP_DIR=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450 (SNAP_MODE=3)
+[2026-01-13 10:33:37] Scenario: LUXEMBOURG -> ARLON (SNAP_MODE=3)
+[2026-01-13 10:33:37] VIA enabled: Bettembourg
+[2026-01-13 10:33:37] Wait toolbar visible
+[*] ui_dump: dump=3009ms cat=180ms total=3189ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:33:40] wait ok: toolbar visible
+[2026-01-13 10:33:41] snap: 10-33-40_000_opening (mode=3)
+[2026-01-13 10:33:41] Toolbar affiche Home
+[2026-01-13 10:33:41] Tap burger icon tap (desc) at 77,154
+[*] ui_dump: dump=2407ms cat=189ms total=2597ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:33:44] wait ok: drawer visible
+[2026-01-13 10:33:44] snap: 10-33-44_001_after_tap_burger (mode=3)
+[2026-01-13 10:33:45] Tap trip planner menu (text) at 423,724
+[*] ui_dump: dump=2559ms cat=183ms total=2742ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:33:47] wait ok: wait trip planner page
+[2026-01-13 10:33:48] Toolbar affiche Trip Planner
+[2026-01-13 10:33:48] Réglage de la date et de l'heure
+[2026-01-13 10:33:48] Tap date time field (id) at 471,605
+[*] ui_dump: dump=2412ms cat=179ms total=2591ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:33:50] wait ok: time picker visible
+[2026-01-13 10:33:51] Tap one day earlier (id) at 143,1389
+[2026-01-13 10:33:51] Tap one day earlier (id) at 143,1389
+[2026-01-13 10:33:51] Tap one day earlier (id) at 143,1389
+[2026-01-13 10:33:51] Tap one day earlier (id) at 143,1389
+[2026-01-13 10:33:55] snap: 10-33-55_020_after_set_datetime (mode=3)
+[2026-01-13 10:33:55] Tap OK button (id) at 887,1535
+[2026-01-13 10:33:55] Réglage de la station de départ
+[*] ui_dump: dump=2438ms cat=165ms total=2604ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:33:58] wait ok: request screen visible
+[2026-01-13 10:33:59] snap: 10-33-58_030_before_set_start (mode=3)
+[2026-01-13 10:33:59] Start field filled → container child
+[2026-01-13 10:33:59] Tap start field (container) at 534,330
+[*] ui_dump: dump=2331ms cat=183ms total=2515ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:01] wait ok: input location name visible
+[2026-01-13 10:34:01] Type start: LUXEMBOURG
+[*] ui_dump: dump=3517ms cat=170ms total=3688ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:06] wait_results_ready: iter=1 list=1 loader=0
+[*] ui_dump: dump=2462ms cat=184ms total=2647ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:11] snap: 10-34-10_031_after_type_start (mode=3)
+[2026-01-13 10:34:11] Tap start suggestion (desc) at 540,700
+[2026-01-13 10:34:11] snap: 10-34-11_032_after_pick_start (mode=3)
+[2026-01-13 10:34:11] Réglage de la station de destination
+[*] ui_dump: dump=2561ms cat=149ms total=2711ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:14] wait ok: request screen visible
+[2026-01-13 10:34:15] snap: 10-34-14_040_before_set_destination (mode=3)
+[2026-01-13 10:34:15] Destination field filled → container child
+[2026-01-13 10:34:15] Tap destination field (container) at 534,473
+[*] ui_dump: dump=2345ms cat=166ms total=2511ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:18] wait ok: input location name visible
+[2026-01-13 10:34:18] Type destination: ARLON
+[*] ui_dump: dump=3323ms cat=179ms total=3503ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:22] wait_results_ready: iter=1 list=1 loader=0
+[*] ui_dump: dump=2434ms cat=156ms total=2591ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:27] snap: 10-34-26_041_after_type_destination (mode=3)
+[2026-01-13 10:34:27] Tap destination suggestion (desc) at 540,700
+[2026-01-13 10:34:28] snap: 10-34-27_042_after_pick_destination (mode=3)
+[2026-01-13 10:34:28] Réglage de la station VIA
+[*] ui_dump: dump=2503ms cat=79ms total=2583ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:30] wait ok: options button visible
+[2026-01-13 10:34:30] Tap options button (desc) at 997,605
+[*] ui_dump: dump=2343ms cat=188ms total=2531ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:34] snap: 10-34-33_050_after_open_options (mode=3)
+[*] ui_dump: dump=2441ms cat=178ms total=2619ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:36] wait ok: via field visible
+[2026-01-13 10:34:37] Tap via field (text) at 587,313
+[*] ui_dump: dump=2333ms cat=180ms total=2513ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:40] snap: 10-34-39_051_after_tap_via (mode=3)
+[2026-01-13 10:34:40] Type via: Bettembourg
+[*] ui_dump: dump=3376ms cat=178ms total=3555ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:44] wait_results_ready: iter=1 list=1 loader=0
+[*] ui_dump: dump=2526ms cat=176ms total=2702ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:49] snap: 10-34-48_052_after_type_via (mode=3)
+[2026-01-13 10:34:49] Tap via suggestion (desc) at 540,313
+[2026-01-13 10:34:50] snap: 10-34-49_053_after_pick_via (mode=3)
+[2026-01-13 10:34:50] Tap back from via (desc) at 77,154
+[*] ui_dump: dump=2354ms cat=188ms total=2542ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:53] snap: 10-34-52_054_after_back_from_via (mode=3)
+[*] ui_dump: dump=2513ms cat=205ms total=2719ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:34:56] wait ok: search button visible
+[2026-01-13 10:34:56] Tap search button (id) at 540,784
+[*] ui_dump: dump=3074ms cat=177ms total=3251ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:00] snap: 10-34-59_060_after_search (mode=3)
+[2026-01-13 10:35:00] Lancement de la recherche
+[*] ui_dump: dump=2419ms cat=191ms total=2610ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:03] wait ok: results page visible
+[2026-01-13 10:35:03] Drill connections (content-desc driven)
+[*] ui_dump: dump=2522ms cat=190ms total=2713ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:06] ITEMS count=3
+[2026-01-13 10:35:06] ITEMS[0]=$'Trip at 2:50pm; . with arrival at 4:18pm; . Duration: 1 hour 28 minutes. with R E 6964, Transfer, R B 4715, Transfer, 5964;2 changes. |\t[0,625][1080,871]'
+[2026-01-13 10:35:06] ITEMS[1]=$'Trip at 3:20pm; . with arrival at 4:23pm; . Duration: 1 hour 3 minutes. with R E 464, Transfer, T E R88740, Transfer, R B 5935;2 changes. | Info: One stop is passed several times |\t[0,874][1080,1203]'
+[2026-01-13 10:35:06] ITEMS[2]=$'Trip at 3:39pm; . with arrival at 4:31pm; . Duration: 52 minutes. with T E R88743, Transfer, T E R88808, Transfer, I C 2139;2 changes. | Info: One stop is passed several times |\t[0,1206][1080,1535]'
+[2026-01-13 10:35:06] Open connection
+[2026-01-13 10:35:06] Tap connection at 540,748
+[*] ui_dump: dump=2484ms cat=176ms total=2661ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:09] wait ok: details page
+[2026-01-13 10:35:09] snap: 10-35-09_070_connection (mode=3)
+[*] ui_dump: dump=2477ms cat=187ms total=2665ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:12] Open route: RE 6964
+[2026-01-13 10:35:12] Tap route at 363,1035
+[*] ui_dump: dump=2583ms cat=182ms total=2765ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:15] wait ok: route details
+[*] ui_dump: dump=2546ms cat=181ms total=2728ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:35:20] route scrollshot saved: [2026-01-13 10:35:18] scrollshot_region: tag=080_route_317df50c9fc4091df7fb11e374ed909bc099b83d anchor=:id/journey_details_head top_crop=201 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-35-18_080_route_317df50c9fc4091df7fb11e374ed909bc099b83d_region
+[2026-01-13 10:35:20] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:35:20] scrollshot_region: stop (no visual change)
+[2026-01-13 10:35:20] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-35-18_080_route_317df50c9fc4091df7fb11e374ed909bc099b83d_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-35-18_080_route_317df50c9fc4091df7fb11e374ed909bc099b83d_region/full.png
+[*] ui_dump: dump=2442ms cat=176ms total=2619ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:23] wait ok: back to details
+[2026-01-13 10:35:23] Open route: RB 4715
+[2026-01-13 10:35:23] Tap route at 364,1587
+[*] ui_dump: dump=2530ms cat=178ms total=2708ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:26] wait ok: route details
+[*] ui_dump: dump=2572ms cat=163ms total=2736ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:35:31] route scrollshot saved: [2026-01-13 10:35:29] scrollshot_region: tag=080_route_78a21323b96b82f498027adb8dc3d507176b7fe3 anchor=:id/journey_details_head top_crop=201 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-35-29_080_route_78a21323b96b82f498027adb8dc3d507176b7fe3_region
+[2026-01-13 10:35:31] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:35:31] scrollshot_region: stop (no visual change)
+[2026-01-13 10:35:31] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-35-29_080_route_78a21323b96b82f498027adb8dc3d507176b7fe3_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-35-29_080_route_78a21323b96b82f498027adb8dc3d507176b7fe3_region/full.png
+[*] ui_dump: dump=2459ms cat=182ms total=2641ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:34] wait ok: back to details
+[*] ui_dump: dump=2478ms cat=187ms total=2666ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:38] Open route: 5964
+[2026-01-13 10:35:38] Tap route at 338,1528
+[*] ui_dump: dump=2519ms cat=168ms total=2688ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:41] wait ok: route details
+[*] ui_dump: dump=2558ms cat=188ms total=2747ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:35:46] route scrollshot saved: [2026-01-13 10:35:44] scrollshot_region: tag=080_route_337f4daa1267d861338a1b21146e619195d00377 anchor=:id/journey_details_head top_crop=201 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-35-44_080_route_337f4daa1267d861338a1b21146e619195d00377_region
+[2026-01-13 10:35:46] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:35:46] scrollshot_region: stop (no visual change)
+[2026-01-13 10:35:46] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-35-44_080_route_337f4daa1267d861338a1b21146e619195d00377_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-35-44_080_route_337f4daa1267d861338a1b21146e619195d00377_region/full.png
+[*] ui_dump: dump=2433ms cat=194ms total=2627ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:35:49] wait ok: back to details
+[*] ui_dump: dump=2447ms cat=190ms total=2638ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2558ms cat=180ms total=2738ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2496ms cat=181ms total=2678ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:36:02] routes list scrollshot saved: [2026-01-13 10:36:00] scrollshot_region: tag=071_routes_list_3165a4ec91380339ae5ae47ea5a6c991f0b7c96e anchor=:id/text_line_name top_crop=823 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-00_071_routes_list_3165a4ec91380339ae5ae47ea5a6c991f0b7c96e_region
+[2026-01-13 10:36:02] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:36:02] scrollshot_region: stop (no visual change)
+[2026-01-13 10:36:02] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-00_071_routes_list_3165a4ec91380339ae5ae47ea5a6c991f0b7c96e_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-00_071_routes_list_3165a4ec91380339ae5ae47ea5a6c991f0b7c96e_region/full.png
+[*] ui_dump: dump=2450ms cat=188ms total=2639ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:05] wait ok: back to results
+[2026-01-13 10:36:05] Open connection
+[2026-01-13 10:36:05] Tap connection at 540,1038
+[*] ui_dump: dump=2425ms cat=172ms total=2597ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:07] wait ok: details page
+[2026-01-13 10:36:08] snap: 10-36-07_070_connection (mode=3)
+[*] ui_dump: dump=2546ms cat=199ms total=2745ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:11] Open route: RE 464
+[2026-01-13 10:36:11] Tap route at 353,1035
+[*] ui_dump: dump=2545ms cat=197ms total=2742ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:14] wait ok: route details
+[*] ui_dump: dump=2572ms cat=165ms total=2738ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:36:19] route scrollshot saved: [2026-01-13 10:36:17] scrollshot_region: tag=080_route_3c130995e78444c329ba471f76513d3c7797a91d anchor=:id/journey_details_head top_crop=201 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-17_080_route_3c130995e78444c329ba471f76513d3c7797a91d_region
+[2026-01-13 10:36:19] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:36:19] scrollshot_region: stop (no visual change)
+[2026-01-13 10:36:19] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-17_080_route_3c130995e78444c329ba471f76513d3c7797a91d_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-17_080_route_3c130995e78444c329ba471f76513d3c7797a91d_region/full.png
+[*] ui_dump: dump=2447ms cat=178ms total=2626ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:22] wait ok: back to details
+[2026-01-13 10:36:22] Open route: TER88740
+[2026-01-13 10:36:22] Tap route at 379,1670
+[*] ui_dump: dump=2378ms cat=157ms total=2536ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:25] wait ok: route details
+[*] ui_dump: dump=2444ms cat=195ms total=2640ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:36:30] route scrollshot saved: [2026-01-13 10:36:28] scrollshot_region: tag=080_route_308ee4f5c26b9998dc0cbaeceb8bac556ee739d9 anchor=:id/journey_details_head top_crop=201 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-28_080_route_308ee4f5c26b9998dc0cbaeceb8bac556ee739d9_region
+[2026-01-13 10:36:30] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:36:30] scrollshot_region: stop (no visual change)
+[2026-01-13 10:36:30] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-28_080_route_308ee4f5c26b9998dc0cbaeceb8bac556ee739d9_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-28_080_route_308ee4f5c26b9998dc0cbaeceb8bac556ee739d9_region/full.png
+[*] ui_dump: dump=2435ms cat=175ms total=2611ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:33] wait ok: back to details
+[*] ui_dump: dump=2542ms cat=193ms total=2736ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:37] Open route: RB 5935
+[2026-01-13 10:36:37] Tap route at 364,1412
+[*] ui_dump: dump=2500ms cat=170ms total=2670ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:40] wait ok: route details
+[*] ui_dump: dump=2532ms cat=176ms total=2708ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:36:45] route scrollshot saved: [2026-01-13 10:36:43] scrollshot_region: tag=080_route_2c0e4f6a90ebc160a9468d3fd0dbe1194b3f0355 anchor=:id/journey_details_head top_crop=201 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-43_080_route_2c0e4f6a90ebc160a9468d3fd0dbe1194b3f0355_region
+[2026-01-13 10:36:45] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:36:45] scrollshot_region: stop (no visual change)
+[2026-01-13 10:36:45] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-43_080_route_2c0e4f6a90ebc160a9468d3fd0dbe1194b3f0355_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-43_080_route_2c0e4f6a90ebc160a9468d3fd0dbe1194b3f0355_region/full.png
+[*] ui_dump: dump=2480ms cat=174ms total=2654ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:36:48] wait ok: back to details
+[*] ui_dump: dump=2626ms cat=188ms total=2814ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2532ms cat=176ms total=2708ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2520ms cat=180ms total=2701ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:37:02] routes list scrollshot saved: [2026-01-13 10:36:58] scrollshot_region: tag=071_routes_list_ef32c03cfeeb5f44d881af6e2d6793fa087bfbee anchor=:id/text_line_name top_crop=756 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-58_071_routes_list_ef32c03cfeeb5f44d881af6e2d6793fa087bfbee_region
+[2026-01-13 10:37:02] scrollshot_region: identical streak=1 i=2
+[2026-01-13 10:37:02] scrollshot_region: stop (no visual change)
+[2026-01-13 10:37:02] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-58_071_routes_list_ef32c03cfeeb5f44d881af6e2d6793fa087bfbee_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-36-58_071_routes_list_ef32c03cfeeb5f44d881af6e2d6793fa087bfbee_region/full.png
+[*] ui_dump: dump=2455ms cat=186ms total=2642ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:05] wait ok: back to results
+[2026-01-13 10:37:05] Open connection
+[2026-01-13 10:37:05] Tap connection at 540,1370
+[*] ui_dump: dump=2419ms cat=189ms total=2609ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:08] wait ok: details page
+[2026-01-13 10:37:08] snap: 10-37-08_070_connection (mode=3)
+[*] ui_dump: dump=2540ms cat=185ms total=2726ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:11] Open route: TER88743
+[2026-01-13 10:37:11] Tap route at 379,1035
+[*] ui_dump: dump=2417ms cat=187ms total=2605ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:14] wait ok: route details
+[*] ui_dump: dump=2485ms cat=188ms total=2673ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:37:19] route scrollshot saved: [2026-01-13 10:37:17] scrollshot_region: tag=080_route_388a2c47b62d1596deda57ff09f95610b1f74c37 anchor=:id/journey_details_head top_crop=201 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-17_080_route_388a2c47b62d1596deda57ff09f95610b1f74c37_region
+[2026-01-13 10:37:19] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:37:19] scrollshot_region: stop (no visual change)
+[2026-01-13 10:37:19] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-17_080_route_388a2c47b62d1596deda57ff09f95610b1f74c37_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-17_080_route_388a2c47b62d1596deda57ff09f95610b1f74c37_region/full.png
+[*] ui_dump: dump=2411ms cat=160ms total=2571ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:22] wait ok: back to details
+[2026-01-13 10:37:22] Open route: TER88808
+[2026-01-13 10:37:22] Tap route at 379,1670
+[*] ui_dump: dump=2481ms cat=183ms total=2664ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:25] wait ok: route details
+[*] ui_dump: dump=2478ms cat=187ms total=2666ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:37:30] route scrollshot saved: [2026-01-13 10:37:28] scrollshot_region: tag=080_route_6ba07bce82a63db17e51f7782ac6be86b348a805 anchor=:id/journey_details_head top_crop=201 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-28_080_route_6ba07bce82a63db17e51f7782ac6be86b348a805_region
+[2026-01-13 10:37:30] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:37:30] scrollshot_region: stop (no visual change)
+[2026-01-13 10:37:30] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-28_080_route_6ba07bce82a63db17e51f7782ac6be86b348a805_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-28_080_route_6ba07bce82a63db17e51f7782ac6be86b348a805_region/full.png
+[*] ui_dump: dump=2462ms cat=173ms total=2636ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:33] wait ok: back to details
+[*] ui_dump: dump=2510ms cat=178ms total=2688ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:37] Open route: IC 2139
+[2026-01-13 10:37:37] Tap route at 359,1418
+[*] ui_dump: dump=2529ms cat=167ms total=2697ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:40] wait ok: route details
+[*] ui_dump: dump=2538ms cat=205ms total=2744ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:37:45] route scrollshot saved: [2026-01-13 10:37:43] scrollshot_region: tag=080_route_bf4da405f916d92fd71ce72d444032d6df8ed1f9 anchor=:id/journey_details_head top_crop=201 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-43_080_route_bf4da405f916d92fd71ce72d444032d6df8ed1f9_region
+[2026-01-13 10:37:45] scrollshot_region: identical streak=1 i=1
+[2026-01-13 10:37:45] scrollshot_region: stop (no visual change)
+[2026-01-13 10:37:45] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-43_080_route_bf4da405f916d92fd71ce72d444032d6df8ed1f9_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-43_080_route_bf4da405f916d92fd71ce72d444032d6df8ed1f9_region/full.png
+[*] ui_dump: dump=2458ms cat=172ms total=2630ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:37:48] wait ok: back to details
+[*] ui_dump: dump=2555ms cat=188ms total=2743ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2498ms cat=191ms total=2689ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2555ms cat=187ms total=2742ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ModuleNotFoundError: No module named 'PIL'
+[2026-01-13 10:38:02] routes list scrollshot saved: [2026-01-13 10:37:58] scrollshot_region: tag=071_routes_list_f3ed22d7f8ff83e99d5f12f6e0884ada884196c7 anchor=:id/text_line_name top_crop=772 bottom_crop=160 dir=/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-58_071_routes_list_f3ed22d7f8ff83e99d5f12f6e0884ada884196c7_region
+[2026-01-13 10:38:02] scrollshot_region: identical streak=1 i=2
+[2026-01-13 10:38:02] scrollshot_region: stop (no visual change)
+[2026-01-13 10:38:02] scrollshot_region: stitched -> /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-58_071_routes_list_f3ed22d7f8ff83e99d5f12f6e0884ada884196c7_region/full.png
+/sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450/10-37-58_071_routes_list_f3ed22d7f8ff83e99d5f12f6e0884ada884196c7_region/full.png
+[*] ui_dump: dump=2418ms cat=202ms total=2620ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:38:05] wait ok: back to results
+[*] ui_dump: dump=2497ms cat=201ms total=2699ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:38:08] ITEMS count=3
+[2026-01-13 10:38:08] ITEMS[0]=$'Trip at 2:50pm; . with arrival at 4:18pm; . Duration: 1 hour 28 minutes. with R E 6964, Transfer, R B 4715, Transfer, 5964;2 changes. |\t[0,625][1080,871]'
+[2026-01-13 10:38:08] ITEMS[1]=$'Trip at 3:20pm; . with arrival at 4:23pm; . Duration: 1 hour 3 minutes. with R E 464, Transfer, T E R88740, Transfer, R B 5935;2 changes. | Info: One stop is passed several times |\t[0,874][1080,1203]'
+[2026-01-13 10:38:08] ITEMS[2]=$'Trip at 3:39pm; . with arrival at 4:31pm; . Duration: 52 minutes. with T E R88743, Transfer, T E R88808, Transfer, I C 2139;2 changes. | Info: One stop is passed several times |\t[0,1206][1080,1535]'
+[*] ui_dump: dump=2449ms cat=175ms total=2625ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[2026-01-13 10:38:12] ITEMS count=3
+[2026-01-13 10:38:12] ITEMS[0]=$'Trip at 2:50pm; . with arrival at 4:18pm; . Duration: 1 hour 28 minutes. with R E 6964, Transfer, R B 4715, Transfer, 5964;2 changes. |\t[0,625][1080,871]'
+[2026-01-13 10:38:12] ITEMS[1]=$'Trip at 3:20pm; . with arrival at 4:23pm; . Duration: 1 hour 3 minutes. with R E 464, Transfer, T E R88740, Transfer, R B 5935;2 changes. | Info: One stop is passed several times |\t[0,874][1080,1203]'
+[2026-01-13 10:38:12] ITEMS[2]=$'Trip at 3:39pm; . with arrival at 4:31pm; . Duration: 52 minutes. with T E R88743, Transfer, T E R88808, Transfer, I C 2139;2 changes. | Info: One stop is passed several times |\t[0,1206][1080,1535]'
+[*] RC=0
+[*] Run artifacts: /sdcard/cfl_watch/runs/2026-01-13_10-33-37_trip_LUXEMBOURG_to_ARLON_via_Bettembourg_d_2026-01-09_t_1450
+[*] Done. fail_count=0
+[*] Restore Android animations: W=0 T=0 A=0
