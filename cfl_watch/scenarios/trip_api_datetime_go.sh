@@ -246,9 +246,12 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       
       ui_calendar_set_date_ymd "$DATE_YMD_TRIM"
 
-      sleep_s 0.5
       log "Phase: datetime | Action: validate | Target: date | Result: ok"
       ui_tap_any "date ok" "text:OK"
+
+      ui_wait_element_gone \
+        "Phase: datetime | Action: wait | Target: calendar | Result: closed" \
+        "text:Previous month" contains "$WAIT_LONG"
 
       # Retour menu CFL
       ui_wait_desc_any \
