@@ -314,6 +314,12 @@ fi
 # Start station (search modal)
 # -------------------------
 
+ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "From field." "$WAIT_LONG"
+
+# Passer en mode texte
+ui_tap_any "PAGE START" \
+  "desc:From field." || true
+
 log "Phase: planner | Action: set_start | Target: from | Result: begin"
 
 # Wait for search modal title (strong anchor)
