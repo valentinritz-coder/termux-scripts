@@ -832,6 +832,8 @@ ui_datetime_set_time_12h_text() {
       warn "AM/PM option '$ampm' not found"
       return 1
   }
+
+  ui_refresh
 }
 
 
