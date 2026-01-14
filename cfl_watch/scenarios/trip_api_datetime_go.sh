@@ -210,6 +210,133 @@ fi
 log "Phase: planner | Action: detect_page | Target: toolbar | Result: trip_planner_visible"
 
 # -------------------------
+# Start station (search modal)
+# -------------------------
+
+ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "From field." "$WAIT_LONG"
+
+# Field may already be active depending on previous state
+ui_tap_any "PAGE START" \
+  "desc:From field." || true
+
+log "Phase: planner | Action: set_start | Target: from | Result: begin"
+
+# Wait for search modal title (strong anchor)
+ui_wait_resid \
+  "Phase: planner | Action: wait | Target: from_modal | Result: visible" \
+  "fromModalTitle" \
+  "$WAIT_LONG"
+
+snap "planner" "set_start" "modal_visible" "$SNAP_MODE"
+
+# Focus input field
+log "Phase: planner | Action: focus | Target: from_input"
+
+# Retour menu CFL
+ui_wait_desc_any \
+  "Phase: planner | Action: wait | Target: from_field | Result: visible" \
+  "From" "$WAIT_LONG"
+
+ui_tap_any "select from field" "desc:From"
+
+# Type text and wait for suggestions
+ui_type "from" "$START_TEXT"
+
+snap "planner" "set_start" "typed" "$SNAP_MODE"
+
+# 1) Wait for keyboard to be shown (key detail)
+_ui_wait_ime_shown || true
+# 3) BACK (in your case: validate + close keyboard)
+_ui_key 4 || true
+# 4) Wait for keyboard to be fully hidden before tapping elsewhere
+_ui_wait_ime_hidden || true
+
+# Wait for at least one suggestion matching START_TEXT
+if ! ui_wait_desc_any \
+  "Phase: planner | Action: wait | Target: start_suggestion | Result: visible" \
+  "$START_TEXT"; then
+  warn "Phase: planner | Action: wait | Target: start_suggestion | Result: timeout"
+  exit 1
+fi
+
+# Pick first matching suggestion
+if ! ui_tap_desc \
+  "start suggestion" \
+  "$START_TEXT,"; then
+  warn "Phase: planner | Action: pick | Target: start | Result: not_found"
+  exit 1
+fi
+
+snap "planner" "set_start" "selected" "$SNAP_MODE"
+
+log "Phase: planner | Action: set_start | Target: from | Result: done"
+
+# -------------------------
+# Destination station (search modal)
+# -------------------------
+
+ui_wait_desc_any \
+  "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" \
+  "To field." \
+  "$WAIT_LONG"
+
+# Field may already be active depending on previous state
+ui_tap_any "PAGE DESTINATION" \
+  "desc:To field." || true
+
+log "Phase: planner | Action: set_destination | Target: to | Result: begin"
+
+# Wait for search modal title (strong anchor)
+ui_wait_resid \
+  "Phase: planner | Action: wait | Target: to_modal | Result: visible" \
+  "toModalTitle" \
+  "$WAIT_LONG"
+
+snap "planner" "set_destination" "modal_visible" "$SNAP_MODE"
+
+# Focus input field
+log "Phase: planner | Action: focus | Target: to_input"
+
+ui_wait_desc_any \
+  "Phase: planner | Action: wait | Target: to_field | Result: visible" \
+  "To" \
+  "$WAIT_LONG"
+
+ui_tap_any "select to field" "desc:To"
+
+# Type text and wait for suggestions
+ui_type "to" "$TARGET_TEXT"
+
+snap "planner" "set_destination" "typed" "$SNAP_MODE"
+
+# 1) Wait for keyboard to be shown
+_ui_wait_ime_shown || true
+# 2) BACK = commit UI + close keyboard
+_ui_key 4 || true
+# 3) Wait for keyboard fully hidden
+_ui_wait_ime_hidden || true
+
+# Wait for at least one suggestion matching TARGET_TEXT
+if ! ui_wait_desc_any \
+  "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" \
+  "$TARGET_TEXT"; then
+  warn "Phase: planner | Action: wait | Target: destination_suggestion | Result: timeout"
+  exit 1
+fi
+
+# Pick first matching suggestion (comma to avoid Pin location)
+if ! ui_tap_desc \
+  "destination suggestion" \
+  "$TARGET_TEXT,"; then
+  warn "Phase: planner | Action: pick | Target: destination | Result: not_found"
+  exit 1
+fi
+
+snap "planner" "set_destination" "selected" "$SNAP_MODE"
+
+log "Phase: planner | Action: set_destination | Target: to | Result: done"
+
+# -------------------------
 # Datetime (optional)
 # -------------------------
 
@@ -243,17 +370,13 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
     if ui_wait_desc_any \
       "Phase: datetime | Action: wait | Target: calendar | Result: visible" \
       "Previous month" "$WAIT_LONG"; then
-      
       ui_calendar_set_date_ymd "$DATE_YMD_TRIM"
-
       log "Phase: datetime | Action: validate | Target: date | Result: ok"
-      sleep_s 1
+      sleep_s 2
       ui_tap_any "date ok" "text:OK"
-
       ui_wait_element_gone \
         "Phase: datetime | Action: wait | Target: calendar | Result: closed" \
         "text:Previous month" contains "$WAIT_LONG"
-
       # Retour menu CFL
       ui_wait_desc_any \
         "Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible" \
@@ -277,17 +400,13 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
 
       # Passer en mode texte
       ui_tap_any "switch to text mode" "resid:android:id/toggle_mode"
-
       ui_wait_element_has_text \
         "Phase: datetime | Action: wait | Target: time_input | Result: text_mode" \
         "resid::id/top_label" "Type in time" "$WAIT_LONG"
-
       ui_datetime_set_time_12h_text "$TIME_HM_TRIM"
-
       log "Phase: datetime | Action: validate | Target: time | Result: ok"
-      sleep_s 1
+      sleep_s 2
       ui_tap_any "date ok" "text:OK"
-
       # Retour menu CFL
       ui_wait_desc_any \
         "Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible" \
@@ -309,108 +428,6 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
     _ui_key 4 || true
   fi
 fi
-
-# -------------------------
-# Start station (search modal)
-# -------------------------
-
-ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "From field." "$WAIT_LONG"
-
-# Passer en mode texte
-ui_tap_any "PAGE START" \
-  "desc:From field." || true
-
-log "Phase: planner | Action: set_start | Target: from | Result: begin"
-
-# Wait for search modal title (strong anchor)
-ui_wait_resid \
-  "Phase: planner | Action: wait | Target: from_modal | Result: visible" \
-  "fromModalTitle" \
-  "$WAIT_LONG"
-
-snap "planner" "set_start" "modal_visible" "$SNAP_MODE"
-
-# Focus input field
-log "Phase: planner | Action: focus | Target: from_input"
-
-# Retour menu CFL
-ui_wait_desc_any \
-  "Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible" \
-  "From" "$WAIT_LONG"
-
-ui_tap_any "select from field" "desc:From"
-
-# Type text and wait for suggestions
-ui_type "from" "$START_TEXT"
-
-snap "planner" "set_start" "typed" "$SNAP_MODE"
-
-# 1) Wait for keyboard to be shown (key detail)
-_ui_wait_ime_shown || true
-# 3) BACK (in your case: validate + close keyboard)
-_ui_key 4 || true
-# 4) Wait for keyboard to be fully hidden before tapping elsewhere
-_ui_wait_ime_hidden || true
-
-# Wait for at least one suggestion matching START_TEXT
-if ! ui_wait_desc_any \
-  "Phase: planner | Action: wait | Target: start_suggestion | Result: visible" \
-  "$START_TEXT"; then
-  warn "Phase: planner | Action: wait | Target: start_suggestion | Result: timeout"
-  exit 1
-fi
-
-# Pick first matching suggestion
-if ! ui_tap_desc \
-  "start suggestion" \
-  "$START_TEXT"; then
-  warn "Phase: planner | Action: pick | Target: start | Result: not_found"
-  exit 1
-fi
-
-snap "planner" "set_start" "selected" "$SNAP_MODE"
-
-log "Phase: planner | Action: set_start | Target: from | Result: done"
-
-
-# -------------------------
-# Destination station
-# -------------------------
-
-log "Phase: planner | Action: set_destination | Target: field | Result: begin"
-
-ui_wait_resid "Phase: planner | Action: wait | Target: request_screen | Result: visible" ":id/request_screen_container" "$WAIT_LONG"
-snap "planner" "set_destination" "before" "$SNAP_MODE"
-
-if ui_has_element "desc:Select destination"; then
-  log "Phase: planner | Action: open_field | Target: destination | Result: empty_select_destination"
-  ui_tap_any "destination field" "desc:Select destination"
-else
-  log "Phase: planner | Action: open_field | Target: destination | Result: filled_container_child"
-  ui_tap_child_of_resid \
-    "destination field (container)" \
-    ":id/request_screen_container" \
-    2
-fi
-
-ui_wait_resid "Phase: planner | Action: wait | Target: input_location_name | Result: visible" ":id/input_location_name" "$WAIT_LONG"
-ui_type_and_wait_results "destination" "$TARGET_TEXT"
-
-# 1) Wait for keyboard to be shown (key detail)
-_ui_wait_ime_shown || true
-# 3) BACK (in your case: validate + close keyboard)
-_ui_key 4 || true
-# 4) Wait for keyboard to be fully hidden before tapping elsewhere
-_ui_wait_ime_hidden || true
-
-snap "planner" "set_destination" "typed" "$SNAP_MODE"
-
-if ! ui_pick_suggestion "destination suggestion" "$TARGET_TEXT"; then
-  warn "Phase: planner | Action: pick_suggestion | Target: destination | Result: not_found"
-  exit 1
-fi
-
-snap "planner" "set_destination" "selected" "$SNAP_MODE"
 
 # -------------------------
 # VIA (optional)
