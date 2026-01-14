@@ -825,6 +825,8 @@ ui_datetime_set_time_12h_text() {
   sleep 1.0
   sleep "${UI_TAP_DELAY:-0.1}"
 
+  ui_refresh
+
   ui_tap_any "time ampm select $ampm" \
     "text:$ampm" || {
       warn "AM/PM option '$ampm' not found"
