@@ -304,19 +304,6 @@ fi
 
 # Pick first matching suggestion
 if ! ui_tap_desc "destination suggestion" "$TARGET_TEXT,"; then
-  warn "Phase: planner | Action: pick | Target: start | Result: not_found"
-  exit 1
-fi
-
-
-# Wait for at least one suggestion matching TARGET_TEXT
-if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" "$TARGET_TEXT"; then
-  warn "Phase: planner | Action: wait | Target: destination_suggestion | Result: timeout"
-  exit 1
-fi
-
-# Pick first matching suggestion (comma to avoid Pin location)
-if ! ui_tap_desc "destination suggestion" "$TARGET_TEXT,"; then
   warn "Phase: planner | Action: pick | Target: destination | Result: not_found"
   exit 1
 fi
@@ -327,10 +314,11 @@ log "Phase: planner | Action: set_destination | Target: to | Result: done"
 
 sleep_s 6
 
-
 # -------------------------
 # Datetime (optional)
 # -------------------------
+
+ui_wait_desc_any "Phase: datetime | Action: wait | Target: datetime button | Result: visible" "Time field." "$WAIT_LONG"
 
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   log "Phase: datetime | Action: set | Target: request | Result: requested date=$DATE_YMD_TRIM time=$TIME_HM_TRIM"
