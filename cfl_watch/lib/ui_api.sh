@@ -261,6 +261,16 @@ ui_type_and_wait_results(){
   ui_refresh
 }
 
+ui_type(){
+  local label="$1"
+  local value="$2"
+
+  log "Type $label: $value"
+  # small settle helps IME overlays
+  sleep_s 0.20
+  maybe type_text "$value"
+}
+
 ui_pick_suggestion(){
   local label="$1"
   local value="$2"
