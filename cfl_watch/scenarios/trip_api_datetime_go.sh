@@ -482,22 +482,32 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
 
       log "Phase: datetime | Action: validate | Target: date | Result: ok"
 
-      if sleep_s 2; then
-        :
+      # Guard: sometimes the calendar auto-closes/flickers after date selection.
+      # If it's already closed, do NOT tap OK (tap-through can reopen it).
+      if ui_wait_element_gone \
+        "Phase: datetime | Action: detect | Target: calendar_autoclose | Result: closed" \
+        "text:Previous month" contains 1; then
+        log "Phase: datetime | Action: tap | Target: date_ok | Result: skipped_already_closed"
       else
-        rc=$?
-        warn "Phase: datetime | Action: sleep | Target: after_date_set | Result: failed"
-        exit $rc
+        # Ensure we tap using a fresh UI dump (avoid stale coordinates)
+        if ui_refresh; then
+          :
+        else
+          rc=$?
+          warn "Phase: datetime | Action: refresh | Target: before_date_ok | Result: failed"
+          exit $rc
+        fi
+
+        if ui_tap_any "date ok" "text:OK"; then
+          :
+        else
+          rc=$?
+          warn "Phase: datetime | Action: tap | Target: date_ok | Result: failed"
+          exit $rc
+        fi
       fi
 
-      if ui_tap_any "date ok" "text:OK"; then
-        :
-      else
-        rc=$?
-        warn "Phase: datetime | Action: tap | Target: date_ok | Result: failed"
-        exit $rc
-      fi
-
+      # Wait for calendar to be gone...
       if ui_wait_element_gone \
         "Phase: datetime | Action: wait | Target: calendar | Result: closed" \
         "text:Previous month" contains "$WAIT_LONG"; then
@@ -505,6 +515,25 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       else
         rc=$?
         warn "Phase: datetime | Action: wait | Target: calendar | Result: timeout"
+        exit $rc
+      fi
+
+      # ...and stay gone (debounce the close->reopen flicker)
+      if sleep_s 0.4; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: sleep | Target: calendar_debounce | Result: failed"
+        exit $rc
+      fi
+
+      if ui_wait_element_gone \
+        "Phase: datetime | Action: wait | Target: calendar | Result: closed_stable" \
+        "text:Previous month" contains "$WAIT_SHORT"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: wait | Target: calendar | Result: reappeared"
         exit $rc
       fi
 
