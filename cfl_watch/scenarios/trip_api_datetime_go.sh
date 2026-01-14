@@ -333,20 +333,24 @@ snap "planner" "set_start" "modal_visible" "$SNAP_MODE"
 # Focus input field
 log "Phase: planner | Action: focus | Target: from_input"
 
-ui_wait_resid \
-  "Phase: planner | Action: wait | Target: from_input | Result: visible" \
-  ":id/fromInputSearch" \
-  "$WAIT_LONG"
+# Retour menu CFL
+ui_wait_desc_any \
+  "Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible" \
+  "From" "$WAIT_LONG"
 
-ui_tap_resid "from input" ":id/fromInputSearch"
-
-# Clear existing text if any
-ui_maybe_tap "clear from input" "resid:fromInputSearch-clear"
+ui_tap_any "select from field" "desc:From"
 
 # Type text and wait for suggestions
-ui_type_and_wait_results "from" "$START_TEXT"
+ui_type "from" "$START_TEXT"
 
 snap "planner" "set_start" "typed" "$SNAP_MODE"
+
+# 1) Wait for keyboard to be shown (key detail)
+_ui_wait_ime_shown || true
+# 3) BACK (in your case: validate + close keyboard)
+_ui_key 4 || true
+# 4) Wait for keyboard to be fully hidden before tapping elsewhere
+_ui_wait_ime_hidden || true
 
 # Wait for at least one suggestion matching START_TEXT
 if ! ui_wait_desc_any \
