@@ -479,7 +479,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
         warn "Phase: datetime | Action: set | Target: date | Result: failed"
         exit $rc
       fi
-
+      snap "datetime" "validate_date" "validate_date" "$SNAP_MODE"
       log "Phase: datetime | Action: validate | Target: date | Result: ok"
 
       while true; do
