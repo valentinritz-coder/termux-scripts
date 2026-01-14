@@ -325,7 +325,7 @@ log "Phase: planner | Action: set_start | Target: from | Result: begin"
 # Wait for search modal title (strong anchor)
 ui_wait_resid \
   "Phase: planner | Action: wait | Target: from_modal | Result: visible" \
-  ":id/fromModalTitle" \
+  "fromModalTitle" \
   "$WAIT_LONG"
 
 snap "planner" "set_start" "modal_visible" "$SNAP_MODE"
