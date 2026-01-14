@@ -154,22 +154,21 @@ disable_animations
 
 while true; do
 
-  now="$(date +%s)"
-
   if [ -n "$FORCE_INTERVAL_SECS" ]; then
-    if [ $(( now - last_forced_capture )) -ge "$FORCE_INTERVAL_SECS" ]; then
-      if dump_live_xml && adb -s "$SERIAL" shell "test -s '$REMOTE_LIVE_XML'" >/dev/null 2>&1; then
+    if dump_live_xml && adb -s "$SERIAL" shell "test -s '$REMOTE_LIVE_XML'" >/dev/null 2>&1; then
+      now="$(date +%s)"
+      if [ $(( now - last_forced_capture )) -ge "$FORCE_INTERVAL_SECS" ]; then
         last_forced_capture="$now"
         capture_pair_from_live "forced_${now}"
-      else
-        warn "Forced capture skipped (dump or xml failed)"
       fi
+    else
+      warn "Forced capture skipped (dump or xml failed)"
     fi
-
+  
     sleep "$POLL_SLEEP_S"
     continue
   fi
-  
+
   if ! dump_live_xml; then
     warn "uiautomator dump failed (adb rc=$?)"
     sleep "$POLL_SLEEP_S"
@@ -189,6 +188,8 @@ while true; do
     continue
   fi
 
+  now="$(date +%s)"
+  
   if [ "$h" != "$candidate" ]; then
     candidate="$h"
     candidate_since="$now"
