@@ -486,7 +486,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       # If it's already closed, do NOT tap OK (tap-through can reopen it).
       if ui_wait_element_gone \
         "Phase: datetime | Action: detect | Target: calendar_autoclose | Result: closed" \
-        "text:Previous month" contains 1; then
+        "text:Previous month" 1; then
         log "Phase: datetime | Action: tap | Target: date_ok | Result: skipped_already_closed"
       else
         # Ensure we tap using a fresh UI dump (avoid stale coordinates)
@@ -510,7 +510,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       # Wait for calendar to be gone...
       if ui_wait_element_gone \
         "Phase: datetime | Action: wait | Target: calendar | Result: closed" \
-        "text:Previous month" contains "$WAIT_LONG"; then
+        "text:Previous month" "$WAIT_LONG"; then
         :
       else
         rc=$?
@@ -529,7 +529,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
 
       if ui_wait_element_gone \
         "Phase: datetime | Action: wait | Target: calendar | Result: closed_stable" \
-        "text:Previous month" contains "$WAIT_SHORT"; then
+        "text:Previous month" "$WAIT_SHORT"; then
         :
       else
         rc=$?
