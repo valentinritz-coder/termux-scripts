@@ -213,7 +213,10 @@ log "Phase: planner | Action: detect_page | Target: toolbar | Result: trip_plann
 # Start station (search modal)
 # -------------------------
 
-ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "From field." "$WAIT_LONG"
+ui_wait_desc_any \
+"Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" \
+"From field." \
+"$WAIT_LONG"		 
 
 # Field may already be active depending on previous state
 ui_tap_any "PAGE START" \
@@ -234,8 +237,9 @@ log "Phase: planner | Action: focus | Target: from_input"
 
 # Retour menu CFL
 ui_wait_desc_any \
-  "Phase: planner | Action: wait | Target: from_field | Result: visible" \
-  "From" "$WAIT_LONG"
+  "Phase: planner | Action: wait | Target: from_field | Result: visible" \	
+  "From" \
+  "$WAIT_LONG"
 
 ui_tap_any "select from field" "desc:From"
 
@@ -297,6 +301,7 @@ snap "planner" "set_destination" "modal_visible" "$SNAP_MODE"
 # Focus input field
 log "Phase: planner | Action: focus | Target: to_input"
 
+				 
 ui_wait_desc_any \
   "Phase: planner | Action: wait | Target: to_field | Result: visible" \
   "To" \
