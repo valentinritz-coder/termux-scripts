@@ -1,34 +1,3 @@
-proot-distro login ubuntu
-mitmproxy -p 8080 --listen-host 0.0.0.0
-
----
-
-su
-settings put global http_proxy 127.0.0.1:8080
-
----
-
-settings get global http_proxy
-
----
-
-
-http://mitm.it
-
----
-
-su
-ls ~/.mitmproxy
-
----
-
-openssl x509 -inform PEM -subject_hash_old -in ~/.mitmproxy/mitmproxy-ca-cert.pem | head -1
-
----
-
-cp ~/.mitmproxy/mitmproxy-ca-cert.pem /system/etc/security/cacerts/abcd1234.0
-chmod 644 /system/etc/security/cacerts/abcd1234.0
-reboot
 
 ----
 
@@ -45,3 +14,75 @@ Payload: 26.8 KB
 Duration: 10 s
 First seen: 01/14/26 14:41:08.898
 Last seen: 01/14/26 14:41:19.563
+
+---
+
+pkg install wget
+wget https://github.com/frida/frida/releases/latest/download/frida-server-16.2.1-android-arm64.xz
+
+--
+
+pkg install xz-utils
+unxz frida-server-16.2.1-android-arm64.xz
+
+---
+
+su
+mv frida-server-16.2.1-android-arm64 /data/local/tmp/frida-server
+chmod 755 /data/local/tmp/frida-server
+
+
+---
+
+/data/local/tmp/frida-server &
+
+---
+
+ps | grep frida
+
+---
+
+pkg install python
+pip install frida-tools
+
+--
+
+frida-ps -U
+
+---
+
+frida-ps -U | grep cfl
+
+--
+
+cat > hafas.js <<'JS'
+Java.perform(function () {
+  var Request = Java.use("okhttp3.Request");
+  var Buffer = Java.use("okio.Buffer");
+
+  Request.newBuilder.implementation = function () {
+    var req = this.build();
+    try {
+      console.log("=== HTTP REQUEST ===");
+      console.log("URL:", req.url().toString());
+      console.log("METHOD:", req.method());
+      console.log("HEADERS:", req.headers().toString());
+
+      var body = req.body();
+      if (body) {
+        var buffer = Buffer.$new();
+        body.writeTo(buffer);
+        console.log("BODY:", buffer.readUtf8());
+      }
+    } catch (e) {
+      console.log("Error:", e);
+    }
+    return this;
+  };
+});
+JS
+
+---
+
+frida -U -f com.cfl.mobile.pub -l hafas.js --no-pause
+
