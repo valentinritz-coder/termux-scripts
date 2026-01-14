@@ -1,22 +1,30 @@
-pkg update
-pkg install python
-pip install mitmproxy
---
+proot-distro login ubuntu
+mitmproxy -p 8080 --listen-host 0.0.0.0
 
-mitmproxy -p 8080
 ---
+
 su
 settings put global http_proxy 127.0.0.1:8080
----
-settings get global http_proxy
----
-http://mitm.it
-su
-ls /data/data/com.termux/files/home/.mitmproxy
----
-openssl x509 -inform PEM -subject_hash_old -in mitmproxy-ca-cert.pem | head -1
---
 
-cp mitmproxy-ca-cert.pem /system/etc/security/cacerts/abcd1234.0
+---
+
+settings get global http_proxy
+
+---
+
+http://mitm.it
+
+---
+
+su
+ls ~/.mitmproxy
+
+---
+
+openssl x509 -inform PEM -subject_hash_old -in ~/.mitmproxy/mitmproxy-ca-cert.pem | head -1
+
+---
+
+cp ~/.mitmproxy/mitmproxy-ca-cert.pem /system/etc/security/cacerts/abcd1234.0
 chmod 644 /system/etc/security/cacerts/abcd1234.0
 reboot
