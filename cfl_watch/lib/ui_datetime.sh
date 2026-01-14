@@ -822,6 +822,7 @@ ui_datetime_set_time_12h_text() {
   ui_tap_any "time ampm spinner" \
     "resid:android:id/am_pm_spinner" || return 1
 
+  sleep 1
   sleep "${UI_TAP_DELAY:-0.1}"
 
   ui_tap_any "time ampm select $ampm" \
