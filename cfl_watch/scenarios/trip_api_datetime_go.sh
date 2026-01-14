@@ -484,9 +484,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
 
       # Guard: sometimes the calendar auto-closes/flickers after date selection.
       # If it's already closed, do NOT tap OK (tap-through can reopen it).
-      if ui_wait_element_gone \
-        "Phase: datetime | Action: detect | Target: calendar_autoclose | Result: closed" \
-        "text:Previous month" 1; then
+      if ui_wait_element_gone "Phase: datetime | Action: detect | Target: calendar_autoclose | Result: closed" "text:Previous month" contains 10; then
         log "Phase: datetime | Action: tap | Target: date_ok | Result: skipped_already_closed"
       else
         # Ensure we tap using a fresh UI dump (avoid stale coordinates)
