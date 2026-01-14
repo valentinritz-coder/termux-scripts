@@ -143,6 +143,10 @@ bash "$HOME/termux-scripts/cfl_watch/tools/batch_trips.sh"
 SERIAL=127.0.0.1:37099 STABLE_SECS=2 bash "$HOME/termux-scripts/cfl_watch/tools/cfl_snap_watch.sh" ui_watch
 ```
 
+```bash
+FORCE_INTERVAL_SECS=2 SERIAL=127.0.0.1:37099 bash "$HOME/termux-scripts/cfl_watch/tools/cfl_snap_watch.sh" ui_watch
+```
+
 ### 6) Viewer
 ```bash
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --serve
