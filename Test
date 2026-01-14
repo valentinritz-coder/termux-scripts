@@ -32,13 +32,16 @@ reboot
 
 ----
 
-apt update
-apt install -y python3-blinker
-
-pip uninstall blinker -y || true
-
-python3 - <<'PY'
-import blinker, inspect
-print(blinker.__version__)
-print(inspect.getfile(blinker))
-PY
+App: CFL mobile pub (10215)
+Protocol: HTTPS (TCP)
+SNI: cfl.demo.hafas.de
+Source: 192.168.247.150:41082
+Destination: 213.83.5.150:443
+Status: Active
+Interface: wlan0
+Traffic: 26.4 KB received — 2.7 KB sent
+Packets: 26 received — 18 sent
+Payload: 26.8 KB
+Duration: 10 s
+First seen: 01/14/26 14:41:08.898
+Last seen: 01/14/26 14:41:19.563
