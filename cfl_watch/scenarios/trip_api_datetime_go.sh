@@ -231,9 +231,9 @@ snap "planner" "set_start" "modal_visible" "$SNAP_MODE"
 log "Phase: planner | Action: focus | Target: from_input"
 
 # Retour menu CFL
-ui_wait_desc_any "Phase: planner | Action: wait | Target: from_field | Result: visible" "From" "$WAIT_LONG"
+ui_wait_resid "Phase: planner | Action: wait | Target: from_field | Result: visible" "fromInputSearch" "$WAIT_LONG"
 
-ui_tap_any "select from field" "desc:From"
+ui_tap_any "select from field" "id:fromInputSearch"
 
 # Type text and wait for suggestions
 ui_type "from" "$START_TEXT"
@@ -275,19 +275,16 @@ ui_tap_any "PAGE DESTINATION" "desc:To field." || true
 log "Phase: planner | Action: set_destination | Target: to | Result: begin"
 
 # Wait for search modal title (strong anchor)
-ui_wait_resid \
-  "Phase: planner | Action: wait | Target: to_modal | Result: visible" "toModalTitle" "$WAIT_LONG"
+ui_wait_resid "Phase: planner | Action: wait | Target: to_modal | Result: visible" "toModalTitle" "$WAIT_LONG"
 
 snap "planner" "set_destination" "modal_visible" "$SNAP_MODE"
 
 # Focus input field
 log "Phase: planner | Action: focus | Target: to_input"
 
-				 
-ui_wait_desc_any \
-  "Phase: planner | Action: wait | Target: to_field | Result: visible" "To" "$WAIT_LONG"
+ui_wait_resid "Phase: planner | Action: wait | Target: to_field | Result: visible" "toInputSearch" "$WAIT_LONG"
 
-ui_tap_any "select to field" "desc:To"
+ui_tap_any "select to field" "id:toInputSearch"
 
 # Type text and wait for suggestions
 ui_type "to" "$TARGET_TEXT"
