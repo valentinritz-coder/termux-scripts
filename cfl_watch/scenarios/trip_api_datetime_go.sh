@@ -413,10 +413,10 @@ fi
 
 ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "From field." "$WAIT_LONG"
 
-if ! ui_has_element "desc:Search" exact; then
-  warn "Phase: planner | Action: tap | Target: search_button | Result: not_tappable_enter_fallback"
+if ui_has_element "desc:Search" exact; then
+  ui_tap_desc_exact "search" "Search"
 else
-  ui_tap_desc "search" "Search"
+  warn "Phase: planner | Action: tap | Target: search_button | Result: not_present"
 fi
 
 snap_here "results" "search" "after" 3
