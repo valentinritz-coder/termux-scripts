@@ -24,7 +24,7 @@ wget https://github.com/frida/frida/releases/download/17.5.2/frida-server-17.5.2
 --
 
 pkg install xz-utils
-unxz frida-server-16.2.1-android-arm64.xz
+unxz frida-server-17.5.2-android-arm64.xz
 
 ---
 
