@@ -417,7 +417,7 @@ if ! ui_has_element "desc:Search" exact; then
   warn "Phase: planner | Action: tap | Target: search_button | Result: not_tappable_enter_fallback"
   maybe key 66 || true
 else
-  ui_tap_any "search" "desc:Search"
+  ui_tap_desc "search" "Search"
 fi
 
 snap_here "results" "search" "after" 3
