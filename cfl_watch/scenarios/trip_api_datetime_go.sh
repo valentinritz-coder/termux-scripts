@@ -506,9 +506,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       fi
 
       # Wait for calendar to be gone...
-      if ui_wait_element_gone \
-        "Phase: datetime | Action: wait | Target: calendar | Result: closed" \
-        "text:Previous month" "$WAIT_LONG"; then
+      if ui_wait_element_gone "Phase: datetime | Action: wait | Target: calendar | Result: closed" "text:Previous month" contains "$WAIT_LONG"; then
         :
       else
         rc=$?
@@ -525,9 +523,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
         exit $rc
       fi
 
-      if ui_wait_element_gone \
-        "Phase: datetime | Action: wait | Target: calendar | Result: closed_stable" \
-        "text:Previous month" "$WAIT_SHORT"; then
+      if ui_wait_element_gone "Phase: datetime | Action: wait | Target: calendar | Result: closed_stable" "text:Previous month" contains "$WAIT_SHORT"; then
         :
       else
         rc=$?
