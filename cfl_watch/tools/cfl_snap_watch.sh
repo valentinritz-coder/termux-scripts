@@ -50,6 +50,37 @@ log "Ctrl+C to stop"
 
 adb -s "$SERIAL" shell "mkdir -p '$REMOTE_TMP_DIR' >/dev/null 2>&1" || true
 
+read_anim_scales(){
+  ANIM_W="$(adb shell settings get global window_animation_scale 2>/dev/null | tr -d '\r')"
+  ANIM_T="$(adb shell settings get global transition_animation_scale 2>/dev/null | tr -d '\r')"
+  ANIM_A="$(adb shell settings get global animator_duration_scale 2>/dev/null | tr -d '\r')"
+
+  # fallback si "null" ou vide
+  [ -n "$ANIM_W" ] && [ "$ANIM_W" != "null" ] || ANIM_W="1"
+  [ -n "$ANIM_T" ] && [ "$ANIM_T" != "null" ] || ANIM_T="1"
+  [ -n "$ANIM_A" ] && [ "$ANIM_A" != "null" ] || ANIM_A="1"
+}
+
+disable_animations(){
+  if [ "${CFL_DRY_RUN:-0}" = "1" ]; then
+    log "[dry-run] skip animation toggles"
+    return 0
+  fi
+  log "Disable Android animations (temporary)"
+  read_anim_scales
+  adb shell settings put global window_animation_scale 0 >/dev/null
+  adb shell settings put global transition_animation_scale 0 >/dev/null
+  adb shell settings put global animator_duration_scale 0 >/dev/null
+}
+
+restore_animations(){
+  [ -n "${ANIM_W:-}" ] || return 0
+  log "Restore Android animations: W=$ANIM_W T=$ANIM_T A=$ANIM_A"
+  adb shell settings put global window_animation_scale "$ANIM_W" >/dev/null 2>&1 || true
+  adb shell settings put global transition_animation_scale "$ANIM_T" >/dev/null 2>&1 || true
+  adb shell settings put global animator_duration_scale "$ANIM_A" >/dev/null 2>&1 || true
+}
+
 notify_capture() {
   local msg="$1"
 
@@ -119,6 +150,8 @@ candidate=""
 candidate_since=0
 last_captured=""
 
+disable_animations
+
 while true; do
 
   now="$(date +%s)"
@@ -168,6 +201,6 @@ while true; do
       # keep candidate_since as-is; last_captured prevents re-capturing forever
     fi
   fi
-
+  
   sleep "$POLL_SLEEP_S"
 done
