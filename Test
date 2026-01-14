@@ -29,7 +29,7 @@ unxz frida-server-17.5.2-android-arm64.xz
 ---
 
 su
-mv frida-server-16.2.1-android-arm64 /data/local/tmp/frida-server
+mv frida-server-17.5.2-android-arm64 /data/local/tmp/frida-server
 chmod 755 /data/local/tmp/frida-server
 
 
