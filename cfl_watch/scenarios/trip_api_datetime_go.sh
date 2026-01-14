@@ -312,8 +312,6 @@ snap "planner" "set_destination" "selected" "$SNAP_MODE"
 
 log "Phase: planner | Action: set_destination | Target: to | Result: done"
 
-sleep_s 6
-
 # -------------------------
 # Datetime (optional)
 # -------------------------
@@ -410,6 +408,21 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
 fi
 
 # -------------------------
+# Search
+# -------------------------
+
+ui_wait_resid "Phase: planner | Action: wait | Target: search_button | Result: visible" ":id/button_search_default" "$WAIT_LONG"
+
+if ! ui_has_element "desc:Search" exact; then
+  warn "Phase: planner | Action: tap | Target: search_button | Result: not_tappable_enter_fallback"
+  maybe key 66 || true
+else
+  ui_tap_any "search" "desc:Search"
+fi
+
+snap_here "results" "search" "after" 3
+
+# -------------------------
 # VIA (optional)
 # -------------------------
 
@@ -454,19 +467,7 @@ if [[ -n "$VIA_TEXT_TRIM" ]]; then
   fi
 fi
 
-# -------------------------
-# Search
-# -------------------------
 
-ui_wait_resid "Phase: planner | Action: wait | Target: search_button | Result: visible" ":id/button_search_default" "$WAIT_LONG"
-
-if ! ui_tap_any "search button" \
-  "resid::id/button_search_default"; then
-  warn "Phase: planner | Action: tap | Target: search_button | Result: not_tappable_enter_fallback"
-  maybe key 66 || true
-fi
-
-snap_here "results" "search" "after" 3
 
 # -------------------------
 # Drill all visible connections
