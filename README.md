@@ -95,8 +95,6 @@ CFL_PKG=lu.cfl.cflgo.qual \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
 CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime_go.sh" \
-DATE_YMD="2026-06-09" \
-TIME_HM="14:50" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --no-anim \
   --start "Luxembourg" --target "Arlon" --snap-mode 3
 ```
