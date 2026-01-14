@@ -420,7 +420,13 @@ log "Phase: planner | Action: set_destination | Target: to | Result: done"
 # Datetime (optional)
 # -------------------------
 
-ui_wait_desc_any "Phase: datetime | Action: wait | Target: datetime button | Result: visible" "Time field." "$WAIT_LONG"
+if ui_wait_desc_any "Phase: datetime | Action: wait | Target: datetime button | Result: visible" "Time field." "$WAIT_LONG"; then
+  :
+else
+  rc=$?
+  warn "Phase: datetime | Action: wait | Target: datetime button | Result: timeout"
+  exit $rc
+fi
 
 if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   log "Phase: datetime | Action: set | Target: request | Result: requested date=$DATE_YMD_TRIM time=$TIME_HM_TRIM"
@@ -428,7 +434,14 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   # ---- Open Date/Time menu (CFL) ----
   if ui_has_element "desc:Time field" contains; then
     log "Phase: datetime | Action: tap | Target: time_field | Result: requested"
-    ui_tap_any "open datetime menu" "desc:Time field"
+
+    if ui_tap_any "open datetime menu" "desc:Time field"; then
+      :
+    else
+      rc=$?
+      warn "Phase: datetime | Action: tap | Target: time_field | Result: failed"
+      exit $rc
+    fi
 
     if ! ui_wait_desc_any \
       "Phase: datetime | Action: wait | Target: datetime_menu | Result: visible" \
@@ -447,22 +460,64 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   if [[ -n "$DATE_YMD_TRIM" ]]; then
     log "Phase: datetime | Action: set | Target: date | Result: requested value=$DATE_YMD_TRIM"
 
-    ui_tap_any "open date picker" "desc:Date,"
+    if ui_tap_any "open date picker" "desc:Date,"; then
+      :
+    else
+      rc=$?
+      warn "Phase: datetime | Action: tap | Target: date_picker | Result: failed"
+      exit $rc
+    fi
 
     if ui_wait_desc_any \
       "Phase: datetime | Action: wait | Target: calendar | Result: visible" \
       "Previous month" "$WAIT_LONG"; then
-      ui_calendar_set_date_ymd "$DATE_YMD_TRIM"
+
+      if ui_calendar_set_date_ymd "$DATE_YMD_TRIM"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: set | Target: date | Result: failed"
+        exit $rc
+      fi
+
       log "Phase: datetime | Action: validate | Target: date | Result: ok"
-      sleep_s 2
-      ui_tap_any "date ok" "text:OK"
-      ui_wait_element_gone \
+
+      if sleep_s 2; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: sleep | Target: after_date_set | Result: failed"
+        exit $rc
+      fi
+
+      if ui_tap_any "date ok" "text:OK"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: tap | Target: date_ok | Result: failed"
+        exit $rc
+      fi
+
+      if ui_wait_element_gone \
         "Phase: datetime | Action: wait | Target: calendar | Result: closed" \
-        "text:Previous month" contains "$WAIT_LONG"
+        "text:Previous month" contains "$WAIT_LONG"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: wait | Target: calendar | Result: timeout"
+        exit $rc
+      fi
+
       # Retour menu CFL
-      ui_wait_desc_any \
+      if ui_wait_desc_any \
         "Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible" \
-        "Date," "Time," "$WAIT_LONG"
+        "Date," "Time," "$WAIT_LONG"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: wait | Target: datetime_menu | Result: timeout"
+        exit $rc
+      fi
     else
       warn "Phase: datetime | Action: set | Target: date | Result: calendar_not_visible"
     fi
@@ -474,25 +529,73 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   if [[ -n "$TIME_HM_TRIM" ]]; then
     log "Phase: datetime | Action: set | Target: time | Result: requested value=$TIME_HM_TRIM"
 
-    ui_tap_any "open time picker" "desc:Time,"
+    if ui_tap_any "open time picker" "desc:Time,"; then
+      :
+    else
+      rc=$?
+      warn "Phase: datetime | Action: tap | Target: time_picker_open | Result: failed"
+      exit $rc
+    fi
 
     if ui_wait_resid \
       "Phase: datetime | Action: wait | Target: time_picker | Result: visible" \
       "android:id/radial_picker" "$WAIT_LONG"; then
 
       # Passer en mode texte
-      ui_tap_any "switch to text mode" "resid:android:id/toggle_mode"
-      ui_wait_element_has_text \
+      if ui_tap_any "switch to text mode" "resid:android:id/toggle_mode"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: tap | Target: toggle_mode | Result: failed"
+        exit $rc
+      fi
+
+      if ui_wait_element_has_text \
         "Phase: datetime | Action: wait | Target: time_input | Result: text_mode" \
-        "resid::id/top_label" "Type in time" "$WAIT_LONG"
-      ui_datetime_set_time_12h_text "$TIME_HM_TRIM"
+        "resid::id/top_label" "Type in time" "$WAIT_LONG"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: wait | Target: time_input | Result: timeout"
+        exit $rc
+      fi
+
+      if ui_datetime_set_time_12h_text "$TIME_HM_TRIM"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: set | Target: time | Result: failed"
+        exit $rc
+      fi
+
       log "Phase: datetime | Action: validate | Target: time | Result: ok"
-      sleep_s 2
-      ui_tap_any "date ok" "text:OK"
+
+      if sleep_s 2; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: sleep | Target: after_time_set | Result: failed"
+        exit $rc
+      fi
+
+      if ui_tap_any "date ok" "text:OK"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: tap | Target: time_ok | Result: failed"
+        exit $rc
+      fi
+
       # Retour menu CFL
-      ui_wait_desc_any \
+      if ui_wait_desc_any \
         "Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible" \
-        "Date," "Time," "$WAIT_LONG"
+        "Date," "Time," "$WAIT_LONG"; then
+        :
+      else
+        rc=$?
+        warn "Phase: datetime | Action: wait | Target: datetime_menu | Result: timeout"
+        exit $rc
+      fi
     else
       warn "Phase: datetime | Action: set | Target: time | Result: time_picker_not_visible"
     fi
@@ -504,12 +607,25 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   if ui_has_element "desc:Apply" contains; then
     log "Phase: datetime | Action: apply | Target: cfl | Result: commit"
     snap "datetime" "apply" "before" "$SNAP_MODE"
-    ui_tap_any "apply" "desc:Apply"
+
+    if ui_tap_any "apply" "desc:Apply"; then
+      :
+    else
+      rc=$?
+      warn "Phase: datetime | Action: apply | Target: cfl | Result: failed"
+      exit $rc
+    fi
   else
     warn "Phase: datetime | Action: apply | Target: cfl | Result: missing_back_fallback"
-    _ui_key 4 || true
+
+    if _ui_key 4; then
+      :
+    else
+      log "Phase: datetime | Action: key | Target: back | Result: skipped"
+    fi
   fi
 fi
+
 
 # -------------------------
 # Search
