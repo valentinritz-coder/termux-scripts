@@ -214,9 +214,7 @@ log "Phase: planner | Action: detect_page | Target: toolbar | Result: trip_plann
 # -------------------------
 
 ui_wait_desc_any \
-"Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" \
-"From field." \
-"$WAIT_LONG"		 
+"Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "From field." "$WAIT_LONG"		 
 
 # Field may already be active depending on previous state
 ui_tap_any "PAGE START" \
@@ -225,10 +223,7 @@ ui_tap_any "PAGE START" \
 log "Phase: planner | Action: set_start | Target: from | Result: begin"
 
 # Wait for search modal title (strong anchor)
-ui_wait_resid \
-  "Phase: planner | Action: wait | Target: from_modal | Result: visible" \
-  "fromModalTitle" \
-  "$WAIT_LONG"
+ui_wait_resid "Phase: planner | Action: wait | Target: from_modal | Result: visible" "fromModalTitle" "$WAIT_LONG"
 
 snap "planner" "set_start" "modal_visible" "$SNAP_MODE"
 
@@ -236,10 +231,7 @@ snap "planner" "set_start" "modal_visible" "$SNAP_MODE"
 log "Phase: planner | Action: focus | Target: from_input"
 
 # Retour menu CFL
-ui_wait_desc_any \
-  "Phase: planner | Action: wait | Target: from_field | Result: visible" \	
-  "From" \
-  "$WAIT_LONG"
+ui_wait_desc_any "Phase: planner | Action: wait | Target: from_field | Result: visible" "From" "$WAIT_LONG"
 
 ui_tap_any "select from field" "desc:From"
 
@@ -256,17 +248,13 @@ _ui_key 4 || true
 _ui_wait_ime_hidden || true
 
 # Wait for at least one suggestion matching START_TEXT
-if ! ui_wait_desc_any \
-  "Phase: planner | Action: wait | Target: start_suggestion | Result: visible" \
-  "$START_TEXT"; then
+if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: start_suggestion | Result: visible" "$START_TEXT"; then
   warn "Phase: planner | Action: wait | Target: start_suggestion | Result: timeout"
   exit 1
 fi
 
 # Pick first matching suggestion
-if ! ui_tap_desc \
-  "start suggestion" \
-  "$START_TEXT,"; then
+if ! ui_tap_desc "start suggestion" "$START_TEXT,"; then
   warn "Phase: planner | Action: pick | Target: start | Result: not_found"
   exit 1
 fi
@@ -279,22 +267,16 @@ log "Phase: planner | Action: set_start | Target: from | Result: done"
 # Destination station (search modal)
 # -------------------------
 
-ui_wait_desc_any \
-  "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" \
-  "To field." \
-  "$WAIT_LONG"
+ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "To field." "$WAIT_LONG"
 
 # Field may already be active depending on previous state
-ui_tap_any "PAGE DESTINATION" \
-  "desc:To field." || true
+ui_tap_any "PAGE DESTINATION" "desc:To field." || true
 
 log "Phase: planner | Action: set_destination | Target: to | Result: begin"
 
 # Wait for search modal title (strong anchor)
 ui_wait_resid \
-  "Phase: planner | Action: wait | Target: to_modal | Result: visible" \
-  "toModalTitle" \
-  "$WAIT_LONG"
+  "Phase: planner | Action: wait | Target: to_modal | Result: visible" "toModalTitle" "$WAIT_LONG"
 
 snap "planner" "set_destination" "modal_visible" "$SNAP_MODE"
 
@@ -303,9 +285,7 @@ log "Phase: planner | Action: focus | Target: to_input"
 
 				 
 ui_wait_desc_any \
-  "Phase: planner | Action: wait | Target: to_field | Result: visible" \
-  "To" \
-  "$WAIT_LONG"
+  "Phase: planner | Action: wait | Target: to_field | Result: visible" "To" "$WAIT_LONG"
 
 ui_tap_any "select to field" "desc:To"
 
@@ -322,17 +302,13 @@ _ui_key 4 || true
 _ui_wait_ime_hidden || true
 
 # Wait for at least one suggestion matching TARGET_TEXT
-if ! ui_wait_desc_any \
-  "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" \
-  "$TARGET_TEXT"; then
+if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" "$TARGET_TEXT"; then
   warn "Phase: planner | Action: wait | Target: destination_suggestion | Result: timeout"
   exit 1
 fi
 
 # Pick first matching suggestion (comma to avoid Pin location)
-if ! ui_tap_desc \
-  "destination suggestion" \
-  "$TARGET_TEXT,"; then
+if ! ui_tap_desc "destination suggestion" "$TARGET_TEXT,"; then
   warn "Phase: planner | Action: pick | Target: destination | Result: not_found"
   exit 1
 fi
