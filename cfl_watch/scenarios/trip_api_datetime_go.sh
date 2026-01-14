@@ -289,12 +289,25 @@ ui_type "to" "$TARGET_TEXT"
 
 snap "planner" "set_destination" "typed" "$SNAP_MODE"
 
-# 1) Wait for keyboard to be shown
+# 1) Wait for keyboard to be shown (key detail)
 _ui_wait_ime_shown || true
-# 2) BACK = commit UI + close keyboard
+# 3) BACK (in your case: validate + close keyboard)
 _ui_key 4 || true
-# 3) Wait for keyboard fully hidden
+# 4) Wait for keyboard to be fully hidden before tapping elsewhere
 _ui_wait_ime_hidden || true
+
+# Wait for at least one suggestion matching START_TEXT
+if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" "$TARGET_TEXT"; then
+  warn "Phase: planner | Action: wait | Target: destination_suggestion | Result: timeout"
+  exit 1
+fi
+
+# Pick first matching suggestion
+if ! ui_tap_desc "destination suggestion" "$TARGET_TEXT,"; then
+  warn "Phase: planner | Action: pick | Target: start | Result: not_found"
+  exit 1
+fi
+
 
 # Wait for at least one suggestion matching TARGET_TEXT
 if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" "$TARGET_TEXT"; then
@@ -311,6 +324,9 @@ fi
 snap "planner" "set_destination" "selected" "$SNAP_MODE"
 
 log "Phase: planner | Action: set_destination | Target: to | Result: done"
+
+sleep_s 6
+
 
 # -------------------------
 # Datetime (optional)
