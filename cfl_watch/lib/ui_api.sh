@@ -185,6 +185,16 @@ ui_tap_desc(){
   tap_by_selector "$label" "$UI_DUMP_CACHE" "content-desc=$needle"
 }
 
+ui_tap_desc_exact(){
+  local label="$1"
+  local value="$2"
+
+  local re
+  re="$(_ui_match_regex "desc:$value" exact)" || return 2
+
+  tap_by_selector "$label" "$UI_DUMP_CACHE" "$re"
+}
+
 ui_tap_text(){
   local label="$1"; local needle="$2"
   tap_by_selector "$label" "$UI_DUMP_CACHE" "text=$needle"
