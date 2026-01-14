@@ -413,8 +413,12 @@ fi
 
 ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "From field." "$WAIT_LONG"
 
-  log "Phase: search | Action: apply | Target: cfl | Result: commit"
-  ui_tap_desc_exact "search" "Start search"
+sleep_s 10
+
+ui_tap_any "select from field" "desc:Start search"
+
+sleep_s 10
+
 
 snap_here "results" "search" "after" 3
 sleep_s 10
