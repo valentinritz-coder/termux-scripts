@@ -233,7 +233,7 @@ log "Phase: planner | Action: focus | Target: from_input"
 # Retour menu CFL
 ui_wait_resid "Phase: planner | Action: wait | Target: from_field | Result: visible" "fromInputSearch" "$WAIT_LONG"
 
-ui_tap_any "select from field" "id:fromInputSearch"
+ui_tap_any "select from field" "fromInputSearch"
 
 # Type text and wait for suggestions
 ui_type "from" "$START_TEXT"
@@ -284,7 +284,7 @@ log "Phase: planner | Action: focus | Target: to_input"
 
 ui_wait_resid "Phase: planner | Action: wait | Target: to_field | Result: visible" "toInputSearch" "$WAIT_LONG"
 
-ui_tap_any "select to field" "id:toInputSearch"
+ui_tap_any "select to field" "toInputSearch"
 
 # Type text and wait for suggestions
 ui_type "to" "$TARGET_TEXT"
