@@ -411,11 +411,10 @@ fi
 # Search
 # -------------------------
 
-ui_wait_resid "Phase: planner | Action: wait | Target: search_button | Result: visible" ":id/button_search_default" "$WAIT_LONG"
+ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "From field." "$WAIT_LONG"
 
 if ! ui_has_element "desc:Search" exact; then
   warn "Phase: planner | Action: tap | Target: search_button | Result: not_tappable_enter_fallback"
-  maybe key 66 || true
 else
   ui_tap_desc "search" "Search"
 fi
