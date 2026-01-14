@@ -150,8 +150,6 @@ candidate=""
 candidate_since=0
 last_captured=""
 
-disable_animations
-
 while true; do
 
   if [ -n "$FORCE_INTERVAL_SECS" ]; then
