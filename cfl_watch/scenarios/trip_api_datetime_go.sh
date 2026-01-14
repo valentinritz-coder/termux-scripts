@@ -401,7 +401,7 @@ else
 fi
 
 # Wait for at least one suggestion matching TARGET_TEXT (unchanged logic)
-if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" "$START_TEXT"; then
+if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" "$TARGET_TEXT"; then
   warn "Phase: planner | Action: wait | Target: destination_suggestion | Result: timeout"
   exit 1
 fi
