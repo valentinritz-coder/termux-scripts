@@ -317,44 +317,96 @@ log "Phase: planner | Action: set_start | Target: from | Result: done"
 # Destination station (search modal)
 # -------------------------
 
-ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "To field." "$WAIT_LONG"
+# Wait toolbar buttons visible (same call, explicit failure handling)
+if ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "To field." "$WAIT_LONG"; then
+  :
+else
+  rc=$?
+  warn "Phase: launch | Action: wait | Target: toolbar buttons | Result: timeout"
+  exit $rc
+fi
 
-# Field may already be active depending on previous state
-ui_tap_any "PAGE DESTINATION" "desc:To field." || true
+# Field may already be active depending on previous state (same call, still best-effort)
+if ui_tap_any "PAGE DESTINATION" "desc:To field."; then
+  :
+else
+  # was: || true
+  log "Phase: launch | Action: tap | Target: to_field | Result: skipped"
+fi
 
 log "Phase: planner | Action: set_destination | Target: to | Result: begin"
 
-# Wait for search modal title (strong anchor)
-ui_wait_resid "Phase: planner | Action: wait | Target: to_modal | Result: visible" "toModalTitle" "$WAIT_LONG"
+# Wait for search modal title (strong anchor) (same call, explicit failure handling)
+if ui_wait_resid "Phase: planner | Action: wait | Target: to_modal | Result: visible" "toModalTitle" "$WAIT_LONG"; then
+  :
+else
+  rc=$?
+  warn "Phase: planner | Action: wait | Target: to_modal | Result: timeout"
+  exit $rc
+fi
 
 snap "planner" "set_destination" "modal_visible" "$SNAP_MODE"
 
 # Focus input field
 log "Phase: planner | Action: focus | Target: to_input"
 
-ui_wait_resid "Phase: planner | Action: wait | Target: to_field | Result: visible" "toInputSearch" "$WAIT_LONG"
+# Retour menu CFL (same call, explicit failure handling)
+if ui_wait_resid "Phase: planner | Action: wait | Target: to_field | Result: visible" "toInputSearch" "$WAIT_LONG"; then
+  :
+else
+  rc=$?
+  warn "Phase: planner | Action: wait | Target: to_field | Result: timeout"
+  exit $rc
+fi
 
-ui_tap_any "select to field" "resid:toInputSearch"
+# Tap input (same call; if it fails, we exit with the same rc as before under set -e)
+if ui_tap_any "select to field" "resid:toInputSearch"; then
+  :
+else
+  rc=$?
+  warn "Phase: planner | Action: tap | Target: to_input | Result: failed"
+  exit $rc
+fi
 
-# Type text and wait for suggestions
-ui_type "to" "$TARGET_TEXT"
+# Type text (same call; explicit failure handling without changing behavior)
+if ui_type "to" "$TARGET_TEXT"; then
+  :
+else
+  rc=$?
+  warn "Phase: planner | Action: type | Target: to_input | Result: failed"
+  exit $rc
+fi
 
 snap "planner" "set_destination" "typed" "$SNAP_MODE"
 
-# 1) Wait for keyboard to be shown (key detail)
-_ui_wait_ime_shown || true
-# 3) BACK (in your case: validate + close keyboard)
-_ui_key 4 || true
-# 4) Wait for keyboard to be fully hidden before tapping elsewhere
-_ui_wait_ime_hidden || true
+# 1) Wait for keyboard to be shown (was: || true)
+if _ui_wait_ime_shown; then
+  :
+else
+  log "Phase: planner | Action: ime_wait | Target: keyboard | Result: not_detected"
+fi
 
-# Wait for at least one suggestion matching START_TEXT
-if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" "$TARGET_TEXT"; then
+# 3) BACK (was: || true)
+if _ui_key 4; then
+  :
+else
+  log "Phase: planner | Action: key | Target: back | Result: failed"
+fi
+
+# 4) Wait for keyboard to be fully hidden (was: || true)
+if _ui_wait_ime_hidden; then
+  :
+else
+  log "Phase: planner | Action: ime_wait | Target: keyboard | Result: not_hidden_or_unknown"
+fi
+
+# Wait for at least one suggestion matching TARGET_TEXT (unchanged logic)
+if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: destination_suggestion | Result: visible" "$START_TEXT"; then
   warn "Phase: planner | Action: wait | Target: destination_suggestion | Result: timeout"
   exit 1
 fi
 
-# Pick first matching suggestion
+# Pick first matching suggestion (unchanged logic)
 if ! ui_tap_desc "destination suggestion" "$TARGET_TEXT,"; then
   warn "Phase: planner | Action: pick | Target: destination | Result: not_found"
   exit 1
