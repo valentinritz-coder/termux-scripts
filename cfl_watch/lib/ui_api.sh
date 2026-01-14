@@ -730,5 +730,54 @@ ui_wait_element_gone() {
   return 1
 }
 
+ui_list_clickable_results_by_changes() {
+  [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
+
+  python - "$UI_DUMP_CACHE" <<'PY'
+import sys, re, xml.etree.ElementTree as ET
+
+dump = sys.argv[1]
+tree = ET.parse(dump)
+root = tree.getroot()
+
+# Regex for "Direct trip" or "X change(s)"
+rx = re.compile(r'^(Direct trip|[0-9]+ changes?)$')
+
+# Build parent map
+parent = {c: p for p in root.iter() for c in p}
+
+seen = set()
+
+def find_clickable_parent(n):
+    while n is not None:
+        if n.get("clickable") == "true":
+            return n
+        n = parent.get(n)
+    return None
+
+for n in root.iter("node"):
+    if n.get("class") != "android.widget.TextView":
+        continue
+
+    text = (n.get("text") or "").strip()
+    if not rx.match(text):
+        continue
+
+    p = find_clickable_parent(n)
+    if p is None:
+        continue
+
+    bounds = p.get("bounds")
+    desc = p.get("content-desc") or ""
+
+    key = (bounds, desc)
+    if key in seen:
+        continue
+    seen.add(key)
+
+    if bounds:
+        print(f"{desc}\t{bounds}")
+PY
+}
 
 
