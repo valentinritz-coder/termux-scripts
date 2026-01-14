@@ -485,7 +485,7 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       while true; do
         ui_refresh
       
-        if ui_has_element "resid:day_picker_view_pager"; then
+        if ui_has_element "resid:android:id/day_picker_view_pager"; then
           log "Phase: datetime | Action: tap | Target: date_ok | Result: calendar_visible"
       
           if ui_tap_any "date ok" "text:OK"; then
