@@ -35,6 +35,8 @@ snap_init "$name"
 # UI dump is slow (2-3s). We do stability based on elapsed time, not "N loops".
 STABLE_SECS="${STABLE_SECS:-6}"          # wait this long with same UI hash
 POLL_SLEEP_S="${POLL_SLEEP_S:-0.2}"      # extra sleep between dumps (dump itself already costs time)
+FORCE_INTERVAL_SECS="${FORCE_INTERVAL_SECS:-}"
+last_forced_capture=0
 
 # Put the live dump in a temp dir (faster, fewer perms headaches)
 REMOTE_TMP_DIR="${CFL_REMOTE_TMP_DIR:-/data/local/tmp/cfl_watch}"
@@ -118,6 +120,23 @@ candidate_since=0
 last_captured=""
 
 while true; do
+
+  now="$(date +%s)"
+
+  if [ -n "$FORCE_INTERVAL_SECS" ]; then
+    if [ $(( now - last_forced_capture )) -ge "$FORCE_INTERVAL_SECS" ]; then
+      if dump_live_xml && adb -s "$SERIAL" shell "test -s '$REMOTE_LIVE_XML'" >/dev/null 2>&1; then
+        last_forced_capture="$now"
+        capture_pair_from_live "forced_${now}"
+      else
+        warn "Forced capture skipped (dump or xml failed)"
+      fi
+    fi
+
+    sleep "$POLL_SLEEP_S"
+    continue
+  fi
+  
   if ! dump_live_xml; then
     warn "uiautomator dump failed (adb rc=$?)"
     sleep "$POLL_SLEEP_S"
@@ -136,8 +155,6 @@ while true; do
     sleep "$POLL_SLEEP_S"
     continue
   fi
-
-  now="$(date +%s)"
 
   if [ "$h" != "$candidate" ]; then
     candidate="$h"
