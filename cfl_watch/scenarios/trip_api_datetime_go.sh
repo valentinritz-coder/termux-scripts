@@ -572,21 +572,51 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
 
       log "Phase: datetime | Action: validate | Target: time | Result: ok"
 
-      if sleep_s 2; then
-        :
-      else
-        rc=$?
-        warn "Phase: datetime | Action: sleep | Target: after_time_set | Result: failed"
-        exit $rc
-      fi
+      TIME_PICKER_IDS=(
+        "resid:android:id/input_hour"
+        "resid:android:id/input_separator"
+        "resid:android:id/input_minute"
+        "resid:android:id/label_hour"
+        "resid:android:id/label_minute"
+        "resid:android:id/am_pm_spinner"
+        "resid:android:id/time_header"
+      )
 
-      if ui_tap_any "date ok" "text:OK"; then
-        :
-      else
-        rc=$?
-        warn "Phase: datetime | Action: tap | Target: time_ok | Result: failed"
-        exit $rc
-      fi
+      start=$(date +%s)
+
+      while true; do
+        ui_refresh
+      
+        picker_visible=0
+        for sel in "${TIME_PICKER_IDS[@]}"; do
+          if ui_has_element "$sel"; then
+            picker_visible=1
+            break
+          fi
+        done
+      
+        if (( picker_visible )); then
+          log "Phase: datetime | Action: tap | Target: time_ok | Result: picker_visible"
+      
+          if ui_tap_any "time ok" "text:OK"; then
+            :
+          else
+            rc=$?
+            warn "Phase: datetime | Action: tap | Target: time_ok | Result: failed"
+            exit $rc
+          fi
+      
+          sleep_s 0.5
+        else
+          log "Phase: datetime | Action: wait | Target: time_picker | Result: closed"
+          break
+        fi
+      
+        (( $(date +%s) - start >= 10 )) && {
+          warn "Phase: datetime | Action: wait | Target: time_picker | Result: timeout"
+          exit 1
+        }
+      done
 
       # Retour menu CFL
       if ui_wait_desc_any \
