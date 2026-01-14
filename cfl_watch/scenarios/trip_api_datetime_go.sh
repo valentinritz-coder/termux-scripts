@@ -420,6 +420,7 @@ else
 fi
 
 snap_here "results" "search" "after" 3
+sleep_s 10
 
 # -------------------------
 # VIA (optional)
