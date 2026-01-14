@@ -631,17 +631,23 @@ fi
 # Search
 # -------------------------
 
-ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "From field." "$WAIT_LONG"
+if ui_wait_desc_any "Phase: launch | Action: wait | Target: toolbar buttons | Result: visible" "Start search" "$WAIT_LONG"; then
+  :
+else
+  rc=$?
+  warn "Phase: launch | Action: wait | Target: toolbar buttons | Result: timeout"
+  exit $rc
+fi
 
-sleep_s 10
-
-ui_tap_any "select from field" "desc:Start search"
-
-sleep_s 10
-
+if ui_tap_any "select from field" "desc:Start search"; then
+  :
+else
+  rc=$?
+  warn "Phase: launch | Action: tap | Target: start_search | Result: failed"
+  exit $rc
+fi
 
 snap_here "results" "search" "after" 3
-sleep_s 10
 
 # -------------------------
 # VIA (optional)
