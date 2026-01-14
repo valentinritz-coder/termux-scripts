@@ -18,7 +18,8 @@ Last seen: 01/14/26 14:41:19.563
 ---
 
 pkg install wget
-wget https://github.com/frida/frida/releases/latest/download/frida-server-16.2.1-android-arm64.xz
+wget https://github.com/frida/frida/releases/download/17.5.2/frida-server-17.5.2-android-arm64.xz
+
 
 --
 
