@@ -12,6 +12,7 @@ settings get global http_proxy
 
 ---
 
+
 http://mitm.it
 
 ---
@@ -28,3 +29,74 @@ openssl x509 -inform PEM -subject_hash_old -in ~/.mitmproxy/mitmproxy-ca-cert.pe
 cp ~/.mitmproxy/mitmproxy-ca-cert.pem /system/etc/security/cacerts/abcd1234.0
 chmod 644 /system/etc/security/cacerts/abcd1234.0
 reboot
+
+
+
+
+~ $ proot-distro login ubuntu
+mitmproxy -p 8080 --listen-host 0.0.0.0
+root@localhost:~# mitmproxy -p 8080 --listen-host 0.0.0.0
+Traceback (most recent call last):
+  File "/usr/bin/mitmproxy", line 33, in <module>
+    sys.exit(load_entry_point('mitmproxy==8.1.1', 'console_scripts', 'mitmproxy')())
+             ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/bin/mitmproxy", line 25, in importlib_load_entry_point
+    return next(matches).load()
+           ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/importlib/metadata/__init__.py", line 179, in load
+    module = import_module(match.group('module'))
+  File "/usr/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/mitmproxy/tools/main.py", line 9, in <module>
+    from mitmproxy import exceptions, master
+  File "/usr/lib/python3/dist-packages/mitmproxy/master.py", line 5, in <module>
+    from mitmproxy import addonmanager, hooks
+  File "/usr/lib/python3/dist-packages/mitmproxy/addonmanager.py", line 14, in <module>
+    from . import ctx
+  File "/usr/lib/python3/dist-packages/mitmproxy/ctx.py", line 3, in <module>
+    import mitmproxy.options
+  File "/usr/lib/python3/dist-packages/mitmproxy/options.py", line 4, in <module>
+    from mitmproxy import optmanager
+  File "/usr/lib/python3/dist-packages/mitmproxy/optmanager.py", line 12, in <module>
+    import blinker._saferef
+ModuleNotFoundError: No module named 'blinker._saferef'
+root@localhost:~# mitmproxy
+Traceback (most recent call last):
+  File "/usr/bin/mitmproxy", line 33, in <module>
+    sys.exit(load_entry_point('mitmproxy==8.1.1', 'console_scripts', 'mitmproxy')())
+             ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/bin/mitmproxy", line 25, in importlib_load_entry_point
+    return next(matches).load()
+           ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/importlib/metadata/__init__.py", line 179, in load
+    module = import_module(match.group('module'))
+  File "/usr/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/usr/lib/python3/dist-packages/mitmproxy/tools/main.py", line 9, in <module>
+    from mitmproxy import exceptions, master
+  File "/usr/lib/python3/dist-packages/mitmproxy/master.py", line 5, in <module>
+    from mitmproxy import addonmanager, hooks
+  File "/usr/lib/python3/dist-packages/mitmproxy/addonmanager.py", line 14, in <module>
+    from . import ctx
+  File "/usr/lib/python3/dist-packages/mitmproxy/ctx.py", line 3, in <module>
+    import mitmproxy.options
+  File "/usr/lib/python3/dist-packages/mitmproxy/options.py", line 4, in <module>
+    from mitmproxy import optmanager
+  File "/usr/lib/python3/dist-packages/mitmproxy/optmanager.py", line 12, in <module>
+    import blinker._saferef
+ModuleNotFoundError: No module named 'blinker._saferef'
+root@localhost:~#
