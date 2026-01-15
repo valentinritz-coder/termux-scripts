@@ -94,7 +94,7 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
   --snap-mode 0
 ```
 
-### 2b) Un trajet précis avec via sur CFL Go
+### 2c) Un trajet précis avec via sur CFL Go
 ```bash
 ADB_TCP_PORT=37099 \
 UI_STEP_SLEEP=0 \
@@ -112,28 +112,79 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
   --snap-mode 0
 ```
 
-### 3) Trois trajets aléatoires (N=3)
+### 3a) Trois trajets aléatoires en multi-run (N=3)
 ```bash
+CFL_MULTI_RUN=1 \
 N=3 \
 SLEEP_BETWEEN=1 \
 ADB_TCP_PORT=37099 \
 STATIONS_FILE="$HOME/termux-scripts/cfl_watch/data/stations.txt" \
-STATIONS_FILE="$HOME/termux-scripts/cfl_watch/data/stations.txt" \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-SCENARIO="$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh" \
 SNAP_MODE=3 \
 NO_ANIM=1 \
 bash "$HOME/termux-scripts/cfl_watch/tools/stress_stations.sh"
 ```
 
-### 4) Un conteneur de trajets
+### 3b) Trois trajets aléatoires CFL Mobile (N=3)
 ```bash
+CFL_PKG=de.hafas.android.cfl \
+N=3 \
+SLEEP_BETWEEN=1 \
+ADB_TCP_PORT=37099 \
+STATIONS_FILE="$HOME/termux-scripts/cfl_watch/data/stations.txt" \
+CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
+SNAP_MODE=3 \
+NO_ANIM=1 \
+bash "$HOME/termux-scripts/cfl_watch/tools/stress_stations.sh"
+```
+
+### 3c) Trois trajets aléatoires CFL Go (N=3)
+```bash
+CFL_PKG=lu.cfl.cflgo.qual \
+N=3 \
+SLEEP_BETWEEN=1 \
+ADB_TCP_PORT=37099 \
+STATIONS_FILE="$HOME/termux-scripts/cfl_watch/data/stations.txt" \
+CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
+SNAP_MODE=3 \
+NO_ANIM=1 \
+bash "$HOME/termux-scripts/cfl_watch/tools/stress_stations.sh"
+```
+
+### 4a) Un batch de trajets en multi-run
+```bash
+CFL_MULTI_RUN=1 \
 TRIPS_FILE="$HOME/termux-scripts/cfl_watch/trips.txt" \
 ADB_TCP_PORT=37099 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-DEFAULT_SCENARIO="$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh" \
+DEFAULT_SNAP_MODE=3 \
+NO_ANIM=1 \
+bash "$HOME/termux-scripts/cfl_watch/tools/batch_trips.sh"
+```
+
+### 4b) Un batch de trajets en multi-run CFL Mobile
+```bash
+CFL_PKG=de.hafas.android.cfl \
+TRIPS_FILE="$HOME/termux-scripts/cfl_watch/trips.txt" \
+ADB_TCP_PORT=37099 \
+CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
+DEFAULT_SNAP_MODE=3 \
+NO_ANIM=1 \
+bash "$HOME/termux-scripts/cfl_watch/tools/batch_trips.sh"
+```
+
+### 4c) Un batch de trajets en multi-run CFL Go
+```bash
+CFL_PKG=lu.cfl.cflgo.qual \
+TRIPS_FILE="$HOME/termux-scripts/cfl_watch/trips.txt" \
+ADB_TCP_PORT=37099 \
+CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
+CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
 DEFAULT_SNAP_MODE=3 \
 NO_ANIM=1 \
 bash "$HOME/termux-scripts/cfl_watch/tools/batch_trips.sh"
