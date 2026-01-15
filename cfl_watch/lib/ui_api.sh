@@ -792,4 +792,32 @@ for n in root.iter("node"):
 PY
 }
 
+ui_list_clickable_desc_bounds() {
+  [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
+
+  python - "$UI_DUMP_CACHE" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+dump = sys.argv[1]
+
+try:
+    root = ET.parse(dump).getroot()
+except Exception:
+    sys.exit(0)
+
+for n in root.iter("node"):
+    if n.get("clickable") != "true":
+        continue
+
+    desc = (n.get("content-desc") or "").strip()
+    bounds = (n.get("bounds") or "").strip()
+
+    if not desc or not bounds:
+        continue
+
+    print(f"{desc}\t{bounds}")
+PY
+}
+
 
