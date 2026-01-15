@@ -142,3 +142,74 @@ ui_scrollshot_region() {
   log "scrollshot: done (${i}-1 frames)"
 }
 
+ui_scrollshot_free() {
+  # Usage:
+  # ui_scrollshot_free "route_abcd1234"
+  local tag="$1"
+
+  [[ -n "${PNG_DIR:-}" && -n "${XML_DIR:-}" ]] || {
+    warn "scrollshot_free: PNG_DIR / XML_DIR not set"
+    return 1
+  }
+
+  ui_refresh
+
+  # 🔒 timestamp canonique UNIQUE pour toute la séquence
+  local ts
+  ts="$(date +"%Y%m%d_%H%M%S_%3N")"
+
+  log "scrollshot_free: tag=$tag ts=$ts"
+
+  local w h
+  read -r w h < <(ui_screen_size)
+
+  # swipe plein écran, safe
+  local x=$(( w / 2 ))
+  local y_start=$(( h * 75 / 100 ))
+  local y_end=$(( h * 20 / 100 ))
+
+  log "scrollshot_free: swipe x=$x y_start=$y_start y_end=$y_end"
+
+  local prev_hash=""
+  local streak=0
+  local i=1
+
+  for ((n=0; n<=SCROLLSHOT_MAX_SCROLL; n++)); do
+    printf -v sfx "__S%02d" "$i"
+
+    local png="$PNG_DIR/${ts}__${tag}${sfx}.png"
+    local xml="$XML_DIR/${ts}__${tag}${sfx}.xml"
+
+    ui_screencap_png "$png"
+    ui_refresh
+    cp -f "$UI_DUMP_CACHE" "$xml"
+
+    local hsh
+    hsh="$(ui_hash_png "$png")"
+
+    if [[ -n "$prev_hash" && "$hsh" == "$prev_hash" ]]; then
+      streak=$((streak + 1))
+      log "scrollshot_free: identical streak=$streak at S$(printf '%02d' "$i")"
+
+      if (( streak >= SCROLLSHOT_STOP_STREAK && i >= 2 )); then
+        rm -f "$png" "$xml"
+        log "scrollshot_free: stop (no more scroll)"
+        break
+      fi
+    else
+      streak=0
+    fi
+
+    prev_hash="$hsh"
+    i=$((i + 1))
+
+    adb -s "$(_ui_serial)" shell input swipe \
+      "$x" "$y_start" "$x" "$y_end" "$SCROLLSHOT_SWIPE_MS"
+
+    sleep_s "$SCROLLSHOT_SETTLE"
+  done
+
+  log "scrollshot_free: done ($((i-1)) frames)"
+}
+
+
