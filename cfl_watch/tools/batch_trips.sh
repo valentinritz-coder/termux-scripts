@@ -2,11 +2,21 @@
 set -u
 
 # Batch runner for trips.txt
-# Lines accepted:
+#
+# Accepted line formats:
 #   START|TARGET
-#   SCENARIO_SCRIPT|START|TARGET
-#   SCENARIO_SCRIPT|START|TARGET|SNAP_MODE
-# Comments: lines starting with #, blanks ignored.
+#   START|TARGET|SNAP
+#   START|TARGET|VIA
+#   START|TARGET|VIA|SNAP
+#
+# Notes:
+# - SNAP must be numeric
+# - VIA is treated as free text
+# - App & scenario selection handled by runner.sh
+#
+# Usage:
+#   CFL_PKG=de.hafas.android.cfl bash batch_trips.sh
+#   CFL_MULTI_RUN=1 bash batch_trips.sh
 
 TRIPS_FILE="${TRIPS_FILE:-$HOME/termux-scripts/cfl_watch/trips.txt}"
 RUNNER="${RUNNER:-$HOME/termux-scripts/cfl_watch/runner.sh}"
@@ -15,22 +25,39 @@ RUNNER="${RUNNER:-$HOME/termux-scripts/cfl_watch/runner.sh}"
 ADB_TCP_PORT="${ADB_TCP_PORT:-37099}"
 CFL_REMOTE_TMP_DIR="${CFL_REMOTE_TMP_DIR:-/data/local/tmp/cfl_watch}"
 CFL_TMP_DIR="${CFL_TMP_DIR:-$HOME/.cache/cfl_watch}"
-DEFAULT_SCENARIO="${DEFAULT_SCENARIO:-$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh}"
 DEFAULT_SNAP_MODE="${DEFAULT_SNAP_MODE:-3}"
 NO_ANIM="${NO_ANIM:-1}"
 
-# Small helper: trim
-_trim() { local s="$*"; s="${s#"${s%%[![:space:]]*}"}"; s="${s%"${s##*[![:space:]]}"}"; printf '%s' "$s"; }
+# ------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------
+_trim() {
+  local s="$*"
+  s="${s#"${s%%[![:space:]]*}"}"
+  s="${s%"${s##*[![:space:]]}"}"
+  printf '%s' "$s"
+}
 
+_is_number() {
+  [[ "$1" =~ ^[0-9]+$ ]]
+}
+
+# ------------------------------------------------------------
+# Sanity checks
+# ------------------------------------------------------------
 if [ ! -f "$TRIPS_FILE" ]; then
   echo "[!] trips file not found: $TRIPS_FILE" >&2
   exit 1
 fi
+
 if [ ! -x "$RUNNER" ]; then
   echo "[!] runner not executable / not found: $RUNNER" >&2
   exit 1
 fi
 
+# ------------------------------------------------------------
+# Main loop
+# ------------------------------------------------------------
 ok=0
 fail=0
 i=0
@@ -42,46 +69,49 @@ while IFS= read -r line || [ -n "${line:-}" ]; do
 
   i=$((i+1))
 
-  # Split by |
   IFS='|' read -r a b c d <<<"$line"
-  a="$(_trim "${a:-}")"; b="$(_trim "${b:-}")"; c="$(_trim "${c:-}")"; d="$(_trim "${d:-}")"
+  a="$(_trim "${a:-}")"
+  b="$(_trim "${b:-}")"
+  c="$(_trim "${c:-}")"
+  d="$(_trim "${d:-}")"
 
-  scenario="$DEFAULT_SCENARIO"
-  start=""
-  target=""
+  start="$a"
+  target="$b"
+  via=""
   snap="$DEFAULT_SNAP_MODE"
 
-  # Detect format
-  if [[ "$a" == */*".sh"* ]] || [[ "$a" == "$HOME"* ]] || [[ "$a" == /* ]]; then
-    # Scenario provided
-    scenario="$a"
-    start="$b"
-    target="$c"
-    [ -n "${d:-}" ] && snap="$d"
-  else
-    # No scenario, only start|target
-    start="$a"
-    target="$b"
-    [ -n "${c:-}" ] && snap="$c"
+  if [ -n "$c" ] && _is_number "$c"; then
+    snap="$c"
+  elif [ -n "$c" ]; then
+    via="$c"
+  fi
+
+  if [ -n "$d" ]; then
+    if _is_number "$d"; then
+      snap="$d"
+    else
+      echo "[!] line $i invalid (SNAP must be numeric): $line" >&2
+      fail=$((fail+1))
+      continue
+    fi
   fi
 
   if [ -z "$start" ] || [ -z "$target" ]; then
-    echo "[!] line $i invalid (need start and target): $line" >&2
+    echo "[!] line $i invalid (need START|TARGET): $line" >&2
     fail=$((fail+1))
     continue
   fi
 
-  echo "[*] ($i) RUN: $start -> $target | snap=$snap | scenario=$scenario"
+  echo "[*] ($i) RUN: $start -> $target${via:+ via $via} | snap=$snap"
 
-  # Build runner args
   args=()
   [ "$NO_ANIM" = "1" ] && args+=(--no-anim)
   args+=(--start "$start" --target "$target" --snap-mode "$snap")
+  [ -n "$via" ] && args+=(--via "$via")
 
   ADB_TCP_PORT="$ADB_TCP_PORT" \
   CFL_REMOTE_TMP_DIR="$CFL_REMOTE_TMP_DIR" \
   CFL_TMP_DIR="$CFL_TMP_DIR" \
-  CFL_SCENARIO_SCRIPT="$scenario" \
   bash "$RUNNER" "${args[@]}"
   rc=$?
 
