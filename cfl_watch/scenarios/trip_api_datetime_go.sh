@@ -658,7 +658,6 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
   fi
 fi
 
-
 # -------------------------
 # Search
 # -------------------------
@@ -727,16 +726,18 @@ if [[ -n "$VIA_TEXT_TRIM" ]]; then
 fi
 
 
-
 # -------------------------
 # Drill all visible connections
 # -------------------------
 
 log "Phase: results | Action: search | Target: request | Result: started"
 
-ui_wait_resid "Phase: results | Action: wait | Target: results_page | Result: visible" ":id/haf_connection_view" "$WAIT_LONG"
+ui_wait_resid \
+  "Phase: results | Action: wait | Target: trip-search-result | Result: visible" \
+  ":id/trip-search-result" \
+  "$WAIT_LONG"
 
-log "Phase: results | Action: drill_connections | Target: haf_connection_view | Result: begin"
+log "Phase: results | Action: drill_connections | Target: trip-search-result | Result: begin"
 
 declare -A SEEN_CONNECTIONS
 
@@ -745,12 +746,13 @@ final_pass=0
 
 while true; do
   ui_refresh
-  mapfile -t ITEMS < <(ui_list_resid_desc_bounds ":id/haf_connection_view")
-  log "Phase: results | Action: debug_items | Target: haf_connection_view | Result: count=${#ITEMS[@]}"
+
+  mapfile -t ITEMS < <(ui_list_clickable_results_by_changes)
+
+  log "Phase: results | Action: debug_items | Target: trip-search-result | Result: count=${#ITEMS[@]}"
 
   for i in "${!ITEMS[@]}"; do
-    # %q prints an escaped representation (tabs, spaces, etc.)
-    log "Phase: results | Action: debug_item | Target: haf_connection_view | Result: index=$i item=$(printf '%q' "${ITEMS[$i]}")"
+    log "Phase: results | Action: debug_item | Target: trip-search-result | Result: index=$i item=$(printf '%q' "${ITEMS[$i]}")"
   done
 
   new=0
@@ -758,7 +760,8 @@ while true; do
   for item in "${ITEMS[@]}"; do
     IFS=$'\t' read -r desc bounds <<<"$item"
 
-    raw_key="$desc"
+    # Fallback safety: content-desc preferred, bounds as last resort
+    raw_key="${desc:-$bounds}"
     key="$(hash_key "$raw_key")"
 
     [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
@@ -768,10 +771,14 @@ while true; do
     cx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
     cy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
 
-    log "Phase: results | Action: open_connection | Target: haf_connection_view | Result: tap"
+    log "Phase: results | Action: open_connection | Target: trip-search-result | Result: tap"
     ui_tap_xy "connection" "$cx" "$cy"
 
-    if ! ui_wait_resid "Phase: results | Action: wait | Target: connection_details | Result: visible" ":id/text_line_name" "$WAIT_LONG"; then
+    if ! ui_wait_resid \
+      "Phase: results | Action: wait | Target: connection_details | Result: visible" \
+      ":id/text_line_name" \
+      "$WAIT_LONG"
+    then
       warn "Phase: results | Action: open_connection | Target: connection_details | Result: not_opened_retry"
       continue
     fi
