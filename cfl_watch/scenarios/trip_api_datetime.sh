@@ -473,9 +473,18 @@ while true; do
 
         SEEN_ROUTES["$rkey"]=1
         rnew=1
-
-        ui_scrollshot_region "route_${rkey}" ":id/journey_details_head"
-        log "Phase: results | Action: scrollshot | Target: route | Result: captured name=route_${rkey}"
+        if header_text="$(ui_get_desc_by_resid ":id/journey_details_head")"; then
+          log "Phase: results | Action: read_header | Target: journey_details_head | Result: text=$header_text"
+          name_route="$header_text"
+          name_route="${name_route#Travel with }"
+          name_route="${name_route% To*}"
+          name_route="${name_route//[[:space:]]/}"
+        else
+          warn "Phase: results | Action: read_header | Target: searchHeader_back | Result: not_found"
+        fi
+        
+        ui_scrollshot_region "route_${name_route}" ":id/journey_details_head"
+        log "Phase: results | Action: scrollshot | Target: route | Result: captured name=route_${name_route}"
         sleep_s 0.3
 
         _ui_key 4 || true
