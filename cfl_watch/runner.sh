@@ -147,6 +147,8 @@ chmod +x "$CFL_CODE_DIR"/lib/*.sh "$CFL_CODE_DIR"/scenarios/*.sh "$CFL_CODE_DIR"
 ANIM_W=""
 ANIM_T=""
 ANIM_A=""
+SCREEN_TIMEOUT_ORIG=""
+STAYON_ORIG=""
 
 read_anim_scales(){
   ANIM_W="$(adb shell settings get global window_animation_scale 2>/dev/null | tr -d '\r')"
@@ -179,12 +181,49 @@ restore_animations(){
   adb shell settings put global animator_duration_scale "$ANIM_A" >/dev/null 2>&1 || true
 }
 
+read_screen_timeout(){
+  SCREEN_TIMEOUT_ORIG="$(adb shell settings get system screen_off_timeout 2>/dev/null | tr -d '\r')"
+  [ -n "$SCREEN_TIMEOUT_ORIG" ] && [ "$SCREEN_TIMEOUT_ORIG" != "null" ] || SCREEN_TIMEOUT_ORIG="60000"
+}
+
+disable_screen_timeout(){
+  if [ "${CFL_DRY_RUN:-0}" = "1" ]; then
+    log "[dry-run] skip screen timeout disable"
+    return 0
+  fi
+
+  log "Disable screen timeout (temporary)"
+  read_screen_timeout
+  adb shell settings put system screen_off_timeout 2147483647 >/dev/null
+
+  # keep screen on when plugged
+  STAYON_ORIG="$(adb shell settings get global stay_on_while_plugged_in 2>/dev/null | tr -d '\r')"
+  adb shell svc power stayon true >/dev/null
+}
+
+restore_screen_timeout(){
+  [ -n "${SCREEN_TIMEOUT_ORIG:-}" ] || return 0
+
+  log "Restore screen timeout: $SCREEN_TIMEOUT_ORIG ms"
+  adb shell settings put system screen_off_timeout "$SCREEN_TIMEOUT_ORIG" >/dev/null 2>&1 || true
+
+  if [ -n "${STAYON_ORIG:-}" ]; then
+    adb shell settings put global stay_on_while_plugged_in "$STAYON_ORIG" >/dev/null 2>&1 || true
+  else
+    adb shell svc power stayon false >/dev/null 2>&1 || true
+  fi
+}
+
 cleanup(){
   if [ "$CFL_DISABLE_ANIM" = "1" ] && [ "${CFL_DRY_RUN:-0}" != "1" ]; then
     restore_animations
   fi
+
+  restore_screen_timeout
+
   if [ "${CFL_DRY_RUN:-0}" != "1" ]; then
-    ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" "$CFL_CODE_DIR/lib/adb_local.sh" stop >/dev/null 2>&1 || true
+    ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" \
+      "$CFL_CODE_DIR/lib/adb_local.sh" stop >/dev/null 2>&1 || true
   fi
 }
 trap cleanup EXIT
@@ -197,6 +236,8 @@ if [ "${CFL_DRY_RUN:-0}" != "1" ]; then
 else
   log "[dry-run] skip adb_local start/devices"
 fi
+
+disable_screen_timeout
 
 if [ "$CFL_DISABLE_ANIM" = "1" ]; then
   disable_animations
