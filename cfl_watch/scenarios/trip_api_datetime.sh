@@ -408,9 +408,10 @@ while true; do
   done
 
   new=0
-
+  i=0
   for item in "${ITEMS[@]}"; do
     [[ $i -ge 2 ]] && break
+    ((i++))
     IFS=$'\t' read -r desc bounds <<<"$item"
 
     raw_key="$desc"
