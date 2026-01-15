@@ -262,15 +262,32 @@ ROOT_RUN_DIR="$CFL_ARTIFACT_DIR/RUN_$RUN_TS"
 run_for_app(){
   local app_label="$1"
   local app_pkg="$2"
+  local scenario_script=""
 
   log "=== APP RUN: $app_label ($app_pkg) ==="
+
+  case "$app_pkg" in
+    de.hafas.android.cfl)
+      scenario_script="$CFL_CODE_DIR/scenarios/trip_api_datetime.sh"
+      ;;
+    lu.cfl.cflgo.qual)
+      scenario_script="$CFL_CODE_DIR/scenarios/trip_api_datetime_go.sh"
+      ;;
+    *)
+      die "Unknown CFL_PKG: $app_pkg"
+      ;;
+  esac
+
+  [ -f "$scenario_script" ] || die "Scenario not found: $scenario_script"
 
   local app_run_dir="$ROOT_RUN_DIR/$app_label"
   mkdir -p "$app_run_dir"
 
-  # Surcharge explicite pour CE run
   export CFL_PKG="$app_pkg"
   export CFL_ARTIFACT_DIR="$app_run_dir"
+  export CFL_SCENARIO_SCRIPT="$scenario_script"
+
+  log "Using scenario: $(basename "$scenario_script")"
 }
 
 fail_count=0
