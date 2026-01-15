@@ -7,7 +7,7 @@ Automatisation **CFL** (Android) qui s’exécute **directement sur le télépho
 
 ## Objectif
 
-- Lancer des scénarios d’automatisation (ex: `trip_api.sh`).
+- Lancer des scénarios d’automatisation (ex: `trip_api_datetime.sh`).
 - Capturer des artefacts (PNG/XML) et générer un viewer HTML.
 - Garder l’option LLM **minimale et non bloquante**.
 
@@ -47,7 +47,7 @@ Vous pouvez soit modifier `env.sh`, soit créer un `env.local.sh` non versionné
 
 Exemple d’override ponctuel (prioritaire sur `env.sh`) :
 ```bash
-CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api.sh" \
+CFL_SCENARIO_SCRIPT="$HOME/termux-scripts/cfl_watch/scenarios/trip_api_datetime.sh" \
 ADB_TCP_PORT=37099 \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" --list
 ```
