@@ -36,6 +36,18 @@ ui_scroll_down() {
   maybe adb shell input swipe 540 1600 540 600 300
 }
 
+ui_scroll_down_soft() {
+  local w h
+  read -r w h < <(ui_screen_size)
+
+  local x=$(( w / 2 ))
+  local y_start=$(( h * 65 / 100 ))
+  local y_end=$(( h * 45 / 100 ))
+
+  # geste court + lent = pas d'inertie
+  maybe adb shell input swipe "$x" "$y_start" "$x" "$y_end" 600
+}
+
 hash_key() {
   printf '%s' "$1" | sha1sum | awk '{print $1}'
 }
