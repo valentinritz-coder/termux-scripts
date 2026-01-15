@@ -37,6 +37,25 @@ _rand_station() {
   echo "${stations[$RANDOM % count]}"
 }
 
+_rand_future_datetime() {
+  local now min_ts max_ts span rnd_ts
+
+  now="$(date +%s)"
+  min_ts=$(( now + 30*60 ))
+
+  # end of tomorrow 23:59:59
+  max_ts="$(date -d 'tomorrow 23:59:59' +%s)"
+
+  # safety net (very unlikely, but bash deserves distrust)
+  [ "$min_ts" -ge "$max_ts" ] && min_ts="$now"
+
+  span=$(( max_ts - min_ts ))
+  rnd_ts=$(( min_ts + (RANDOM % span) ))
+
+  DATE_YMD="$(date -d "@$rnd_ts" +%Y-%m-%d)"
+  TIME_HM="$(date -d "@$rnd_ts" +%H:%M)"
+}
+
 # ------------------------------------------------------------
 # Sanity checks
 # ------------------------------------------------------------
@@ -79,6 +98,7 @@ fail=0
 for i in $(seq 1 "$N"); do
   start="$(_rand_station)"
   target="$(_rand_station)"
+  _rand_future_datetime
 
   # ensure start != target
   tries=0
@@ -116,6 +136,8 @@ for i in $(seq 1 "$N"); do
   ADB_TCP_PORT="$ADB_TCP_PORT" \
   CFL_REMOTE_TMP_DIR="$CFL_REMOTE_TMP_DIR" \
   CFL_TMP_DIR="$CFL_TMP_DIR" \
+  DATE_YMD="$DATE_YMD" \
+  TIME_HM="$TIME_HM" \
   bash "$RUNNER" "${args[@]}"
   rc=$?
 
