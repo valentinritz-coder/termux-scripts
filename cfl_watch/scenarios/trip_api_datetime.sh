@@ -410,13 +410,13 @@ while true; do
     log "Phase: results | Action: debug_item | Target: haf_connection_view | Result: index=$i item=$(printf '%q' "${ITEMS[$i]}")"
   done
 
-  new=0
+  #new=0
   for item in "${ITEMS[@]}"; do
     # Stop before processing a 3rd unique connection
-    if (( ${#SEEN_CONNECTIONS[@]} >= 2 )); then
-      done_search=1
-      break
-    fi
+    #if (( ${#SEEN_CONNECTIONS[@]} >= 2 )); then
+    #  done_search=1
+    #  break
+    #fi
     IFS=$'\t' read -r desc bounds <<<"$item"
 
     raw_key="$desc"
@@ -518,7 +518,7 @@ while true; do
     ui_wait_resid "Phase: results | Action: wait | Target: results_page | Result: visible" ":id/haf_connection_view" "$WAIT_LONG"
   done
 
-  [[ $done_search -eq 1 ]] && break
+  #[[ $done_search -eq 1 ]] && break
   
   if [[ $new -eq 0 ]]; then
     if [[ $final_pass -eq 1 ]]; then
