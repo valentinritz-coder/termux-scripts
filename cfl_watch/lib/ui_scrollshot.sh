@@ -13,6 +13,34 @@ set -euo pipefail
 # AUCUN python.
 # --------------------------------------------------
 
+# Env: START_TEXT, TARGET_TEXT, VIA_TEXT (optional), SNAP_MODE, WAIT_*, CFL_DRY_RUN
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$SCRIPT_DIR/../lib/path.sh"
+
+SNAP_MODE_SET=0
+if [ "${SNAP_MODE+set}" = "set" ]; then
+  SNAP_MODE_SET=1
+fi
+
+CFL_CODE_DIR="${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+CFL_CODE_DIR="$(expand_tilde_path "$CFL_CODE_DIR")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
+
+# Load env overrides (optional)
+if [ -f "$CFL_CODE_DIR/env.sh" ]; then
+  . "$CFL_CODE_DIR/env.sh"
+fi
+if [ -f "$CFL_CODE_DIR/env.local.sh" ]; then
+  . "$CFL_CODE_DIR/env.local.sh"
+fi
+
+# Re-resolve after env (in case env overrides CFL_CODE_DIR)
+CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}")"
+CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
+# UI libs
+. "$CFL_CODE_DIR/lib/ui_api.sh"
+
 : "${SCROLLSHOT_MAX_SCROLL:=25}"
 : "${SCROLLSHOT_SETTLE:=0.5}"
 : "${SCROLLSHOT_SWIPE_MS:=300}"
@@ -91,15 +119,6 @@ ui_scrollshot_region() {
 
   log "scrollshot: tag=$tag anchor=$anchor_resid top_y=$top_y ts=$ts"
 
-  local w h
-  read -r w h < <(ui_screen_size)
-
-  local x=$(( w / 2 ))
-  local y_start=$(( h - SCROLLSHOT_BOTTOM_MARGIN - 20 ))
-  local y_end=$(( top_y + 40 ))
-
-  log "scrollshot: swipe x=$x y_start=$y_start y_end=$y_end"
-
   local prev_hash=""
   local streak=0
   local i=1
@@ -133,10 +152,9 @@ ui_scrollshot_region() {
     prev_hash="$hsh"
     i=$((i + 1))
 
-    adb -s "$(_ui_serial)" shell input swipe \
-      "$x" "$y_start" "$x" "$y_end" "$SCROLLSHOT_SWIPE_MS"
-
+    ui_scroll_down_soft
     sleep_s "$SCROLLSHOT_SETTLE"
+
   done
 
   log "scrollshot: done (${i}-1 frames)"
@@ -159,16 +177,6 @@ ui_scrollshot_free() {
   ts="$(date +"%Y%m%d_%H%M%S_%3N")"
 
   log "scrollshot_free: tag=$tag ts=$ts"
-
-  local w h
-  read -r w h < <(ui_screen_size)
-
-  # swipe plein écran, safe
-  local x=$(( w / 2 ))
-  local y_start=$(( h * 75 / 100 ))
-  local y_end=$(( h * 20 / 100 ))
-
-  log "scrollshot_free: swipe x=$x y_start=$y_start y_end=$y_end"
 
   local prev_hash=""
   local streak=0
@@ -203,9 +211,7 @@ ui_scrollshot_free() {
     prev_hash="$hsh"
     i=$((i + 1))
 
-    adb -s "$(_ui_serial)" shell input swipe \
-      "$x" "$y_start" "$x" "$y_end" "$SCROLLSHOT_SWIPE_MS"
-
+    ui_scroll_down_soft
     sleep_s "$SCROLLSHOT_SETTLE"
   done
 
