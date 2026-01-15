@@ -148,11 +148,13 @@ snap_here() {
 
 snap_init "$run_name"
 
+rc_open_viewer=0
+
 finish() {
   local rc=$?
   trap - EXIT
   if [ "$rc" -ne 0 ]; then
-    warn "Phase: finish | Action: exit_trap | Target: run | Result: failed rc=$rc_open_viewer"
+    warn "Phase: finish | Action: exit_trap | Target: run | Result: failed rc=${rc_open_viewer:-0}"
     "$CFL_CODE_DIR/lib/viewer.sh" "$SNAP_DIR" >/dev/null 2>&1 || true
     log "Phase: finish | Action: viewer | Target: snapshot_dir | Result: $SNAP_DIR/viewers/index.html"
   fi
@@ -396,6 +398,7 @@ declare -A SEEN_CONNECTIONS
 
 scrolls=0
 final_pass=0
+done_search=0
 
 while true; do
   ui_refresh
@@ -408,10 +411,12 @@ while true; do
   done
 
   new=0
-  i=0
   for item in "${ITEMS[@]}"; do
-    [[ $i -ge 2 ]] && break
-    ((i++))
+    # Stop before processing a 3rd unique connection
+    if (( ${#SEEN_CONNECTIONS[@]} >= 2 )); then
+      done_search=1
+      break
+    fi
     IFS=$'\t' read -r desc bounds <<<"$item"
 
     raw_key="$desc"
@@ -513,6 +518,8 @@ while true; do
     ui_wait_resid "Phase: results | Action: wait | Target: results_page | Result: visible" ":id/haf_connection_view" "$WAIT_LONG"
   done
 
+  [[ $done_search -eq 1 ]] && break
+  
   if [[ $new -eq 0 ]]; then
     if [[ $final_pass -eq 1 ]]; then
       break
