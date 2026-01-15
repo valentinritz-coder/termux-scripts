@@ -493,7 +493,7 @@ while true; do
       route_scrolls=$((route_scrolls + 1))
       [[ $route_scrolls -ge 8 ]] && break
 
-      ui_scroll_down
+      ui_scroll_down_soft
       sleep_s 0.4
     done
 
@@ -514,7 +514,7 @@ while true; do
   scrolls=$((scrolls + 1))
   [[ $scrolls -ge 10 ]] && break
 
-  ui_scroll_down
+  ui_scroll_down_soft
   sleep_s 0.4
 done
 
