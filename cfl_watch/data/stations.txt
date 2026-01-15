@@ -1,6 +1,5 @@
-LUXEMBOURG
-ARLON
-MERSCH
-ETTELBRUCK
-TRIER
-REMICH
+Luxembourg
+Mersch
+Remich
+Bruxelles-Midi
+Nancy
