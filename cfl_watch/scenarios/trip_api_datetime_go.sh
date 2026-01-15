@@ -732,10 +732,7 @@ fi
 
 log "Phase: results | Action: search | Target: request | Result: started"
 
-ui_wait_resid \
-  "Phase: results | Action: wait | Target: trip-search-result | Result: visible" \
-  ":id/trip-search-result" \
-  "$WAIT_LONG"
+ui_wait_resid "Phase: results | Action: wait | Target: trip-search-result | Result: visible" "trip-search-result" "$WAIT_LONG"
 
 log "Phase: results | Action: drill_connections | Target: trip-search-result | Result: begin"
 
@@ -746,9 +743,7 @@ final_pass=0
 
 while true; do
   ui_refresh
-
   mapfile -t ITEMS < <(ui_list_clickable_results_by_changes)
-
   log "Phase: results | Action: debug_items | Target: trip-search-result | Result: count=${#ITEMS[@]}"
 
   for i in "${!ITEMS[@]}"; do
@@ -759,7 +754,6 @@ while true; do
 
   for item in "${ITEMS[@]}"; do
     IFS=$'\t' read -r desc bounds <<<"$item"
-
     # Fallback safety: content-desc preferred, bounds as last resort
     raw_key="${desc:-$bounds}"
     key="$(hash_key "$raw_key")"
@@ -774,19 +768,15 @@ while true; do
     log "Phase: results | Action: open_connection | Target: trip-search-result | Result: tap"
     ui_tap_xy "connection" "$cx" "$cy"
 
-    if ! ui_wait_resid \
-      "Phase: results | Action: wait | Target: connection_details | Result: visible" \
-      ":id/text_line_name" \
-      "$WAIT_LONG"
+    if ! ui_wait_desc_any "Phase: results | Action: wait | Target: trip_details | Result: visible" "Trip details page" "$WAIT_LONG"
     then
-      warn "Phase: results | Action: open_connection | Target: connection_details | Result: not_opened_retry"
+      warn "Phase: results | Action: open_connection | Target: trip_details | Result: not_opened_retry"
       continue
     fi
 
     # ---- mark SEEN only after success ----
     SEEN_CONNECTIONS["$key"]=1
     new=1
-
     snap "results" "open_connection" "details_visible" 3
 
     # -------------------------
@@ -799,14 +789,14 @@ while true; do
 
     while true; do
       ui_refresh
-      mapfile -t ROUTES < <(ui_list_resid_text_bounds ":id/text_line_name")
-
+      mapfile -t ROUTES < <(ui_list_clickable_desc_bounds)
       rnew=0
 
       for r in "${ROUTES[@]}"; do
-        IFS=$'\t' read -r text rbounds <<<"$r"
+        IFS=$'\t' read -r desc rbounds <<<"$r"
+        [[ "$desc" != Route\ details* ]] && continue
 
-        raw_rkey="$text"
+        raw_rkey="$desc"
         rkey="$(hash_key "$raw_rkey")"
 
         [[ -n "${SEEN_ROUTES[$rkey]:-}" ]] && continue
@@ -815,10 +805,10 @@ while true; do
         rcx=$(( (BASH_REMATCH[1] + BASH_REMATCH[3]) / 2 ))
         rcy=$(( (BASH_REMATCH[2] + BASH_REMATCH[4]) / 2 ))
 
-        log "Phase: results | Action: open_route | Target: route_list | Result: tap text=$text"
+        log "Phase: results | Action: open_route | Target: route_list | Result: tap text=$desc"
         ui_tap_xy "route" "$rcx" "$rcy"
 
-        if ! ui_wait_resid "Phase: results | Action: wait | Target: route_details | Result: visible" ":id/journey_details_head" "$WAIT_LONG"; then
+        if ! ui_wait_desc_any "Phase: results | Action: wait | Target: route_details | Result: visible" "details page" "$WAIT_LONG"; then
           warn "Phase: results | Action: open_route | Target: route_details | Result: not_opened_retry"
           continue
         fi
@@ -826,12 +816,13 @@ while true; do
         SEEN_ROUTES["$rkey"]=1
         rnew=1
 
-        ui_scrollshot_region "route_${rkey}" ":id/journey_details_head"
+        ui_scrollshot_free "route_${rkey}"
         log "Phase: results | Action: scrollshot | Target: route | Result: captured name=route_${rkey}"
         sleep_s 0.3
 
         _ui_key 4 || true
-        ui_wait_resid "Phase: results | Action: wait | Target: connection_details | Result: visible" ":id/text_line_name" "$WAIT_LONG"
+        ui_wait_desc_any "Phase: results | Action: wait | Target: trip_details | Result: visible" "Trip details page"
+        
       done
 
       if [[ $rnew -eq 0 ]]; then
@@ -852,7 +843,7 @@ while true; do
 
     # ---- back to results ----
     _ui_key 4 || true
-    ui_wait_resid "Phase: results | Action: wait | Target: results_page | Result: visible" ":id/haf_connection_view" "$WAIT_LONG"
+    ui_wait_resid "Phase: results | Action: wait | Target: trip-search-result | Result: visible" "trip-search-result" "$WAIT_LONG"
   done
 
   if [[ $new -eq 0 ]]; then
