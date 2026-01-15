@@ -792,6 +792,7 @@ while true; do
   new=0
 
   for item in "${ITEMS[@]}"; do
+    [[ $i -ge 2 ]] && break
     IFS=$'\t' read -r desc bounds <<<"$item"
     # Fallback safety: content-desc preferred, bounds as last resort
     raw_key="${desc:-$bounds}"
