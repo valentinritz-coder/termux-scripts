@@ -73,7 +73,7 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
   --start "Rodange" \
   --target "Troisvierges" \
   --via "Bettembourg" \
-  --snap-mode 3
+  --snap-mode 0
 ```
 
 ### 2b) Un trajet précis avec via sur CFL Mobile
@@ -91,7 +91,7 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
   --start "Rodange" \
   --target "Troisvierges" \
   --via "Bettembourg" \
-  --snap-mode 3
+  --snap-mode 0
 ```
 
 ### 2b) Un trajet précis avec via sur CFL Go
@@ -109,7 +109,7 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
   --start "Rodange" \
   --target "Troisvierges" \
   --via "Bettembourg" \
-  --snap-mode 3
+  --snap-mode 0
 ```
 
 ### 3) Trois trajets aléatoires (N=3)
