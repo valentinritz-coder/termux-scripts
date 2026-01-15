@@ -7,7 +7,7 @@
   - `snap.sh` – snapshot helpers with global/per-step `SNAP_MODE`.
   - `viewer.sh` – builds HTML viewers tolerant of missing PNG/XML.
 - **scenarios/**
-  - `trip_api.sh` – parameterized trip flow using shared helpers.
+  - `trip_api_datetime.sh` – parameterized trip flow using shared helpers.
   - `scenario_llm_tripplanner.sh` – LLM-driven runner (optional).
 - **tools/**
   - `install_termux.sh` – install deps, copy scripts to `$HOME/cfl_watch`, create `/sdcard/cfl_watch/{runs,logs}` shims, fix CRLF + permissions.
