@@ -22,7 +22,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 : "${CFL_REMOTE_TMP_DIR:=/data/local/tmp/cfl_watch}"
 
 # Scenario selection (runner uses this)
-: "${CFL_SCENARIO_SCRIPT:=$CFL_CODE_DIR/scenarios/trip_api.sh}"
+: "${CFL_SCENARIO_SCRIPT:=$CFL_CODE_DIR/scenarios/trip_api_datetime.sh}"
 
 # Snapshots
 : "${SNAP_MODE:=1}"        # 0=off,1=png,2=xml,3=both
