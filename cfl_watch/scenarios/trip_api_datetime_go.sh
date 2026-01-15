@@ -303,7 +303,7 @@ if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: start_suggestion 
 fi
 
 # Pick first matching suggestion (unchanged logic)
-if ! ui_tap_desc "start suggestion" "$START_TEXT,"; then
+if ! ui_tap_desc "start suggestion" "$START_TEXT"; then
   warn "Phase: planner | Action: pick | Target: start | Result: not_found"
   exit 1
 fi
@@ -407,7 +407,7 @@ if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: destination_sugge
 fi
 
 # Pick first matching suggestion (unchanged logic)
-if ! ui_tap_desc "destination suggestion" "$TARGET_TEXT,"; then
+if ! ui_tap_desc "destination suggestion" "$TARGET_TEXT"; then
   warn "Phase: planner | Action: pick | Target: destination | Result: not_found"
   exit 1
 fi
