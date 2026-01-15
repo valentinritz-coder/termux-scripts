@@ -855,9 +855,16 @@ while true; do
 
         SEEN_ROUTES["$rkey"]=1
         rnew=1
+        
+        if header_text="$(ui_get_text_by_resid "searchHeader_back")"; then
+          log "Phase: results | Action: read_header | Target: searchHeader_back | Result: text=$header_text"
+          name_route="${header_text#Details }"
+        else
+          warn "Phase: results | Action: read_header | Target: searchHeader_back | Result: not_found"
+        fi
 
-        ui_scrollshot_free "route_${rkey}"
-        log "Phase: results | Action: scrollshot | Target: route | Result: captured name=route_${rkey}"
+        ui_scrollshot_free "route_${name_route}"
+        log "Phase: results | Action: scrollshot | Target: route | Result: captured name=route_${name_route}"
         sleep_s 0.3
 
         _ui_key 4 || true
