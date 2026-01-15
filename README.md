@@ -66,7 +66,7 @@ UI_DT_DEBUG=0 \
 CFL_MULTI_RUN=1 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-DATE_YMD="2026-01-09" \
+DATE_YMD="2026-01-15" \
 TIME_HM="14:50" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
   --no-anim \
@@ -84,7 +84,7 @@ UI_DT_DEBUG=0 \
 CFL_PKG=de.hafas.android.cfl \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-DATE_YMD="2026-01-09" \
+DATE_YMD="2026-01-15" \
 TIME_HM="14:50" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
   --no-anim \
@@ -102,7 +102,7 @@ UI_DT_DEBUG=0 \
 CFL_PKG=lu.cfl.cflgo.qual \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-DATE_YMD="2026-01-09" \
+DATE_YMD="2026-01-15" \
 TIME_HM="14:50" \
 bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
   --no-anim \
