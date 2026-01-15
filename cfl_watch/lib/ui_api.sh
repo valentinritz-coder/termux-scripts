@@ -45,7 +45,7 @@ ui_scroll_down_soft() {
   local y_end=$(( h * 38 / 100 ))
 
   # geste court + lent = pas d'inertie
-  maybe adb shell input swipe "$x" "$y_start" "$x" "$y_end" 180
+  maybe adb shell input swipe "$x" "$y_start" "$x" "$y_end" 333
 }
 
 hash_key() {
