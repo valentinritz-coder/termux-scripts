@@ -41,11 +41,11 @@ ui_scroll_down_soft() {
   read -r w h < <(ui_screen_size)
 
   local x=$(( w / 2 ))
-  local y_start=$(( h * 72 / 100 ))
-  local y_end=$(( h * 38 / 100 ))
+  local y_start=$(( h * 66 / 100 ))
+  local y_end=$(( h * 40 / 100 ))
 
   # geste court + lent = pas d'inertie
-  maybe adb shell input swipe "$x" "$y_start" "$x" "$y_end" 333
+  maybe adb shell input swipe "$x" "$y_start" "$x" "$y_end" 350
 }
 
 hash_key() {
