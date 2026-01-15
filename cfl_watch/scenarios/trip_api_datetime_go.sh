@@ -656,6 +656,53 @@ if [[ -n "$DATE_YMD_TRIM" || -n "$TIME_HM_TRIM" ]]; then
       log "Phase: datetime | Action: key | Target: back | Result: skipped"
     fi
   fi
+else
+
+  # ---- Open Date/Time menu (CFL) ----
+  if ui_has_element "desc:Time field" contains; then
+    log "Phase: datetime | Action: tap | Target: time_field | Result: requested"
+
+    if ui_tap_any "open datetime menu" "desc:Time field"; then
+      :
+    else
+      rc=$?
+      warn "Phase: datetime | Action: tap | Target: time_field | Result: failed"
+      exit $rc
+    fi
+
+    if ! ui_wait_desc_any \
+      "Phase: datetime | Action: wait | Target: datetime_menu | Result: visible" \
+      "Date," "Time," "Leave now" "$WAIT_LONG"; then
+      warn "Phase: datetime | Action: open | Target: datetime_menu | Result: failed"
+      exit 1
+    fi
+  else
+    warn "Phase: datetime | Action: find | Target: time_field | Result: missing_skip"
+    exit 0
+  fi
+  # ---------------------------------------------------------------------------
+  # APPLY (commit CFL)
+  # ---------------------------------------------------------------------------
+  if ui_has_element "desc:Apply" contains; then
+    log "Phase: datetime | Action: apply | Target: cfl | Result: commit"
+    snap "datetime" "apply" "before" "$SNAP_MODE"
+
+    if ui_tap_any "apply" "desc:Apply"; then
+      :
+    else
+      rc=$?
+      warn "Phase: datetime | Action: apply | Target: cfl | Result: failed"
+      exit $rc
+    fi
+  else
+    warn "Phase: datetime | Action: apply | Target: cfl | Result: missing_back_fallback"
+
+    if _ui_key 4; then
+      :
+    else
+      log "Phase: datetime | Action: key | Target: back | Result: skipped"
+    fi
+  fi
 fi
 
 # -------------------------
@@ -687,17 +734,13 @@ snap_here "results" "search" "after" 3
 if [[ -n "$VIA_TEXT_TRIM" ]]; then
   log "Phase: planner | Action: set_via | Target: field | Result: begin value=$VIA_TEXT_TRIM"
 
-  if ui_wait_resid "Phase: planner | Action: wait | Target: options_button | Result: visible" ":id/button_options" "$WAIT_LONG"; then
-    ui_tap_any "options button" \
-      "desc:Extended search options" \
-      "resid::id/button_options" || true
+  if ui_wait_resid "Phase: planner | Action: wait | Target: options_button | Result: visible" "add-via-btn" "$WAIT_LONG"; then
+    ui_tap_any "options button" "resid:add-via-btn" || true
 
     snap_here "planner" "open_options" "after" "$SNAP_MODE"
 
-    if ui_wait_resid "Phase: planner | Action: wait | Target: via_field | Result: visible" ":id/input_via" "$WAIT_LONG"; then
-      ui_tap_any "via field" \
-        "text:Enter stop" \
-        "resid::id/input_via" || true
+    if ui_wait_resid "Phase: planner | Action: wait | Target: via_field | Result: visible" "midModalTitle" "$WAIT_LONG"; then
+      ui_tap_any "via field" "resid:midModalTitle" || true
 
       snap_here "planner" "set_via" "field_open" "$SNAP_MODE"
 
@@ -713,10 +756,6 @@ if [[ -n "$VIA_TEXT_TRIM" ]]; then
       snap "planner" "set_via" "typed" "$SNAP_MODE"
 
       ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM" || true
-      snap "planner" "set_via" "selected" "$SNAP_MODE"
-
-      ui_tap_any "back from via" "desc:Navigate up" || true
-      snap_here "planner" "exit_options" "after" "$SNAP_MODE"
     else
       warn "Phase: planner | Action: find_field | Target: via | Result: not_found_skip"
     fi
