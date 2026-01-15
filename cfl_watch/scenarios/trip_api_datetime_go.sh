@@ -779,6 +779,7 @@ declare -A SEEN_CONNECTIONS
 
 scrolls=0
 final_pass=0
+done_search=0
 
 while true; do
   ui_refresh
@@ -790,10 +791,13 @@ while true; do
   #done
 
   new=0
-  i=0
   for item in "${ITEMS[@]}"; do
-    [[ $i -ge 2 ]] && break
-    ((i++))
+    # Stop before processing a 3rd unique connection
+    if (( ${#SEEN_CONNECTIONS[@]} >= 2 )); then
+      done_search=1
+      break
+    fi
+    
     IFS=$'\t' read -r desc bounds <<<"$item"
     # Fallback safety: content-desc preferred, bounds as last resort
     raw_key="${desc:-$bounds}"
@@ -895,6 +899,8 @@ while true; do
     ui_wait_resid "Phase: results | Action: wait | Target: trip-search-result | Result: visible" "trip-search-result" "$WAIT_LONG"
   done
 
+  [[ $done_search -eq 1 ]] && break
+  
   if [[ $new -eq 0 ]]; then
     if [[ $final_pass -eq 1 ]]; then
       break
