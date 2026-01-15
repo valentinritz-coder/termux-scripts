@@ -10,6 +10,11 @@ CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
 [ -f "$CFL_CODE_DIR/env.sh" ] && . "$CFL_CODE_DIR/env.sh"
 [ -f "$CFL_CODE_DIR/env.local.sh" ] && . "$CFL_CODE_DIR/env.local.sh"
 
+# ------------------------------------------------------------
+# Multi-run switch (default: OFF)
+# ------------------------------------------------------------
+CFL_MULTI_RUN="${CFL_MULTI_RUN:-0}"
+
 # Re-déduire après env (seulement si tu autorises env à redéfinir CFL_CODE_DIR)
 CFL_CODE_DIR="$(expand_tilde_path "${CFL_CODE_DIR:-$SCRIPT_DIR}")"
 CFL_BASE_DIR="${CFL_BASE_DIR:-$CFL_CODE_DIR}"
@@ -245,33 +250,94 @@ run_one(){
   return "$rc"
 }
 
+# ------------------------------------------------------------
+# Multi-app runner (CFL / CFL GO)
+# ------------------------------------------------------------
+
+CFL_MULTI_RUN="${CFL_MULTI_RUN:-0}"
+
+RUN_TS="$(date +%Y%m%d_%H%M%S)"
+ROOT_RUN_DIR="$CFL_ARTIFACT_DIR/RUN_$RUN_TS"
+
+run_for_app(){
+  local app_label="$1"
+  local app_pkg="$2"
+
+  log "=== APP RUN: $app_label ($app_pkg) ==="
+
+  local app_run_dir="$ROOT_RUN_DIR/$app_label"
+  mkdir -p "$app_run_dir"
+
+  # Surcharge explicite pour CE run
+  export CFL_PKG="$app_pkg"
+  export CFL_ARTIFACT_DIR="$app_run_dir"
+}
+
 fail_count=0
 
-if [ -n "$LLM_INSTRUCTION" ]; then
-  # utilise des placeholders, runner exige start/target pour logger
-  run_one "LLM" "LLM" "${CUSTOM_SNAP_MODE:-3}" \
-    "$DELAY_LAUNCH" "$DELAY_TAP" "$DELAY_TYPE" "$DELAY_PICK" "$DELAY_SEARCH" \
-    || fail_count=$((fail_count+1))
-  log "Done. fail_count=$fail_count"
-  exit 0
-fi
+if [ "$CFL_MULTI_RUN" = "1" ]; then
+  log "Multi-run ENABLED"
+  mkdir -p "$ROOT_RUN_DIR"
 
-if [ -n "$CUSTOM_START" ] || [ -n "$CUSTOM_TARGET" ]; then
-  [ -n "$CUSTOM_START" ] || die "--start required"
-  [ -n "$CUSTOM_TARGET" ] || die "--target required"
-  snap_mode="${CUSTOM_SNAP_MODE:-1}"
-  run_one "$CUSTOM_START" "$CUSTOM_TARGET" "$snap_mode" \
-    "$DELAY_LAUNCH" "$DELAY_TAP" "$DELAY_TYPE" "$DELAY_PICK" "$DELAY_SEARCH" \
-    || fail_count=$((fail_count+1))
-else
-  for row in "${SCENARIOS[@]}"; do
-    IFS='|' read -r START TARGET SM DLAUNCH DTAP DTYPE DPICK DSEARCH <<<"$row"
-    SM="${SM:-1}"; DLAUNCH="${DLAUNCH:-1.0}"; DTAP="${DTAP:-0.20}"
-    DTYPE="${DTYPE:-0.30}"; DPICK="${DPICK:-0.25}"; DSEARCH="${DSEARCH:-0.80}"
-    run_one "$START" "$TARGET" "$SM" "$DLAUNCH" "$DTAP" "$DTYPE" "$DPICK" "$DSEARCH" \
+  # =========================
+  # CFL
+  # =========================
+  run_for_app "CFL" "de.hafas.android.cfl"
+
+  if [ -n "$CUSTOM_START" ] || [ -n "$CUSTOM_TARGET" ]; then
+    snap_mode="${CUSTOM_SNAP_MODE:-1}"
+    run_one "$CUSTOM_START" "$CUSTOM_TARGET" "$snap_mode" \
+      "$DELAY_LAUNCH" "$DELAY_TAP" "$DELAY_TYPE" "$DELAY_PICK" "$DELAY_SEARCH" \
       || fail_count=$((fail_count+1))
-  done
+  else
+    for row in "${SCENARIOS[@]}"; do
+      IFS='|' read -r START TARGET SM DLAUNCH DTAP DTYPE DPICK DSEARCH <<<"$row"
+      run_one "$START" "$TARGET" "$SM" \
+        "$DLAUNCH" "$DTAP" "$DTYPE" "$DPICK" "$DSEARCH" \
+        || fail_count=$((fail_count+1))
+    done
+  fi
+
+  # =========================
+  # CFL GO
+  # =========================
+  run_for_app "CFL_GO" "lu.cfl.cflgo.qual"
+
+  if [ -n "$CUSTOM_START" ] || [ -n "$CUSTOM_TARGET" ]; then
+    snap_mode="${CUSTOM_SNAP_MODE:-1}"
+    run_one "$CUSTOM_START" "$CUSTOM_TARGET" "$snap_mode" \
+      "$DELAY_LAUNCH" "$DELAY_TAP" "$DELAY_TYPE" "$DELAY_PICK" "$DELAY_SEARCH" \
+      || fail_count=$((fail_count+1))
+  else
+    for row in "${SCENARIOS[@]}"; do
+      IFS='|' read -r START TARGET SM DLAUNCH DTAP DTYPE DPICK DSEARCH <<<"$row"
+      run_one "$START" "$TARGET" "$SM" \
+        "$DLAUNCH" "$DTAP" "$DTYPE" "$DPICK" "$DSEARCH" \
+        || fail_count=$((fail_count+1))
+    done
+  fi
+
+else
+  log "Multi-run DISABLED (single app mode)"
+
+  # Mode historique: UNE app, CFL_PKG doit être fourni
+  [ -n "${CFL_PKG:-}" ] || die "CFL_PKG must be set when CFL_MULTI_RUN=0"
+
+  if [ -n "$CUSTOM_START" ] || [ -n "$CUSTOM_TARGET" ]; then
+    snap_mode="${CUSTOM_SNAP_MODE:-1}"
+    run_one "$CUSTOM_START" "$CUSTOM_TARGET" "$snap_mode" \
+      "$DELAY_LAUNCH" "$DELAY_TAP" "$DELAY_TYPE" "$DELAY_PICK" "$DELAY_SEARCH" \
+      || fail_count=$((fail_count+1))
+  else
+    for row in "${SCENARIOS[@]}"; do
+      IFS='|' read -r START TARGET SM DLAUNCH DTAP DTYPE DPICK DSEARCH <<<"$row"
+      run_one "$START" "$TARGET" "$SM" \
+        "$DLAUNCH" "$DTAP" "$DTYPE" "$DPICK" "$DSEARCH" \
+        || fail_count=$((fail_count+1))
+    done
+  fi
 fi
 
 log "Done. fail_count=$fail_count"
 exit 0
+
