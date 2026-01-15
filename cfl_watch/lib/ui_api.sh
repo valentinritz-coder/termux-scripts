@@ -820,4 +820,44 @@ for n in root.iter("node"):
 PY
 }
 
+ui_get_text_by_resid() {
+  # Usage:
+  #   ui_get_text_by_resid ":id/searchHeader_back"
+  #   ui_get_text_by_resid "searchHeader_back"
+
+  local resid="$1"
+
+  [[ -n "$resid" ]] || return 2
+  [[ -n "${UI_DUMP_CACHE:-}" && -s "$UI_DUMP_CACHE" ]] || ui_refresh
+
+  # Normaliser :id/foo
+  if [[ "$resid" == :id/* ]]; then
+    resid="${APP_PACKAGE:-de.hafas.android.cfl}${resid}"
+  fi
+
+  python - "$UI_DUMP_CACHE" "$resid" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+dump, resid = sys.argv[1], sys.argv[2]
+
+try:
+    root = ET.parse(dump).getroot()
+except Exception:
+    sys.exit(1)
+
+for n in root.iter("node"):
+    if n.get("resource-id") != resid:
+        continue
+
+    text = (n.get("text") or "").strip()
+    if text:
+        print(text)
+        sys.exit(0)
+
+sys.exit(1)
+PY
+}
+
+
 
