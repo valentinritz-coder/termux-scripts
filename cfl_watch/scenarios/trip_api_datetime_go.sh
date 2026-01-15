@@ -790,9 +790,10 @@ while true; do
   #done
 
   new=0
-
+  i=0
   for item in "${ITEMS[@]}"; do
     [[ $i -ge 2 ]] && break
+    ((i++))
     IFS=$'\t' read -r desc bounds <<<"$item"
     # Fallback safety: content-desc preferred, bounds as last resort
     raw_key="${desc:-$bounds}"
@@ -859,6 +860,7 @@ while true; do
         if header_text="$(ui_get_text_by_resid "searchHeader_back")"; then
           log "Phase: results | Action: read_header | Target: searchHeader_back | Result: text=$header_text"
           name_route="${header_text#Details }"
+          name_route="${name_route//[[:space:]]/}"
         else
           warn "Phase: results | Action: read_header | Target: searchHeader_back | Result: not_found"
         fi
