@@ -1,0 +1,396 @@
+[*] Log: /sdcard/cfl_watch/logs/2026-01-16_07-37-53_runner.log
+[*] Start ADB local on 127.0.0.1:37099
+[*] Activation ADB TCP sur 127.0.0.1:37099 (root)
+[*] Redémarrage adbd
+[*] Attente adbd=running
+[*] adb connect (retry) -> 127.0.0.1:37099
+[*] connected to 127.0.0.1:37099
+[*] getprop:
+37099
+running
+[*] adb devices -l:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Tip: export ANDROID_SERIAL=127.0.0.1:37099
+[*] Device list:
+List of devices attached
+127.0.0.1:37099        device product:blueline model:Pixel_3 device:blueline transport_id:1
+
+[*] Disable screen timeout (temporary)
+[*] Disable Android animations (temporary)
+[*] Enable SystemUI demo mode (temporary)
+[*] Multi-run ENABLED
+[*] === APP RUN: CFL (de.hafas.android.cfl) ===
+[*] Using scenario: trip_api_datetime.sh
+[*] === RUN: Rodange -> Troisvierges (SNAP_MODE=0) ===
+2026-01-16T07:38:05+01:00 | INFO | SNAP_DIR=/sdcard/cfl_watch/RUN_20260116_073803/CFL/runs/20260116_073805_trip_Rodange_to_Troisvierges_via_Bettembourg_d_2026-01-15_t_1450
+2026-01-16T07:38:05+01:00 | INFO | Phase: launch | Action: scenario | Target: trip_planner | Result: start=Rodange target=Troisvierges snap_mode=0
+2026-01-16T07:38:05+01:00 | INFO | Phase: launch | Action: config | Target: via | Result: enabled value=Bettembourg
+2026-01-16T07:38:06+01:00 | INFO | Phase: launch | Action: wait | Target: toolbar | Result: requested
+[*] ui_dump: dump=2850ms cat=174ms total=3025ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:09+01:00 | INFO | Phase: launch | Action: wait | Target: toolbar | Result: visible
+2026-01-16T07:38:09+01:00 | INFO | Phase: home | Action: detect_page | Target: toolbar | Result: home_visible
+2026-01-16T07:38:09+01:00 | INFO | Tap burger icon tap (desc) at 77,154
+[*] ui_dump: dump=2343ms cat=168ms total=2512ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:12+01:00 | INFO | Phase: home | Action: wait | Target: navigation_drawer | Result: visible
+2026-01-16T07:38:12+01:00 | INFO | Tap trip_planner_button_tap (text) at 423,724
+[*] ui_dump: dump=2560ms cat=143ms total=2703ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:15+01:00 | INFO | Phase: home | Action: wait | Target: toolbar | Result: trip_planner_visible
+2026-01-16T07:38:15+01:00 | INFO | Phase: planner | Action: detect_page | Target: toolbar | Result: trip_planner_visible
+2026-01-16T07:38:15+01:00 | INFO | Phase: datetime | Action: set_datetime | Target: request | Result: requested date=2026-01-15 time=14:50
+2026-01-16T07:38:15+01:00 | INFO | Tap date_time_button_tap (id) at 471,605
+[*] ui_dump: dump=2335ms cat=170ms total=2506ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:17+01:00 | INFO | Phase: datetime | Action: wait | Target: time_picker | Result: visible
+2026-01-16T07:38:18+01:00 | INFO | Tap one day earlier (id) at 143,1389
+2026-01-16T07:38:21+01:00 | INFO | Tap ok_button_tap (id) at 887,1535
+2026-01-16T07:38:21+01:00 | INFO | Phase: planner | Action: set_start | Target: field | Result: begin
+[*] ui_dump: dump=2457ms cat=158ms total=2615ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:24+01:00 | INFO | Phase: planner | Action: wait | Target: request_screen | Result: visible
+2026-01-16T07:38:24+01:00 | INFO | Phase: planner | Action: open_field | Target: start | Result: filled_container_child
+2026-01-16T07:38:24+01:00 | INFO | Tap start field (container) at 534,330
+[*] ui_dump: dump=2319ms cat=142ms total=2461ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:27+01:00 | INFO | Phase: planner | Action: wait | Target: input_location_name | Result: visible
+2026-01-16T07:38:27+01:00 | INFO | Type start: Rodange
+[*] ui_dump: dump=3544ms cat=207ms total=3751ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:31+01:00 | INFO | wait_results_ready: iter=1 list=1 loader=0
+[*] ui_dump: dump=2394ms cat=179ms total=2573ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:35+01:00 | INFO | Tap start suggestion (desc) at 540,700
+2026-01-16T07:38:35+01:00 | INFO | Phase: planner | Action: set_destination | Target: field | Result: begin
+[*] ui_dump: dump=2438ms cat=171ms total=2610ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:38+01:00 | INFO | Phase: planner | Action: wait | Target: request_screen | Result: visible
+2026-01-16T07:38:38+01:00 | INFO | Phase: planner | Action: open_field | Target: destination | Result: filled_container_child
+2026-01-16T07:38:38+01:00 | INFO | Tap destination field (container) at 534,473
+[*] ui_dump: dump=2310ms cat=161ms total=2472ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:41+01:00 | INFO | Phase: planner | Action: wait | Target: input_location_name | Result: visible
+2026-01-16T07:38:41+01:00 | INFO | Type destination: Troisvierges
+[*] ui_dump: dump=3445ms cat=181ms total=3626ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:45+01:00 | INFO | wait_results_ready: iter=1 list=1 loader=0
+[*] ui_dump: dump=2484ms cat=167ms total=2651ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:49+01:00 | INFO | Tap destination suggestion (desc) at 540,700
+2026-01-16T07:38:50+01:00 | INFO | Phase: planner | Action: set_via | Target: field | Result: begin value=Bettembourg
+[*] ui_dump: dump=2361ms cat=182ms total=2544ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:52+01:00 | INFO | Phase: planner | Action: wait | Target: options_button | Result: visible
+2026-01-16T07:38:52+01:00 | INFO | Tap options button (desc) at 997,605
+[*] ui_dump: dump=2347ms cat=186ms total=2534ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2467ms cat=195ms total=2663ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:38:58+01:00 | INFO | Phase: planner | Action: wait | Target: via_field | Result: visible
+2026-01-16T07:38:58+01:00 | INFO | Tap via field (text) at 587,313
+[*] ui_dump: dump=2335ms cat=165ms total=2501ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:01+01:00 | INFO | Type via: Bettembourg
+[*] ui_dump: dump=3468ms cat=180ms total=3648ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:05+01:00 | INFO | wait_results_ready: iter=1 list=1 loader=0
+[*] ui_dump: dump=2468ms cat=175ms total=2644ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:09+01:00 | INFO | Tap via suggestion (desc) at 540,313
+2026-01-16T07:39:09+01:00 | INFO | Tap back from via (desc) at 77,154
+[*] ui_dump: dump=2415ms cat=167ms total=2582ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2544ms cat=166ms total=2711ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:15+01:00 | INFO | Phase: planner | Action: wait | Target: search_button | Result: visible
+2026-01-16T07:39:15+01:00 | INFO | Tap search button (id) at 540,784
+[*] ui_dump: dump=2338ms cat=156ms total=2495ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:18+01:00 | INFO | snap: 20260116_073918_254__000_results__search__after (mode=3)
+2026-01-16T07:39:18+01:00 | INFO | Phase: results | Action: search | Target: request | Result: started
+[*] ui_dump: dump=2432ms cat=187ms total=2620ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:21+01:00 | INFO | Phase: results | Action: wait | Target: results_page | Result: visible
+2026-01-16T07:39:21+01:00 | INFO | Phase: results | Action: drill_connections | Target: haf_connection_view | Result: begin
+[*] ui_dump: dump=2430ms cat=105ms total=2536ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:24+01:00 | INFO | Phase: results | Action: debug_items | Target: haf_connection_view | Result: count=3
+2026-01-16T07:39:24+01:00 | INFO | Phase: results | Action: debug_item | Target: haf_connection_view | Result: index=0 item=$'Trip at 2:50pm; . with arrival at 4:54pm; . Duration: 2 hours 4 minutes. with R E 414;0 changes. |\t[0,625][1080,871]'
+2026-01-16T07:39:24+01:00 | INFO | Phase: results | Action: debug_item | Target: haf_connection_view | Result: index=1 item=$'Trip at 3:20pm; . with arrival at 5:24pm; . Duration: 2 hours 4 minutes. with R E 6941, Transfer, I C 5338;one change. |\t[0,874][1080,1120]'
+2026-01-16T07:39:24+01:00 | INFO | Phase: results | Action: debug_item | Target: haf_connection_view | Result: index=2 item=$'Trip at 3:50pm; . with arrival at 5:54pm; . Duration: 2 hours 4 minutes. with R E 415;0 changes. |\t[0,1123][1080,1369]'
+2026-01-16T07:39:24+01:00 | INFO | Phase: results | Action: open_connection | Target: haf_connection_view | Result: tap
+2026-01-16T07:39:24+01:00 | INFO | Tap connection at 540,748
+[*] ui_dump: dump=2411ms cat=164ms total=2575ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:27+01:00 | INFO | Phase: results | Action: wait | Target: connection_details | Result: visible
+2026-01-16T07:39:27+01:00 | INFO | snap: 20260116_073927_170__000_results__open_connection__details_visible (mode=3)
+[*] ui_dump: dump=2446ms cat=155ms total=2601ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:30+01:00 | INFO | Phase: results | Action: open_route | Target: route_list | Result: tap text=RE 414
+2026-01-16T07:39:30+01:00 | INFO | Tap route at 353,1035
+[*] ui_dump: dump=2620ms cat=178ms total=2798ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:33+01:00 | INFO | Phase: results | Action: wait | Target: route_details | Result: visible
+2026-01-16T07:39:33+01:00 | INFO | Phase: results | Action: read_header | Target: journey_details_head | Result: text=Travel with R E 414 To Troisvierges
+[*] ui_dump: dump=2619ms cat=148ms total=2767ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:36+01:00 | INFO | scrollshot: tag=route_RE414 anchor=:id/journey_details_head top_y=231 ts=20260116_073936_608
+[*] ui_dump: dump=2387ms cat=111ms total=2499ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2642ms cat=191ms total=2834ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2575ms cat=188ms total=2763ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2610ms cat=173ms total=2783ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2489ms cat=161ms total=2650ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:39:57+01:00 | INFO | scrollshot: identical streak=1 at S05
+2026-01-16T07:39:57+01:00 | INFO | scrollshot: stop (no more scroll)
+2026-01-16T07:39:57+01:00 | INFO | scrollshot: done (5-1 frames)
+2026-01-16T07:39:57+01:00 | INFO | Phase: results | Action: scrollshot | Target: route | Result: captured name=route_RE414
+[*] ui_dump: dump=2364ms cat=174ms total=2538ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:00+01:00 | INFO | Phase: results | Action: wait | Target: connection_details | Result: visible
+[*] ui_dump: dump=2476ms cat=189ms total=2665ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2482ms cat=166ms total=2649ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2393ms cat=170ms total=2563ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:11+01:00 | INFO | Phase: results | Action: wait | Target: results_page | Result: visible
+2026-01-16T07:40:11+01:00 | INFO | Phase: results | Action: open_connection | Target: haf_connection_view | Result: tap
+2026-01-16T07:40:11+01:00 | INFO | Tap connection at 540,997
+[*] ui_dump: dump=2443ms cat=180ms total=2624ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:14+01:00 | INFO | Phase: results | Action: wait | Target: connection_details | Result: visible
+2026-01-16T07:40:14+01:00 | INFO | snap: 20260116_074014_293__000_results__open_connection__details_visible (mode=3)
+[*] ui_dump: dump=2500ms cat=180ms total=2681ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:17+01:00 | INFO | Phase: results | Action: open_route | Target: route_list | Result: tap text=RE 6941
+2026-01-16T07:40:17+01:00 | INFO | Tap route at 363,1035
+[*] ui_dump: dump=2533ms cat=185ms total=2719ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:20+01:00 | INFO | Phase: results | Action: wait | Target: route_details | Result: visible
+2026-01-16T07:40:20+01:00 | INFO | Phase: results | Action: read_header | Target: journey_details_head | Result: text=Travel with R E 6941 To Luxembourg
+[*] ui_dump: dump=2568ms cat=191ms total=2760ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:23+01:00 | INFO | scrollshot: tag=route_RE6941 anchor=:id/journey_details_head top_y=231 ts=20260116_074023_698
+[*] ui_dump: dump=2527ms cat=177ms total=2704ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2517ms cat=167ms total=2685ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2436ms cat=166ms total=2603ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:35+01:00 | INFO | scrollshot: identical streak=1 at S03
+2026-01-16T07:40:35+01:00 | INFO | scrollshot: stop (no more scroll)
+2026-01-16T07:40:35+01:00 | INFO | scrollshot: done (3-1 frames)
+2026-01-16T07:40:35+01:00 | INFO | Phase: results | Action: scrollshot | Target: route | Result: captured name=route_RE6941
+[*] ui_dump: dump=2398ms cat=186ms total=2584ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:39+01:00 | INFO | Phase: results | Action: wait | Target: connection_details | Result: visible
+2026-01-16T07:40:39+01:00 | INFO | Phase: results | Action: open_route | Target: route_list | Result: tap text=IC 5338
+2026-01-16T07:40:39+01:00 | INFO | Tap route at 359,1577
+[*] ui_dump: dump=2547ms cat=173ms total=2721ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:42+01:00 | INFO | Phase: results | Action: wait | Target: route_details | Result: visible
+2026-01-16T07:40:42+01:00 | INFO | Phase: results | Action: read_header | Target: journey_details_head | Result: text=Travel with I C 5338 To Liege-Guillemins (Belgium)
+[*] ui_dump: dump=2549ms cat=182ms total=2731ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:40:45+01:00 | INFO | scrollshot: tag=route_IC5338 anchor=:id/journey_details_head top_y=231 ts=20260116_074045_074
+[*] ui_dump: dump=2466ms cat=179ms total=2646ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2579ms cat=170ms total=2750ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2590ms cat=177ms total=2768ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2530ms cat=178ms total=2708ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2509ms cat=187ms total=2697ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:06+01:00 | INFO | scrollshot: identical streak=1 at S05
+2026-01-16T07:41:06+01:00 | INFO | scrollshot: stop (no more scroll)
+2026-01-16T07:41:06+01:00 | INFO | scrollshot: done (5-1 frames)
+2026-01-16T07:41:06+01:00 | INFO | Phase: results | Action: scrollshot | Target: route | Result: captured name=route_IC5338
+[*] ui_dump: dump=2407ms cat=200ms total=2608ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:09+01:00 | INFO | Phase: results | Action: wait | Target: connection_details | Result: visible
+[*] ui_dump: dump=2492ms cat=195ms total=2688ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2445ms cat=185ms total=2631ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2395ms cat=116ms total=2512ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:19+01:00 | INFO | Phase: results | Action: wait | Target: results_page | Result: visible
+2026-01-16T07:41:19+01:00 | INFO | Phase: results | Action: drill_connections | Target: limit | Result: reached max_unique=2
+[*] RC=0
+[*] === APP RUN: CFL_GO (lu.cfl.cflgo.qual) ===
+[*] Using scenario: trip_api_datetime_go.sh
+[*] === RUN: Rodange -> Troisvierges (SNAP_MODE=0) ===
+2026-01-16T07:41:23+01:00 | INFO | SNAP_DIR=/sdcard/cfl_watch/RUN_20260116_073803/CFL_GO/runs/20260116_074123_trip_Rodange_to_Troisvierges_via_Bettembourg_d_2026-01-15_t_1450
+2026-01-16T07:41:23+01:00 | INFO | Phase: launch | Action: scenario | Target: trip_planner | Result: start=Rodange target=Troisvierges snap_mode=0
+2026-01-16T07:41:23+01:00 | INFO | Phase: launch | Action: config | Target: via | Result: enabled value=Bettembourg
+2026-01-16T07:41:23+01:00 | INFO | Phase: launch | Action: wait | Target: toolbar | Result: requested
+[*] ui_dump: dump=2505ms cat=173ms total=2678ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:26+01:00 | INFO | Phase: launch | Action: wait | Target: toolbar buttons | Result: visible
+2026-01-16T07:41:26+01:00 | INFO | Phase: planner | Action: detect_page | Target: toolbar | Result: trip_planner_visible
+[*] ui_dump: dump=2508ms cat=190ms total=2699ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:29+01:00 | INFO | Phase: launch | Action: wait | Target: toolbar buttons | Result: visible
+2026-01-16T07:41:29+01:00 | INFO | Tap PAGE START (desc) at 540,459
+2026-01-16T07:41:29+01:00 | INFO | Phase: planner | Action: set_start | Target: from | Result: begin
+[*] ui_dump: dump=2812ms cat=163ms total=2976ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:32+01:00 | INFO | Phase: planner | Action: wait | Target: from_modal | Result: visible
+2026-01-16T07:41:32+01:00 | INFO | Phase: planner | Action: focus | Target: from_input
+[*] ui_dump: dump=2506ms cat=158ms total=2664ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:35+01:00 | INFO | Phase: planner | Action: wait | Target: from_field | Result: visible
+2026-01-16T07:41:35+01:00 | INFO | Tap select from field (id) at 598,359
+2026-01-16T07:41:35+01:00 | INFO | Type from: Rodange
+[*] ui_dump: dump=2494ms cat=178ms total=2673ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:40+01:00 | INFO | Phase: planner | Action: wait | Target: start_suggestion | Result: visible
+2026-01-16T07:41:40+01:00 | INFO | Tap start suggestion at 492,733
+2026-01-16T07:41:40+01:00 | INFO | Phase: planner | Action: set_start | Target: from | Result: done
+[*] ui_dump: dump=2556ms cat=172ms total=2728ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:43+01:00 | INFO | Phase: launch | Action: wait | Target: toolbar buttons | Result: visible
+2026-01-16T07:41:43+01:00 | INFO | Tap PAGE DESTINATION (desc) at 540,632
+2026-01-16T07:41:43+01:00 | INFO | Phase: planner | Action: set_destination | Target: to | Result: begin
+[*] ui_dump: dump=2686ms cat=125ms total=2811ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:46+01:00 | INFO | Phase: planner | Action: wait | Target: to_modal | Result: visible
+2026-01-16T07:41:46+01:00 | INFO | Phase: planner | Action: focus | Target: to_input
+[*] ui_dump: dump=2584ms cat=184ms total=2768ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:49+01:00 | INFO | Phase: planner | Action: wait | Target: to_field | Result: visible
+2026-01-16T07:41:49+01:00 | INFO | Tap select to field (id) at 542,359
+2026-01-16T07:41:49+01:00 | INFO | Type to: Troisvierges
+[*] ui_dump: dump=2522ms cat=90ms total=2613ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:54+01:00 | INFO | Phase: planner | Action: wait | Target: destination_suggestion | Result: visible
+2026-01-16T07:41:54+01:00 | INFO | Tap destination suggestion at 492,733
+2026-01-16T07:41:54+01:00 | INFO | Phase: planner | Action: set_destination | Target: to | Result: done
+[*] ui_dump: dump=2520ms cat=178ms total=2699ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:41:57+01:00 | INFO | Phase: datetime | Action: wait | Target: datetime button | Result: visible
+2026-01-16T07:41:57+01:00 | INFO | Phase: datetime | Action: set | Target: request | Result: requested date=2026-01-15 time=14:50
+2026-01-16T07:41:57+01:00 | INFO | Phase: datetime | Action: tap | Target: time_field | Result: requested
+2026-01-16T07:41:57+01:00 | INFO | Tap open datetime menu (desc) at 540,905
+[*] ui_dump: dump=2480ms cat=173ms total=2654ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:00+01:00 | INFO | Phase: datetime | Action: wait | Target: datetime_menu | Result: visible
+2026-01-16T07:42:00+01:00 | INFO | Phase: datetime | Action: set | Target: date | Result: requested value=2026-01-15
+2026-01-16T07:42:00+01:00 | INFO | Tap open date picker (desc) at 540,861
+[*] ui_dump: dump=2439ms cat=170ms total=2609ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:03+01:00 | INFO | Phase: datetime | Action: wait | Target: calendar | Result: visible
+2026-01-16T07:42:03+01:00 | INFO | Phase: calendar | Action: goto_month | Target: calendar | Result: requested ym=2026-01
+2026-01-16T07:42:03+01:00 | INFO | Phase: calendar | Action: pick_day | Target: day | Result: requested day=15
+2026-01-16T07:42:03+01:00 | INFO | Tap calendar day 2026-01-15 (desc) at 635,1183
+2026-01-16T07:42:03+01:00 | INFO | Phase: calendar | Action: set_date | Target: calendar | Result: success ymd=2026-01-15
+2026-01-16T07:42:03+01:00 | INFO | Phase: datetime | Action: validate | Target: date | Result: ok
+[*] ui_dump: dump=2580ms cat=172ms total=2753ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:06+01:00 | INFO | Phase: datetime | Action: tap | Target: date_ok | Result: calendar_visible
+2026-01-16T07:42:06+01:00 | INFO | Tap date ok (text) at 815,1645
+[*] ui_dump: dump=2537ms cat=189ms total=2727ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:09+01:00 | INFO | Phase: datetime | Action: tap | Target: date_ok | Result: calendar_visible
+2026-01-16T07:42:09+01:00 | INFO | Tap date ok (text) at 815,1645
+[*] ui_dump: dump=2541ms cat=168ms total=2710ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:13+01:00 | INFO | Phase: datetime | Action: wait | Target: calendar | Result: closed
+[*] ui_dump: dump=2522ms cat=179ms total=2702ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:16+01:00 | INFO | Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible
+2026-01-16T07:42:16+01:00 | INFO | Phase: datetime | Action: set | Target: time | Result: requested value=14:50
+2026-01-16T07:42:16+01:00 | INFO | Tap open time picker (desc) at 540,1072
+[*] ui_dump: dump=2336ms cat=192ms total=2528ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:19+01:00 | INFO | Phase: datetime | Action: wait | Target: time_picker | Result: visible
+2026-01-16T07:42:19+01:00 | INFO | Tap switch to text mode (id) at 243,1520
+[*] ui_dump: dump=2301ms cat=82ms total=2383ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:21+01:00 | INFO | Phase: datetime | Action: wait | Target: time_input | Result: text_mode
+2026-01-16T07:42:21+01:00 | INFO | Tap time hour input (id) at 279,1135
+2026-01-16T07:42:23+01:00 | INFO | Tap time minute input (id) at 417,1135
+2026-01-16T07:42:24+01:00 | INFO | Tap time ampm spinner (id) at 748,1143
+[*] ui_dump: dump=2488ms cat=168ms total=2656ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:28+01:00 | INFO | Tap time ampm select PM (text) at 682,1275
+[*] ui_dump: dump=2314ms cat=186ms total=2501ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:31+01:00 | INFO | Phase: datetime | Action: validate | Target: time | Result: ok
+[*] ui_dump: dump=2428ms cat=165ms total=2594ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:34+01:00 | INFO | Phase: datetime | Action: tap | Target: time_ok | Result: picker_visible
+2026-01-16T07:42:34+01:00 | INFO | Tap time ok (text) at 815,1338
+[*] ui_dump: dump=2530ms cat=180ms total=2711ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:38+01:00 | INFO | Phase: datetime | Action: wait | Target: time_picker | Result: closed
+[*] ui_dump: dump=2579ms cat=162ms total=2741ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:40+01:00 | INFO | Phase: datetime | Action: wait | Target: datetime_menu | Result: back_visible
+2026-01-16T07:42:40+01:00 | INFO | Phase: datetime | Action: apply | Target: cfl | Result: commit
+2026-01-16T07:42:41+01:00 | INFO | Tap apply (desc) at 766,1294
+[*] ui_dump: dump=2396ms cat=166ms total=2562ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:43+01:00 | INFO | Phase: launch | Action: wait | Target: toolbar buttons | Result: visible
+2026-01-16T07:42:43+01:00 | INFO | Tap select from field (desc) at 541,1074
+[*] ui_dump: dump=3271ms cat=184ms total=3455ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:48+01:00 | INFO | snap: 20260116_074247_534__000_results__search__after (mode=3)
+2026-01-16T07:42:48+01:00 | INFO | Phase: planner | Action: set_via | Target: field | Result: begin value=Bettembourg
+[*] ui_dump: dump=2573ms cat=167ms total=2741ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:51+01:00 | INFO | Phase: planner | Action: wait | Target: options_button | Result: visible
+2026-01-16T07:42:51+01:00 | INFO | Tap options button (id) at 540,580
+[*] ui_dump: dump=2644ms cat=187ms total=2832ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2486ms cat=178ms total=2665ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:56+01:00 | INFO | Phase: planner | Action: wait | Target: via_field | Result: visible
+2026-01-16T07:42:57+01:00 | INFO | Tap via field (id) at 518,176
+[*] ui_dump: dump=2469ms cat=182ms total=2652ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:42:59+01:00 | INFO | Type via: Bettembourg
+[*] ui_dump: dump=3089ms cat=181ms total=3270ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:03+01:00 | INFO | wait_results_ready: iter=1 list=0 loader=0
+[*] ui_dump: dump=2509ms cat=182ms total=2691ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:06+01:00 | INFO | wait_results_ready: iter=2 list=0 loader=0
+[*] ui_dump: dump=2482ms cat=198ms total=2681ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:09+01:00 | INFO | wait_results_ready: iter=3 list=0 loader=0
+[*] ui_dump: dump=2482ms cat=168ms total=2650ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:12+01:00 | INFO | wait_results_ready: iter=4 list=0 loader=0
+[*] ui_dump: dump=2487ms cat=186ms total=2674ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:15+01:00 | INFO | wait_results_ready: iter=5 list=0 loader=0
+[*] ui_dump: dump=2507ms cat=159ms total=2667ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:17+01:00 | INFO | wait_results_ready: iter=6 list=0 loader=0
+[*] ui_dump: dump=2501ms cat=183ms total=2685ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:20+01:00 | INFO | wait_results_ready: iter=7 list=0 loader=0
+[*] ui_dump: dump=2416ms cat=169ms total=2586ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:23+01:00 | INFO | wait_results_ready: iter=8 list=0 loader=0
+[*] ui_dump: dump=2570ms cat=176ms total=2746ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:26+01:00 | INFO | wait_results_ready: iter=9 list=0 loader=0
+[*] ui_dump: dump=2529ms cat=183ms total=2712ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:29+01:00 | INFO | wait_results_ready: iter=10 list=0 loader=0
+[*] ui_dump: dump=2480ms cat=153ms total=2633ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:31+01:00 | INFO | wait_results_ready: iter=11 list=0 loader=0
+2026-01-16T07:43:31+01:00 | WARN | wait_results_ready timeout (30 s) last=iter=11 list=0 loader=0
+[*] ui_dump: dump=2477ms cat=192ms total=2669ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:36+01:00 | INFO | Tap via suggestion (desc) at 492,510
+2026-01-16T07:43:36+01:00 | INFO | Phase: results | Action: search | Target: request | Result: started
+[*] ui_dump: dump=2321ms cat=166ms total=2487ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2467ms cat=178ms total=2645ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:41+01:00 | INFO | Phase: results | Action: wait | Target: trip-search-result | Result: visible
+2026-01-16T07:43:41+01:00 | INFO | Phase: results | Action: drill_connections | Target: trip-search-result | Result: begin
+[*] ui_dump: dump=2529ms cat=185ms total=2715ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:44+01:00 | INFO | Phase: results | Action: debug_items | Target: trip-search-result | Result: count=2
+2026-01-16T07:43:44+01:00 | INFO | Phase: results | Action: open_connection | Target: trip-search-result | Result: tap
+2026-01-16T07:43:44+01:00 | INFO | Tap connection at 540,1210
+[*] ui_dump: dump=2421ms cat=186ms total=2607ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:47+01:00 | INFO | Phase: results | Action: wait | Target: trip_details | Result: visible
+2026-01-16T07:43:48+01:00 | INFO | snap: 20260116_074347_477__000_results__open_connection__details_visible (mode=3)
+[*] ui_dump: dump=2463ms cat=190ms total=2654ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:50+01:00 | INFO | Phase: results | Action: open_route | Target: route_list | Result: tap text=Route details : 1 connection from Rodange to 2 50 PM without delay of RE 414 to the track 3 false. 20 on this connection with a duration of 124. Arrival at 4 54 PM at Troisvierges to the track 1 false. Click here for more details.
+2026-01-16T07:43:50+01:00 | INFO | Tap route at 636,962
+[*] ui_dump: dump=3143ms cat=186ms total=3329ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:54+01:00 | INFO | Phase: results | Action: wait | Target: route_details | Result: visible
+2026-01-16T07:43:54+01:00 | INFO | Phase: results | Action: read_header | Target: searchHeader_back | Result: text=Details RE 414
+[*] ui_dump: dump=2876ms cat=164ms total=3041ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:43:57+01:00 | INFO | scrollshot_free: tag=route_RE414 ts=20260116_074357_757
+[*] ui_dump: dump=2619ms cat=183ms total=2803ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2883ms cat=182ms total=3066ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2813ms cat=182ms total=2995ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2921ms cat=175ms total=3097ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2902ms cat=184ms total=3086ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2908ms cat=170ms total=3078ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2975ms cat=156ms total=3132ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:44:30+01:00 | INFO | scrollshot_free: identical streak=1 at S07
+2026-01-16T07:44:30+01:00 | INFO | scrollshot_free: stop (no more scroll)
+2026-01-16T07:44:30+01:00 | INFO | scrollshot_free: done (6 frames)
+2026-01-16T07:44:30+01:00 | INFO | Phase: results | Action: scrollshot | Target: route | Result: captured name=route_RE414
+[*] ui_dump: dump=2366ms cat=187ms total=2554ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:44:33+01:00 | INFO | Phase: results | Action: wait | Target: trip_details | Result: visible
+[*] ui_dump: dump=2477ms cat=180ms total=2658ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2407ms cat=107ms total=2514ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2465ms cat=173ms total=2638ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:44:43+01:00 | INFO | Phase: results | Action: wait | Target: trip-search-result | Result: visible
+2026-01-16T07:44:43+01:00 | INFO | Phase: results | Action: open_connection | Target: trip-search-result | Result: tap
+2026-01-16T07:44:43+01:00 | INFO | Tap connection at 540,1626
+[*] ui_dump: dump=2468ms cat=186ms total=2655ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:44:46+01:00 | INFO | Phase: results | Action: wait | Target: trip_details | Result: visible
+2026-01-16T07:44:47+01:00 | INFO | snap: 20260116_074446_612__000_results__open_connection__details_visible (mode=3)
+[*] ui_dump: dump=2479ms cat=187ms total=2667ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:44:50+01:00 | INFO | Phase: results | Action: open_route | Target: route_list | Result: tap text=Route details : 1 connection from Rodange to 3 20 PM without delay of RE 6941 to the track 3 false. 9 on this connection with a duration of 49. Arrival at 4 09 PM at Luxembourg to the track 4ab false. Click here for more details.
+2026-01-16T07:44:50+01:00 | INFO | Tap route at 636,962
+[*] ui_dump: dump=2759ms cat=173ms total=2933ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:44:53+01:00 | INFO | Phase: results | Action: wait | Target: route_details | Result: visible
+2026-01-16T07:44:53+01:00 | INFO | Phase: results | Action: read_header | Target: searchHeader_back | Result: text=Details RE 6941
+[*] ui_dump: dump=2565ms cat=170ms total=2736ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:44:56+01:00 | INFO | scrollshot_free: tag=route_RE6941 ts=20260116_074456_172
+[*] ui_dump: dump=2587ms cat=169ms total=2756ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2465ms cat=165ms total=2630ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2607ms cat=180ms total=2787ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2598ms cat=189ms total=2788ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2603ms cat=161ms total=2765ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:45:17+01:00 | INFO | scrollshot_free: identical streak=1 at S05
+2026-01-16T07:45:17+01:00 | INFO | scrollshot_free: stop (no more scroll)
+2026-01-16T07:45:17+01:00 | INFO | scrollshot_free: done (4 frames)
+2026-01-16T07:45:17+01:00 | INFO | Phase: results | Action: scrollshot | Target: route | Result: captured name=route_RE6941
+[*] ui_dump: dump=2444ms cat=164ms total=2608ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:45:20+01:00 | INFO | Phase: results | Action: wait | Target: trip_details | Result: visible
+2026-01-16T07:45:20+01:00 | INFO | Phase: results | Action: open_route | Target: route_list | Result: tap text=Route details : 3 connection from Luxembourg to 4 16 PM without delay of IC 5338 to the track 3cd false. 8 on this connection with a duration of 68. Arrival at 5 24 PM at Troisvierges to the track 2 false. Click here for more details.
+2026-01-16T07:45:20+01:00 | INFO | Tap route at 636,1522
+[*] ui_dump: dump=2995ms cat=172ms total=3168ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:45:24+01:00 | INFO | Phase: results | Action: wait | Target: route_details | Result: visible
+2026-01-16T07:45:24+01:00 | INFO | Phase: results | Action: read_header | Target: searchHeader_back | Result: text=Details IC 5338
+[*] ui_dump: dump=2876ms cat=191ms total=3067ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:45:27+01:00 | INFO | scrollshot_free: tag=route_IC5338 ts=20260116_074527_563
+[*] ui_dump: dump=2830ms cat=157ms total=2988ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2835ms cat=170ms total=3006ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2771ms cat=187ms total=2958ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2816ms cat=177ms total=2993ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2822ms cat=189ms total=3012ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2892ms cat=173ms total=3065ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2826ms cat=184ms total=3011ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:45:59+01:00 | INFO | scrollshot_free: identical streak=1 at S07
+2026-01-16T07:45:59+01:00 | INFO | scrollshot_free: stop (no more scroll)
+2026-01-16T07:45:59+01:00 | INFO | scrollshot_free: done (6 frames)
+2026-01-16T07:45:59+01:00 | INFO | Phase: results | Action: scrollshot | Target: route | Result: captured name=route_IC5338
+[*] ui_dump: dump=2437ms cat=188ms total=2626ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:46:02+01:00 | INFO | Phase: results | Action: wait | Target: trip_details | Result: visible
+[*] ui_dump: dump=2464ms cat=166ms total=2631ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2491ms cat=196ms total=2688ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+[*] ui_dump: dump=2487ms cat=203ms total=2691ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:46:13+01:00 | INFO | Phase: results | Action: wait | Target: trip-search-result | Result: visible
+[*] ui_dump: dump=2523ms cat=199ms total=2723ms -> /data/data/com.termux/files/home/.cache/cfl_watch/live_dump.xml
+2026-01-16T07:46:17+01:00 | INFO | Phase: results | Action: debug_items | Target: trip-search-result | Result: count=3
+2026-01-16T07:46:17+01:00 | INFO | Phase: results | Action: drill_connections | Target: limit | Result: reached max_unique=2
+[*] RC=0
+[*] Done. fail_count=0
+[*] Restore Android animations: W=0 T=0 A=0
+[*] Restore screen timeout: 1800000 ms
+[*] Disable SystemUI demo mode (restore)
