@@ -1,100 +1,100 @@
-Arlon (Belgium)
-Athus (Belgium)
-Audun-le-Tiche
-Bascharage-Sanem
-Belval-Lycee
-Belval-Redange
-Belval-Universite
-Belvaux-Soleuvre
+Arlon Belgium
+Athus Belgium
+Audun le Tiche
+Bascharage Sanem
+Belval Lycee
+Belval Redange
+Belval Universite
+Belvaux Soleuvre
 Berchem
-Bertrange-Strassen
+Bertrange Strassen
 Bettembourg
 Betzdorf
-Bruxelles-Midi (Belgium)
+Bruxelles Midi Belgium
 Capellen
-Cents-Hamm
+Cents Hamm
 Clervaux
-Colmar-Berg
+Colmar Berg
 Cruchten
 Diekirch
 Differdange
-Dippach-Reckange
+Dippach Reckange
 Dommeldange
 Drauffelt
-Dudelange-Burange
-Dudelange-Centre
-Dudelange-Usines
-Dudelange-Ville
-DUESSELDORF HBF (Germany)
-Esch-sur-Alzette
+Dudelange Burange
+Dudelange Centre
+Dudelange Usines
+Dudelange Ville
+DUESSELDORF HBF Germany
+Esch sur Alzette
 Ettelbruck
 Goebelsmuhle
-Gouvy (Belgium)
+Gouvy Belgium
 Heisdorf
-HETTANGE GRANDE (France)
+HETTANGE GRANDE France
 Hollerich
 Howald
-IGEL (Germany)
-KARTHAUS (Germany)
+IGEL Germany
+KARTHAUS Germany
 Kautenbach
 Kayl
 Kleinbettingen
-KOBLENZ HBF (Germany)
-KREUZ KONZ (Germany)
+KOBLENZ HBF Germany
+KREUZ KONZ Germany
 Lamadelaine
 Leudelange
-Libramont (Belgium)
-Liege-Guillemins (Belgium)
-Liers (Belgium)
+Libramont Belgium
+Liege Guillemins Belgium
+Liers Belgium
 Lintgen
-LONGWY (France)
+LONGWY France
 Lorentzweiler
 Luxembourg
 Mamer
-Mamer-Lycee
+Mamer Lycee
 Manternach
-Marloie (Belgium)
-MARSEILLE ST CHARLES (France)
+Marloie Belgium
+MARSEILLE ST CHARLES France
 Merkholtz
 Mersch
 Mertert
-METZ VILLE (France)
+METZ VILLE France
 Michelau
-MONTPELLIER SAINT-ROCH (France)
+MONTPELLIER SAINT ROCH France
 Munsbach
-Namur (Belgium)
-NANCY (France)
+Namur Belgium
+NANCY France
 Niederkorn
 Noertzange
 Oberkorn
 Oetrange
 Paradiso
-PARIS EST (France)
+PARIS EST France
 Petange
-Pfaffenthal-Kirchberg
-Rivage (Belgium)
+Pfaffenthal Kirchberg
+Rivage Belgium
 Rodange
 Roodt
 Rumelange
-Sandweiler-Contern
+Sandweiler Contern
 Schieren
 Schifflange
 Schouweiler
-SCHWEICH(DB) (Germany)
+SCHWEICHDB Germany
 Tetange
-THIONVILLE (France)
-TRIER HAFENSTRASSE (Germany)
-TRIER HBF (Germany)
-TRIER SUED (Germany)
-TRIER WEST (Germany)
-TRIER-EUREN (Germany)
-TRIER-PALLIEN (Germany)
-TRIER-ZEWEN (Germany)
+THIONVILLE France
+TRIER HAFENSTRASSE Germany
+TRIER HBF Germany
+TRIER SUED Germany
+TRIER WEST Germany
+TRIER EUREN Germany
+TRIER PALLIEN Germany
+TRIER ZEWEN Germany
 Troisvierges
-Volmerange-les-Mines
+Volmerange les Mines
 Walferdange
 Wasserbillig
 Wecker
 Wiltz
 Wilwerwiltz
-WITTLICH HBF (Germany)
+WITTLICH HBF Germany
