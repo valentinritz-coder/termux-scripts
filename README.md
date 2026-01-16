@@ -64,6 +64,7 @@ ADB_TCP_PORT=37099 \
 UI_STEP_SLEEP=0 \
 UI_DT_DEBUG=0 \
 CFL_MULTI_RUN=1 \
+CFL_DEMO_STATUSBAR=1 \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
 DATE_YMD="2026-01-15" \
@@ -116,6 +117,7 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
 ```bash
 CFL_MULTI_RUN=1 \
 N=3 \
+CFL_DEMO_STATUSBAR=1 \
 SLEEP_BETWEEN=1 \
 ADB_TCP_PORT=37099 \
 STATIONS_FILE="$HOME/termux-scripts/cfl_watch/data/stations.txt" \
