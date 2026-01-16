@@ -64,7 +64,98 @@ ui_screen_size() {
 }
 
 ui_hash_png() {
-  sha1sum "$1" | awk '{print $1}'
+  local png="$1"
+  local xml="${2:-}"
+  local app_pkg="${APP_PACKAGE:-${CFL_PKG:-de.hafas.android.cfl}}"
+  local magick_cmd=""
+
+  if command -v magick >/dev/null 2>&1; then
+    magick_cmd="magick"
+  elif command -v convert >/dev/null 2>&1; then
+    magick_cmd="convert"
+  fi
+
+  if [[ -z "$xml" || ! -s "$xml" ]]; then
+    log "Phase: snap | Action: crop_hash | Target: screenshot | Result: skipped (no dump)"
+    sha1sum "$png" | awk '{print $1}'
+    return 0
+  fi
+
+  if [[ -z "$magick_cmd" ]]; then
+    log "Phase: snap | Action: crop_hash | Target: screenshot | Result: skipped (no imagemagick)"
+    sha1sum "$png" | awk '{print $1}'
+    return 0
+  fi
+
+  local bbox
+  bbox="$(python - "$xml" "$app_pkg" <<'PY' 2>/dev/null || true
+import sys
+import xml.etree.ElementTree as ET
+import re
+
+dump, pkg = sys.argv[1], sys.argv[2]
+try:
+    root = ET.parse(dump).getroot()
+except Exception:
+    print("", end="")
+    raise SystemExit(0)
+
+rb = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
+min_x = min_y = None
+max_x = max_y = None
+
+for node in root.iter("node"):
+    if node.get("package") != pkg:
+        continue
+    m = rb.match(node.get("bounds", ""))
+    if not m:
+        continue
+    x1, y1, x2, y2 = map(int, m.groups())
+    if min_x is None or x1 < min_x:
+        min_x = x1
+    if min_y is None or y1 < min_y:
+        min_y = y1
+    if max_x is None or x2 > max_x:
+        max_x = x2
+    if max_y is None or y2 > max_y:
+        max_y = y2
+
+if min_x is None:
+    print("", end="")
+else:
+    print(f"{min_x} {min_y} {max_x - min_x} {max_y - min_y}", end="")
+PY
+)"
+
+  if [[ -z "$bbox" ]]; then
+    log "Phase: snap | Action: crop_hash | Target: screenshot | Result: skipped (no app nodes)"
+    sha1sum "$png" | awk '{print $1}'
+    return 0
+  fi
+
+  local x y w h
+  read -r x y w h <<<"$bbox"
+  if [[ -z "${x:-}" || -z "${y:-}" || -z "${w:-}" || -z "${h:-}" || "$w" -le 0 || "$h" -le 0 ]]; then
+    log "Phase: snap | Action: crop_hash | Target: screenshot | Result: skipped (invalid bounds)"
+    sha1sum "$png" | awk '{print $1}'
+    return 0
+  fi
+
+  local tmp_dir="${CFL_TMP_DIR:-/tmp}"
+  mkdir -p "$tmp_dir" >/dev/null 2>&1 || true
+  local cropped
+  cropped="$(mktemp "$tmp_dir/$(basename "${png%.png}")__hashcrop.XXXXXX.png")"
+
+  if ! "$magick_cmd" "$png" -crop "${w}x${h}+${x}+${y}" +repage "$cropped" >/dev/null 2>&1; then
+    log "Phase: snap | Action: crop_hash | Target: screenshot | Result: skipped (crop failed)"
+    rm -f "$cropped" >/dev/null 2>&1 || true
+    sha1sum "$png" | awk '{print $1}'
+    return 0
+  fi
+
+  log "Phase: snap | Action: crop_hash | Target: screenshot | Result: geometry=${w}x${h}+${x}+${y}"
+  sha1sum "$cropped" | awk '{print $1}'
+  rm -f "$cropped" >/dev/null 2>&1 || true
 }
 
 ui_get_resid_top_y() {
@@ -134,7 +225,7 @@ ui_scrollshot_region() {
     cp -f "$UI_DUMP_CACHE" "$xml"
 
     local hsh
-    hsh="$(ui_hash_png "$png")"
+    hsh="$(ui_hash_png "$png" "$xml")"
 
     if [[ -n "$prev_hash" && "$hsh" == "$prev_hash" ]]; then
       streak=$((streak + 1))
@@ -193,7 +284,7 @@ ui_scrollshot_free() {
     cp -f "$UI_DUMP_CACHE" "$xml"
 
     local hsh
-    hsh="$(ui_hash_png "$png")"
+    hsh="$(ui_hash_png "$png" "$xml")"
 
     if [[ -n "$prev_hash" && "$hsh" == "$prev_hash" ]]; then
       streak=$((streak + 1))
@@ -217,5 +308,4 @@ ui_scrollshot_free() {
 
   log "scrollshot_free: done ($((i-1)) frames)"
 }
-
 
