@@ -1,16 +1,13 @@
-Arlon Belgium
-Athus Belgium
+Arlon
+Athus
 Audun-le-Tiche
 Bascharage-Sanem
-Belval-Lycee
-Belval-Redange
-Belval-Universite
 Belvaux-Soleuvre
 Berchem
 Bertrange-Strassen
 Bettembourg
 Betzdorf
-Bruxelles-Midi Belgium
+Bruxelles-Midi
 Capellen
 Cents-Hamm
 Clervaux
@@ -25,54 +22,51 @@ Dudelange-Burange
 Dudelange-Centre
 Dudelange-Usines
 Dudelange-Ville
-DUESSELDORF HBF Germany
+DUESSELDORF HBF
 Esch-sur-Alzette
 Ettelbruck
-Goebelsmuhle
-Gouvy Belgium
+Gouvy
 Heisdorf
-HETTANGE GRANDE France
+HETTANGE GRANDE
 Hollerich
 Howald
-IGEL Germany
-KARTHAUS Germany
+IGEL
+KARTHAUS
 Kautenbach
 Kayl
 Kleinbettingen
-KOBLENZ HBF Germany
-KREUZ KONZ Germany
+KOBLENZ HBF
+KREUZ KONZ
 Lamadelaine
 Leudelange
-Libramont Belgium
-Liege-Guillemins Belgium
-Liers Belgium
+Libramont
+Liege-Guillemins
+Liers
 Lintgen
-LONGWY France
+LONGWY
 Lorentzweiler
 Luxembourg
 Mamer
-Mamer-Lycee
 Manternach
-Marloie Belgium
-MARSEILLE ST CHARLES France
+Marloie
+MARSEILLE ST CHARLES
 Merkholtz
 Mersch
 Mertert
-METZ VILLE France
+METZ VILLE
 Michelau
-MONTPELLIER SAINT-ROCH France
+MONTPELLIER SAINT-ROCH
 Munsbach
-Namur Belgium
-NANCY France
+Namur
+NANCY
 Niederkorn
 Noertzange
 Oberkorn
 Oetrange
 Paradiso
-PARIS EST France
-Petange
+PARIS EST
 Pfaffenthal-Kirchberg
-Rivage Belgium
+Rivage
 Rodange
 Roodt
 Rumelange
@@ -80,16 +74,15 @@ Sandweiler-Contern
 Schieren
 Schifflange
 Schouweiler
-SCHWEICHDB Germany
 Tetange
-THIONVILLE France
-TRIER HAFENSTRASSE Germany
-TRIER HBF Germany
-TRIER SUED Germany
-TRIER WEST Germany
-TRIER-EUREN Germany
-TRIER-PALLIEN Germany
-TRIER-ZEWEN Germany
+THIONVILLE
+TRIER HAFENSTRASSE
+TRIER HBF
+TRIER SUED
+TRIER WEST
+TRIER-EUREN
+TRIER-PALLIEN
+TRIER-ZEWEN
 Troisvierges
 Volmerange-les-Mines
 Walferdange
@@ -97,4 +90,4 @@ Wasserbillig
 Wecker
 Wiltz
 Wilwerwiltz
-WITTLICH HBF Germany
+WITTLICH HBF
