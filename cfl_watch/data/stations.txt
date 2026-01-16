@@ -2,9 +2,9 @@ Arlon (Belgium)
 Athus (Belgium)
 Audun-le-Tiche
 Bascharage-Sanem
-Belval-Lycée
-Belval-Rédange
-Belval-Université
+Belval-Lycee
+Belval-Redange
+Belval-Universite
 Belvaux-Soleuvre
 Berchem
 Bertrange-Strassen
@@ -28,7 +28,7 @@ Dudelange-Ville
 DUESSELDORF HBF (Germany)
 Esch-sur-Alzette
 Ettelbruck
-Goebelsmühle
+Goebelsmuhle
 Gouvy (Belgium)
 Heisdorf
 HETTANGE GRANDE (France)
@@ -51,7 +51,7 @@ LONGWY (France)
 Lorentzweiler
 Luxembourg
 Mamer
-Mamer-Lycée
+Mamer-Lycee
 Manternach
 Marloie (Belgium)
 MARSEILLE ST CHARLES (France)
@@ -70,7 +70,7 @@ Oberkorn
 Oetrange
 Paradiso
 PARIS EST (France)
-Pétange
+Petange
 Pfaffenthal-Kirchberg
 Rivage (Belgium)
 Rodange
