@@ -149,6 +149,61 @@ ANIM_T=""
 ANIM_A=""
 SCREEN_TIMEOUT_ORIG=""
 STAYON_ORIG=""
+DEMO_ALLOWED_ORIG=""
+DEMO_ACTIVE="0"
+
+read_sysui_demo_allowed() {
+  DEMO_ALLOWED_ORIG="$(adb shell settings get global sysui_demo_allowed 2>/dev/null | tr -d '\r')"
+  [ -n "$DEMO_ALLOWED_ORIG" ] && [ "$DEMO_ALLOWED_ORIG" != "null" ] || DEMO_ALLOWED_ORIG="0"
+}
+
+enable_statusbar_demo() {
+  if [ "${CFL_DRY_RUN:-0}" = "1" ]; then
+    log "[dry-run] skip statusbar demo mode"
+    return 0
+  fi
+
+  log "Enable SystemUI demo mode (temporary)"
+  read_sysui_demo_allowed
+
+  # autorise demo mode
+  adb shell settings put global sysui_demo_allowed 1 >/dev/null 2>&1 || true
+
+  # enter demo mode
+  adb shell am broadcast -a com.android.systemui.demo -e command enter >/dev/null 2>&1 || true
+
+  # Configure: heure fixe + pas de notif + réseau/batterie figés
+  # (Les clés exactes peuvent varier selon Android, donc best-effort + silencieux)
+  adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm "${CFL_DEMO_CLOCK:-1200}" >/dev/null 2>&1 || true
+  adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false >/dev/null 2>&1 || true
+
+  # Réseau: on affiche wifi stable, et on cache le mobile
+  adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level "${CFL_DEMO_WIFI_LEVEL:-4}" >/dev/null 2>&1 || true
+  adb shell am broadcast -a com.android.systemui.demo -e command network -e mobile hide >/dev/null 2>&1 || true
+
+  # Batterie: niveau fixe, pas en charge
+  adb shell am broadcast -a com.android.systemui.demo -e command battery -e level "${CFL_DEMO_BATTERY:-100}" -e plugged false >/dev/null 2>&1 || true
+
+  DEMO_ACTIVE="1"
+}
+
+restore_statusbar_demo() {
+  if [ "${CFL_DRY_RUN:-0}" = "1" ]; then
+    return 0
+  fi
+
+  # Sortir du demo mode si on l’a activé
+  if [ "${DEMO_ACTIVE:-0}" = "1" ]; then
+    log "Disable SystemUI demo mode (restore)"
+    adb shell am broadcast -a com.android.systemui.demo -e command exit >/dev/null 2>&1 || true
+    DEMO_ACTIVE="0"
+  fi
+
+  # Restaurer sysui_demo_allowed
+  if [ -n "${DEMO_ALLOWED_ORIG:-}" ]; then
+    adb shell settings put global sysui_demo_allowed "$DEMO_ALLOWED_ORIG" >/dev/null 2>&1 || true
+  fi
+}
 
 read_anim_scales(){
   ANIM_W="$(adb shell settings get global window_animation_scale 2>/dev/null | tr -d '\r')"
@@ -215,11 +270,15 @@ restore_screen_timeout(){
 }
 
 cleanup(){
-  if [ "$CFL_DISABLE_ANIM" = "1" ] && [ "${CFL_DRY_RUN:-0}" != "1" ]; then
+  if [ "${CFL_DISABLE_ANIM:-0}" = "1" ] && [ "${CFL_DRY_RUN:-0}" != "1" ]; then
     restore_animations
   fi
 
   restore_screen_timeout
+
+  if [ "${CFL_DEMO_STATUSBAR:-0}" = "1" ] && [ "${CFL_DRY_RUN:-0}" != "1" ]; then
+    restore_statusbar_demo
+  fi
 
   if [ "${CFL_DRY_RUN:-0}" != "1" ]; then
     ADB_TCP_PORT="$CFL_DEFAULT_PORT" ADB_HOST="$CFL_DEFAULT_HOST" \
@@ -241,6 +300,10 @@ disable_screen_timeout
 
 if [ "$CFL_DISABLE_ANIM" = "1" ]; then
   disable_animations
+fi
+
+if [ "${CFL_DEMO_STATUSBAR:-0}" = "1" ]; then
+  enable_statusbar_demo
 fi
 
 run_one(){
