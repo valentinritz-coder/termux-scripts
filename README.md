@@ -113,17 +113,17 @@ bash "$HOME/termux-scripts/cfl_watch/runner.sh" \
   --snap-mode 0
 ```
 
-### 3a) Trois trajets aléatoires en multi-run (N=3)
+### 3a) Cinquante trajets aléatoires en multi-run (N=50)
 ```bash
 CFL_MULTI_RUN=1 \
-N=3 \
+N=50 \
 CFL_DEMO_STATUSBAR=1 \
 SLEEP_BETWEEN=1 \
 ADB_TCP_PORT=37099 \
 STATIONS_FILE="$HOME/termux-scripts/cfl_watch/data/stations.txt" \
 CFL_REMOTE_TMP_DIR=/data/local/tmp/cfl_watch \
 CFL_TMP_DIR="$HOME/.cache/cfl_watch" \
-SNAP_MODE=3 \
+SNAP_MODE=0 \
 NO_ANIM=1 \
 bash "$HOME/termux-scripts/cfl_watch/tools/stress_stations.sh"
 ```
