@@ -178,7 +178,8 @@ enable_statusbar_demo() {
   adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false >/dev/null 2>&1 || true
 
   # Réseau: on affiche wifi stable, et on cache le mobile
-  adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level "${CFL_DEMO_WIFI_LEVEL:-4}" >/dev/null 2>&1 || true
+  # adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level "${CFL_DEMO_WIFI_LEVEL:-4}" >/dev/null 2>&1 || true
+    adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi hide >/dev/null 2>&1 || true
   adb shell am broadcast -a com.android.systemui.demo -e command network -e mobile hide >/dev/null 2>&1 || true
 
   # Batterie: niveau fixe, pas en charge
