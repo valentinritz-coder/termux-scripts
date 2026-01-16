@@ -742,20 +742,54 @@ if [[ -n "$VIA_TEXT_TRIM" ]]; then
     if ui_wait_resid "Phase: planner | Action: wait | Target: via_field | Result: visible" "midModalTitle" "$WAIT_LONG"; then
       ui_tap_any "via field" "resid:midModalTitle" || true
 
-      snap_here "planner" "set_via" "field_open" "$SNAP_MODE"
-
-      ui_type_and_wait_results "via" "$VIA_TEXT_TRIM"
-
-      # 1) Wait for keyboard to be shown (key detail)
-      _ui_wait_ime_shown || true
-      # 3) BACK (in your case: validate + close keyboard)
-      _ui_key 4 || true
-      # 4) Wait for keyboard to be fully hidden before tapping elsewhere
-      _ui_wait_ime_hidden || true
-
+      # Type text (same call; explicit failure handling without changing behavior)
+      if ui_type "via" "$VIA_TEXT_TRIM"; then
+        :
+      else
+        rc=$?
+        warn "Phase: planner | Action: type | Target: via_input | Result: failed"
+        exit $rc
+      fi
+      
       snap "planner" "set_via" "typed" "$SNAP_MODE"
 
-      ui_pick_suggestion "via suggestion" "$VIA_TEXT_TRIM" || true
+      # 1) Wait for keyboard to be shown (was: || true)
+      if _ui_wait_ime_shown; then
+        :
+      else
+        log "Phase: planner | Action: ime_wait | Target: keyboard | Result: not_detected"
+      fi
+      
+      # 3) BACK (was: || true)
+      if _ui_key 4; then
+        :
+      else
+        log "Phase: planner | Action: key | Target: back | Result: failed"
+      fi
+      
+      # 4) Wait for keyboard to be fully hidden (was: || true)
+      if _ui_wait_ime_hidden; then
+        :
+      else
+        log "Phase: planner | Action: ime_wait | Target: keyboard | Result: not_hidden_or_unknown"
+      fi
+
+      # Wait for at least one suggestion matching START_TEXT (unchanged logic)
+      if ! ui_wait_desc_any "Phase: planner | Action: wait | Target: via_suggestion | Result: visible" "$VIA_TEXT_TRIM"; then
+        warn "Phase: planner | Action: wait | Target: via_suggestion | Result: timeout"
+        exit 1
+      fi
+
+      # Pick first matching suggestion (unchanged logic)
+      if ! ui_tap_desc "start suggestion" "$VIA_TEXT_TRIM"; then
+        warn "Phase: planner | Action: pick | Target: via | Result: not_found"
+        exit 1
+      fi
+
+      snap "planner" "set_via" "selected" "$SNAP_MODE"
+
+      log "Phase: planner | Action: set_via | Target: via | Result: done"
+
     else
       warn "Phase: planner | Action: find_field | Target: via | Result: not_found_skip"
     fi
