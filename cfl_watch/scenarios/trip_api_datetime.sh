@@ -395,6 +395,9 @@ ui_wait_resid "Phase: results | Action: wait | Target: results_page | Result: vi
 log "Phase: results | Action: drill_connections | Target: haf_connection_view | Result: begin"
 
 declare -A SEEN_CONNECTIONS
+max_unique=2
+unique_processed=0
+stop_drill=0
 
 scrolls=0
 final_pass=0
@@ -423,6 +426,11 @@ while true; do
     key="$(hash_key "$raw_key")"
 
     [[ -n "${SEEN_CONNECTIONS[$key]:-}" ]] && continue
+    if [[ $unique_processed -ge $max_unique ]]; then
+      log "Phase: results | Action: drill_connections | Target: limit | Result: reached max_unique=2"
+      stop_drill=1
+      break
+    fi
 
     # ---- compute tap coords ----
     [[ "$bounds" =~ \[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\] ]] || continue
@@ -439,6 +447,7 @@ while true; do
 
     # ---- mark SEEN only after success ----
     SEEN_CONNECTIONS["$key"]=1
+    unique_processed=$((unique_processed + 1))
     new=1
 
     snap "results" "open_connection" "details_visible" 3
@@ -518,6 +527,7 @@ while true; do
     ui_wait_resid "Phase: results | Action: wait | Target: results_page | Result: visible" ":id/haf_connection_view" "$WAIT_LONG"
   done
 
+  [[ $stop_drill -eq 1 ]] && break
   #[[ $done_search -eq 1 ]] && break
   
   if [[ $new -eq 0 ]]; then
